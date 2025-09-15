@@ -17,16 +17,16 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Red-Blue Theme Primary Colors */
-    --primary: 355 85% 45%; /* Deep Red */
+    /* Enhanced Red-Blue Theme for 97 */
+    --primary: 358 89% 52%; /* Vibrant Crimson Red */
     --primary-foreground: 0 0% 98%;
-    --primary-light: 355 75% 55%;
-    --primary-glow: 355 65% 65%;
+    --primary-light: 358 79% 62%;
+    --primary-glow: 358 69% 72%;
 
-    --secondary: 215 85% 50%; /* Deep Blue */
+    --secondary: 217 91% 55%; /* Electric Blue */
     --secondary-foreground: 0 0% 98%;
-    --secondary-light: 215 75% 60%;
-    --secondary-glow: 215 65% 70%;
+    --secondary-light: 217 81% 65%;
+    --secondary-glow: 217 71% 75%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -52,10 +52,11 @@ All colors MUST be HSL.
     --status-ready: 173 58% 39%; /* Teal */
     --status-completed: 142 76% 36%; /* Green */
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    /* Enhanced Gradients for 97 */
+    --gradient-primary: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-secondary: linear-gradient(145deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    --gradient-accent: linear-gradient(45deg, hsl(var(--primary) / 0.1), hsl(var(--secondary) / 0.1));
 
     /* Shadows */
     --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
