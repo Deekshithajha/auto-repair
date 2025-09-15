@@ -18,6 +18,13 @@ export const AuthForm: React.FC = () => {
     signIn,
     signUp
   } = useAuth();
+
+  // Demo login credentials
+  const demoUsers = {
+    customer: { email: 'demo-customer@autorepair.com', password: 'demo123', name: 'Demo Customer' },
+    employee: { email: 'demo-employee@autorepair.com', password: 'demo123', name: 'Demo Employee' },
+    admin: { email: 'demo-admin@autorepair.com', password: 'demo123', name: 'Demo Admin' }
+  };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
@@ -37,6 +44,21 @@ export const AuthForm: React.FC = () => {
     }
     setIsLoading(true);
     await signUp(formData.email, formData.password, formData.name);
+    setIsLoading(false);
+  };
+
+  const handleDemoLogin = async (role: 'customer' | 'employee' | 'admin') => {
+    setIsLoading(true);
+    const demoUser = demoUsers[role];
+    
+    // Try to sign in first
+    const signInResult = await signIn(demoUser.email, demoUser.password);
+    
+    // If sign in fails, create the account
+    if (signInResult.error) {
+      await signUp(demoUser.email, demoUser.password, demoUser.name);
+    }
+    
     setIsLoading(false);
   };
   return <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
@@ -114,10 +136,41 @@ export const AuthForm: React.FC = () => {
           </Tabs>
         </Card>
 
-        <div className="text-center text-white/60 text-sm mt-6">
-          <p>Secure login 
+        {/* Demo Login Section */}
+        <div className="mt-6 space-y-4">
+          <div className="text-center">
+            <p className="text-white/80 text-sm mb-3">Quick Demo Access</p>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleDemoLogin('customer')}
+              disabled={isLoading}
+              className="w-full bg-white/10 text-white border-white/20 hover:bg-white/20"
+            >
+              Demo as Customer
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDemoLogin('employee')}
+              disabled={isLoading}
+              className="w-full bg-white/10 text-white border-white/20 hover:bg-white/20"
+            >
+              Demo as Employee
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDemoLogin('admin')}
+              disabled={isLoading}
+              className="w-full bg-white/10 text-white border-white/20 hover:bg-white/20"
+            >
+              Demo as Admin
+            </Button>
+          </div>
+        </div>
 
-        </p>
+        <div className="text-center text-white/60 text-sm mt-6">
+          <p>Secure login • Demo accounts ready</p>
         </div>
       </div>
     </div>;

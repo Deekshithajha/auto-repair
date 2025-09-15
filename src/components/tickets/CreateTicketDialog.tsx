@@ -30,36 +30,15 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    vehicle_id: '',
+    make: '',
+    model: '',
+    year: new Date().getFullYear(),
     description: '',
     preferred_pickup_time: ''
   });
   const [photos, setPhotos] = useState<File[]>([]);
 
-  useEffect(() => {
-    if (open) {
-      fetchVehicles();
-    }
-  }, [open]);
-
-  const fetchVehicles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('id, make, model, year')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setVehicles(data || []);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load vehicles",
-        variant: "destructive"
-      });
-    }
-  };
+  // Remove fetchVehicles since we're using text input now
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -89,7 +68,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehicle_id || !formData.description) {
+    if (!formData.make || !formData.model || !formData.description) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -105,11 +84,25 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error('User not authenticated');
 
+      // Create or find vehicle first
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .insert([{
+          make: formData.make,
+          model: formData.model,
+          year: formData.year,
+          user_id: user.id
+        }])
+        .select()
+        .single();
+
+      if (vehicleError) throw vehicleError;
+
       // Create the ticket
       const { data: ticket, error: ticketError } = await supabase
         .from('tickets')
         .insert([{
-          vehicle_id: formData.vehicle_id,
+          vehicle_id: vehicle.id,
           description: formData.description,
           preferred_pickup_time: formData.preferred_pickup_time || null,
           user_id: user.id
@@ -131,7 +124,9 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
 
       // Reset form
       setFormData({
-        vehicle_id: '',
+        make: '',
+        model: '',
+        year: new Date().getFullYear(),
         description: '',
         preferred_pickup_time: ''
       });
@@ -152,7 +147,9 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
 
   const handleClose = () => {
     setFormData({
-      vehicle_id: '',
+      make: '',
+      model: '',
+      year: new Date().getFullYear(),
       description: '',
       preferred_pickup_time: ''
     });
@@ -171,29 +168,43 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Vehicle Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="vehicle">Select Vehicle *</Label>
-            <Select
-              value={formData.vehicle_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, vehicle_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose your vehicle" />
-              </SelectTrigger>
-              <SelectContent>
-                {vehicles.map((vehicle) => (
-                  <SelectItem key={vehicle.id} value={vehicle.id}>
-                    {vehicle.year} {vehicle.make} {vehicle.model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {vehicles.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No vehicles found. Please add a vehicle first.
-              </p>
-            )}
+          {/* Vehicle Information */}
+          <div className="space-y-4">
+            <Label className="text-base font-semibold">Vehicle Information *</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="make">Make</Label>
+                <Input
+                  id="make"
+                  value={formData.make}
+                  onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
+                  placeholder="Toyota, Honda, etc."
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="model">Model</Label>
+                <Input
+                  id="model"
+                  value={formData.model}
+                  onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                  placeholder="Camry, Civic, etc."
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="year">Year</Label>
+              <Input
+                id="year"
+                type="number"
+                value={formData.year}
+                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                min="1900"
+                max={new Date().getFullYear() + 1}
+                required
+              />
+            </div>
           </div>
 
           {/* Problem Description */}
@@ -278,7 +289,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || vehicles.length === 0}
+              disabled={loading}
               className="bg-gradient-primary"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
