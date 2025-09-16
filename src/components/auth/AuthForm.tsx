@@ -1,51 +1,44 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Wrench, Car, UserCircle, Shield, Users } from 'lucide-react';
 
 type LoginMode = 'customer' | 'employee' | 'admin';
 
 export const AuthForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<LoginMode>('customer');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     name: '',
     confirmPassword: ''
   });
-  const {
-    signIn,
-    signUp
-  } = useAuth();
+  const { signIn, signUp } = useAuth();
 
   // Demo login credentials
   const demoUsers = {
-    customer: { email: 'demo-customer@autorepair.com', password: 'demo123', name: 'Demo Customer' },
-    employee: { email: 'demo-employee@autorepair.com', password: 'demo123', name: 'Demo Employee' },
-    admin: { email: 'demo-admin@autorepair.com', password: 'demo123', name: 'Demo Admin' }
+    customer: { email: 'demo-customer@97auto.com', password: 'demo123', name: 'Demo Customer' },
+    employee: { email: 'demo-employee@97auto.com', password: 'demo123', name: 'Demo Employee' },
+    admin: { email: 'demo-admin@97auto.com', password: 'demo123', name: 'Demo Admin' }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [field]: value
     }));
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
     setIsLoading(true);
     await signIn(formData.email, formData.password);
     setIsLoading(false);
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignUp = async () => {
     if (formData.password !== formData.confirmPassword) {
       return;
     }
@@ -75,25 +68,19 @@ export const AuthForm: React.FC = () => {
         return {
           title: 'Employee Access',
           subtitle: 'Access your work dashboard',
-          icon: UserCircle,
-          gradient: 'bg-gradient-secondary',
-          color: 'text-secondary'
+          gradient: 'bg-gradient-secondary'
         };
       case 'admin':
         return {
           title: 'Admin Portal',
           subtitle: 'Manage your business',
-          icon: Shield,
-          gradient: 'bg-gradient-primary',
-          color: 'text-primary'
+          gradient: 'bg-gradient-primary'
         };
       default:
         return {
           title: 'Customer Portal',
           subtitle: 'Track your service requests',
-          icon: Users,
-          gradient: 'bg-gradient-hero',
-          color: 'text-primary'
+          gradient: 'bg-gradient-hero'
         };
     }
   };
@@ -114,7 +101,6 @@ export const AuthForm: React.FC = () => {
               : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
             }
           >
-            <UserCircle className="h-4 w-4 mr-1" />
             Employee
           </Button>
           <Button
@@ -126,7 +112,6 @@ export const AuthForm: React.FC = () => {
               : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
             }
           >
-            <Shield className="h-4 w-4 mr-1" />
             Admin
           </Button>
         </div>
@@ -135,8 +120,8 @@ export const AuthForm: React.FC = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-background rounded-full shadow-glow mb-4">
             <div className="flex items-center space-x-1">
-              <Wrench className="h-7 w-7 text-primary" />
-              <Car className="h-7 w-7 text-secondary" />
+              <span className="text-2xl">🔧</span>
+              <span className="text-2xl">🚗</span>
             </div>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">97</h1>
@@ -144,132 +129,98 @@ export const AuthForm: React.FC = () => {
           
           {/* Mode Indicator */}
           <div className="mt-4 flex items-center justify-center space-x-2">
-            <modeConfig.icon className={`h-5 w-5 ${modeConfig.color === 'text-primary' ? 'text-white' : 'text-white'}`} />
             <span className="text-white/80 font-medium">{modeConfig.title}</span>
           </div>
         </div>
 
         <Card className="shadow-glow border-0 bg-background/95 backdrop-blur">
-          <Tabs defaultValue="signin" className="w-full">
-            <CardHeader className="space-y-1">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <CardDescription className="text-center text-muted-foreground">
-                {modeConfig.subtitle}
-              </CardDescription>
-            </CardHeader>
+          <CardHeader className="space-y-1">
+            {/* Tab Navigation */}
+            <div className="grid w-full grid-cols-2 bg-muted p-1 rounded-md">
+              <button
+                onClick={() => setIsSignUp(false)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${
+                  !isSignUp 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setIsSignUp(true)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${
+                  isSignUp 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+            <CardDescription className="text-center text-muted-foreground">
+              {modeConfig.subtitle}
+            </CardDescription>
+          </CardHeader>
 
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn}>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      placeholder={loginMode === 'customer' ? 'your@email.com' : `${loginMode}@97auto.com`}
-                      value={formData.email} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="focus:ring-primary" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input 
-                      id="password" 
-                      name="password" 
-                      type="password" 
-                      value={formData.password} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="focus:ring-primary" 
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    className={`w-full ${modeConfig.gradient} hover:opacity-90 transition-opacity`} 
-                    disabled={isLoading}
-                  >
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In to {modeConfig.title}
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp}>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input 
-                      id="signup-name" 
-                      name="name" 
-                      type="text" 
-                      placeholder="John Doe" 
-                      value={formData.name} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="focus:ring-primary" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input 
-                      id="signup-email" 
-                      name="email" 
-                      type="email" 
-                      placeholder="your@email.com" 
-                      value={formData.email} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="focus:ring-primary" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input 
-                      id="signup-password" 
-                      name="password" 
-                      type="password" 
-                      value={formData.password} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="focus:ring-primary" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input 
-                      id="confirmPassword" 
-                      name="confirmPassword" 
-                      type="password" 
-                      value={formData.confirmPassword} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="focus:ring-primary" 
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    className={`w-full ${modeConfig.gradient} hover:opacity-90 transition-opacity`} 
-                    disabled={isLoading || formData.password !== formData.confirmPassword}
-                  >
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create {modeConfig.title.replace(' Access', '').replace(' Portal', '')} Account
-                  </Button>
-                </CardFooter>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <CardContent className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <label htmlFor="signup-name" className="text-sm font-medium">Full Name</label>
+                <Input 
+                  id="signup-name" 
+                  type="text" 
+                  placeholder="John Doe" 
+                  value={formData.name} 
+                  onChange={(e) => handleInputChange('name', e.target.value)} 
+                  className="focus:ring-primary" 
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder={loginMode === 'customer' ? 'your@email.com' : `${loginMode}@97auto.com`}
+                value={formData.email} 
+                onChange={(e) => handleInputChange('email', e.target.value)} 
+                className="focus:ring-primary" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <Input 
+                id="password" 
+                type="password" 
+                value={formData.password} 
+                onChange={(e) => handleInputChange('password', e.target.value)} 
+                className="focus:ring-primary" 
+              />
+            </div>
+            {isSignUp && (
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</label>
+                <Input 
+                  id="confirmPassword" 
+                  type="password" 
+                  value={formData.confirmPassword} 
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)} 
+                  className="focus:ring-primary" 
+                />
+              </div>
+            )}
+          </CardContent>
+          
+          <CardFooter>
+            <Button 
+              onClick={isSignUp ? handleSignUp : handleSignIn} 
+              className={`w-full ${modeConfig.gradient} hover:opacity-90 transition-opacity`} 
+              disabled={isLoading || (isSignUp && formData.password !== formData.confirmPassword)}
+            >
+              {isLoading ? 'Loading...' : (isSignUp ? `Create ${modeConfig.title.replace(' Access', '').replace(' Portal', '')} Account` : `Sign In to ${modeConfig.title}`)}
+            </Button>
+          </CardFooter>
         </Card>
 
         {/* Demo Login Section - More Compact */}
