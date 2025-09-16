@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
+import { EmployeeWorkManagement } from '@/components/employee/EmployeeWorkManagement';
 
 interface EmployeeDashboardProps {
   activeTab?: string;
@@ -17,10 +18,14 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
     <div className="min-h-full bg-background">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 lg:w-auto text-xs sm:text-sm">
             <TabsTrigger value="assignments" className="flex items-center space-x-1 sm:space-x-2">
               <span>📋</span>
-              <span className="hidden sm:inline">Assignments</span>
+              <span className="hidden sm:inline">My Work</span>
+            </TabsTrigger>
+            <TabsTrigger value="register" className="flex items-center space-x-1 sm:space-x-2">
+              <span>➕</span>
+              <span className="hidden sm:inline">Register</span>
             </TabsTrigger>
             <TabsTrigger value="attendance" className="flex items-center space-x-1 sm:space-x-2">
               <span>⏰</span>
@@ -40,19 +45,30 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
           <TabsContent value="assignments" className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold">My Assignments</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Work on assigned repair tickets</p>
+                <h2 className="text-xl sm:text-2xl font-bold">My Work Assignments</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">View assigned vehicles, start work, and track repairs</p>
               </div>
-              <CustomerRegistration />
+            </div>
+
+            <EmployeeWorkManagement />
+          </TabsContent>
+
+          {/* Register Tab */}
+          <TabsContent value="register" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">Customer Registration</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Register new customers in the system</p>
+              </div>
             </div>
 
             <Card>
               <CardHeader>
-                <CardTitle>Assignment Queue</CardTitle>
-                <CardDescription>Your active repair assignments</CardDescription>
+                <CardTitle>New Customer</CardTitle>
+                <CardDescription>Add a new customer to 76 Auto Repairs</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground text-center py-8">No assignments available</p>
+                <CustomerRegistration />
               </CardContent>
             </Card>
           </TabsContent>

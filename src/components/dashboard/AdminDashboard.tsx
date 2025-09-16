@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
+import { AdminTicketManagement } from '@/components/admin/AdminTicketManagement';
 
 interface AdminDashboardProps {
   activeTab?: string;
@@ -17,14 +18,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
     <div className="min-h-full bg-background">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 lg:w-auto text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 lg:w-auto text-xs sm:text-sm">
             <TabsTrigger value="tickets" className="flex items-center space-x-1 sm:space-x-2">
               <span>📧</span>
-              <span className="hidden sm:inline">Tickets</span>
+              <span className="hidden sm:inline">Approve</span>
             </TabsTrigger>
             <TabsTrigger value="employees" className="flex items-center space-x-1 sm:space-x-2">
               <span>👥</span>
               <span className="hidden sm:inline">Employees</span>
+            </TabsTrigger>
+            <TabsTrigger value="register" className="flex items-center space-x-1 sm:space-x-2">
+              <span>➕</span>
+              <span className="hidden sm:inline">Register</span>
             </TabsTrigger>
             <TabsTrigger value="monitor" className="flex items-center space-x-1 sm:space-x-2">
               <span>📊</span>
@@ -44,21 +49,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
           <TabsContent value="tickets" className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Ticket Inbox</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Ticket Approval & Assignment</h2>
                 <p className="text-muted-foreground text-sm sm:text-base">Approve, decline, and assign repair tickets</p>
               </div>
-              <CustomerRegistration />
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Approvals</CardTitle>
-                <CardDescription>New tickets awaiting review</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">No pending tickets</p>
-              </CardContent>
-            </Card>
+            <AdminTicketManagement />
           </TabsContent>
 
           {/* Employees Tab */}
@@ -68,7 +64,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
                 <h2 className="text-xl sm:text-2xl font-bold">Employee Management</h2>
                 <p className="text-muted-foreground text-sm sm:text-base">Manage employees, attendance, and assignments</p>
               </div>
-              <CustomerRegistration />
             </div>
 
             <Card>
@@ -78,6 +73,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-center py-8">No employees registered</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Register Tab */}
+          <TabsContent value="register" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">Customer Registration</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Register new customers in the system</p>
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>New Customer</CardTitle>
+                <CardDescription>Add a new customer to 76 Auto Repairs</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CustomerRegistration />
               </CardContent>
             </Card>
           </TabsContent>

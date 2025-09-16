@@ -94,6 +94,47 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_notifications: {
+        Row: {
+          created_at: string
+          email_enabled: boolean | null
+          email_verified: boolean | null
+          id: string
+          phone_verified: boolean | null
+          sms_enabled: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean | null
+          email_verified?: boolean | null
+          id?: string
+          phone_verified?: boolean | null
+          sms_enabled?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean | null
+          email_verified?: boolean | null
+          id?: string
+          phone_verified?: boolean | null
+          sms_enabled?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           created_at: string
@@ -419,6 +460,57 @@ export type Database = {
           year?: number | null
         }
         Relationships: []
+      }
+      work_sessions: {
+        Row: {
+          created_at: string
+          employee_id: string
+          ended_at: string | null
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sessions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
