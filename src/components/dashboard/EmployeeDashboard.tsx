@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ interface EmployeeDashboardProps {
 
 export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab = 'assignments' }) => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [selectedWorkLog, setSelectedWorkLog] = useState<any>(null);
   const [showWorkLogDialog, setShowWorkLogDialog] = useState(false);
 
@@ -214,7 +216,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
   return (
     <DashboardBackground>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <Tabs value={activeTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(val) => navigate(`/employee/${val}`)} className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 lg:w-auto text-xs sm:text-sm">
             <TabsTrigger value="assignments" className="flex items-center space-x-1 sm:space-x-2">
               <span>📋</span>
