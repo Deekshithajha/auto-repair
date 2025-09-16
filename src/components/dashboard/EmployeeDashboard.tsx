@@ -257,8 +257,6 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
             </div>
 
             <EmployeeWorkManagement />
-
-            <RaiseTicketWizard open={raiseOpen} onOpenChange={setRaiseOpen} onTicketCreated={() => setRaiseOpen(false)} />
           </TabsContent>
 
           {/* Work Log Tab */}

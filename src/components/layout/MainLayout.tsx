@@ -43,7 +43,7 @@ export const MainLayout: React.FC = () => {
   }
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />

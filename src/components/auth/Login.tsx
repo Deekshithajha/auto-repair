@@ -55,6 +55,17 @@ export const Login: React.FC<LoginProps> = ({ onSubmit, theme = 'blue' }) => {
     }
   };
 
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      rememberMe: checked,
+    }));
+    
+    if (formState.error) {
+      setFormState(prev => ({ ...prev, error: null }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -248,6 +259,7 @@ export const Login: React.FC<LoginProps> = ({ onSubmit, theme = 'blue' }) => {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
+                        autoComplete="email"
                         className={`border-2 ${isRedTheme ? 'border-auto-red-400 focus:border-auto-red-600 focus:ring-auto-red-600' : 'border-auto-blue-400 focus:border-auto-blue-600 focus:ring-auto-blue-600'} transition-all duration-200`}
                         aria-describedby="email-error"
                       />
@@ -270,6 +282,7 @@ export const Login: React.FC<LoginProps> = ({ onSubmit, theme = 'blue' }) => {
                           value={formData.password}
                           onChange={handleInputChange}
                           required
+                          autoComplete="current-password"
                           className={`border-2 ${isRedTheme ? 'border-auto-red-400 focus:border-auto-red-600 focus:ring-auto-red-600' : 'border-auto-blue-400 focus:border-auto-blue-600 focus:ring-auto-blue-600'} pr-10 transition-all duration-200`}
                           aria-describedby="password-error"
                         />
@@ -294,7 +307,7 @@ export const Login: React.FC<LoginProps> = ({ onSubmit, theme = 'blue' }) => {
                         id="rememberMe"
                         name="rememberMe"
                         checked={formData.rememberMe}
-                        onChange={handleInputChange}
+                        onCheckedChange={handleCheckboxChange}
                         className={`border-2 ${isRedTheme ? 'border-auto-red-400 data-[state=checked]:bg-auto-red-600 data-[state=checked]:border-auto-red-600' : 'border-auto-blue-400 data-[state=checked]:bg-auto-blue-600 data-[state=checked]:border-auto-blue-600'}`}
                       />
                       <Label 
