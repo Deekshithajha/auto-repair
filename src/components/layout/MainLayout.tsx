@@ -9,7 +9,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 export const MainLayout: React.FC = () => {
-  const { user, profile, loading, signIn } = useAuth();
+  const { user, profile, loading, signIn, signUp } = useAuth();
 
   if (loading) {
     return (
@@ -24,7 +24,21 @@ export const MainLayout: React.FC = () => {
 
   if (!user || !profile) {
     return <Login onSubmit={async (credentials) => {
-      await signIn(credentials.email, credentials.password);
+      const { email, password } = credentials;
+      const attempt = await signIn(email, password);
+      if (attempt.error) {
+        // Auto-provision demo users if sign-in fails
+        const demoMap: Record<string, { name: string; role: 'user' | 'employee' | 'admin' } > = {
+          'demo-customer@autorepair.com': { name: 'Demo Customer', role: 'user' },
+          'demo-employee@autorepair.com': { name: 'Demo Employee', role: 'employee' },
+          'demo-admin@autorepair.com': { name: 'Demo Admin', role: 'admin' },
+        };
+        const meta = demoMap[email.toLowerCase()];
+        if (meta) {
+          await signUp(email, password, meta.name);
+          await signIn(email, password);
+        }
+      }
     }} />;
   }
 

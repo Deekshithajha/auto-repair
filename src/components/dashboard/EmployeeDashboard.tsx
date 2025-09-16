@@ -249,9 +249,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
                 <h2 className="text-xl sm:text-2xl font-bold">My Work Assignments</h2>
                 <p className="text-muted-foreground text-sm sm:text-base">View assigned vehicles, start work, and track repairs</p>
               </div>
+              <div>
+                <Button onClick={() => setRaiseOpen(true)}>
+                  Raise New Ticket
+                </Button>
+              </div>
             </div>
 
             <EmployeeWorkManagement />
+
+            <RaiseTicketWizard open={raiseOpen} onOpenChange={setRaiseOpen} onTicketCreated={() => setRaiseOpen(false)} />
           </TabsContent>
 
           {/* Work Log Tab */}
