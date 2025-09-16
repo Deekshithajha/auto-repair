@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { AuthForm } from '@/components/auth/AuthForm';
+import Login from '@/components/auth/Login';
 import { UserDashboard } from '@/components/dashboard/UserDashboard';
 import { EmployeeDashboard } from '@/components/dashboard/EmployeeDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
@@ -9,7 +9,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 export const MainLayout: React.FC = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signIn } = useAuth();
 
   if (loading) {
     return (
@@ -23,7 +23,9 @@ export const MainLayout: React.FC = () => {
   }
 
   if (!user || !profile) {
-    return <AuthForm />;
+    return <Login onSubmit={async (credentials) => {
+      await signIn(credentials.email, credentials.password);
+    }} />;
   }
 
   return (

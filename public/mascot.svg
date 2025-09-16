@@ -1,0 +1,47 @@
+<svg width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Car Body (Red) -->
+  <path d="M60 180 L60 150 C60 130 75 115 95 115 L185 115 C205 115 220 130 220 150 L220 180 L210 180 L210 200 C210 215 195 230 180 230 L100 230 C85 230 70 215 70 200 L70 180 L60 180 Z" fill="#D32F2F" stroke="#7B0000" stroke-width="3"/>
+  
+  <!-- Car Windows (Blue) -->
+  <rect x="75" y="130" width="40" height="35" fill="#4FC3F7" stroke="#0D47A1" stroke-width="2"/>
+  <rect x="165" y="130" width="40" height="35" fill="#4FC3F7" stroke="#0D47A1" stroke-width="2"/>
+  
+  <!-- Car Roof (Red) -->
+  <path d="M75 130 L140 100 L205 130 L205 165 L75 165 Z" fill="#FF6B6B" stroke="#D32F2F" stroke-width="3"/>
+  
+  <!-- Wheels (Blue) -->
+  <circle cx="100" cy="200" r="20" fill="#1976D2" stroke="#0D47A1" stroke-width="3"/>
+  <circle cx="180" cy="200" r="20" fill="#1976D2" stroke="#0D47A1" stroke-width="3"/>
+  
+  <!-- Wheel Centers (Red) -->
+  <circle cx="100" cy="200" r="12" fill="#FF6B6B" stroke="#D32F2F" stroke-width="2"/>
+  <circle cx="180" cy="200" r="12" fill="#FF6B6B" stroke="#D32F2F" stroke-width="2"/>
+  
+  <!-- Mechanic Character (Blue) -->
+  <circle cx="140" cy="80" r="25" fill="#BBDEFB" stroke="#1976D2" stroke-width="3"/>
+  
+  <!-- Mechanic Hat (Red) -->
+  <ellipse cx="140" cy="65" rx="22" ry="10" fill="#D32F2F" stroke="#7B0000" stroke-width="2"/>
+  
+  <!-- Eyes (Blue) -->
+  <circle cx="133" cy="78" r="3" fill="#0D47A1"/>
+  <circle cx="147" cy="78" r="3" fill="#0D47A1"/>
+  
+  <!-- Smile (Red) -->
+  <path d="M133 88 Q140 95 147 88" stroke="#D32F2F" stroke-width="3" fill="none"/>
+  
+  <!-- Wrench in hand (Blue) -->
+  <path d="M165 90 L180 75 L187 82 L172 97 Z" fill="#1976D2" stroke="#0D47A1" stroke-width="2"/>
+  <circle cx="165" cy="90" r="4" fill="#4FC3F7" stroke="#1976D2" stroke-width="2"/>
+  
+  <!-- Sparkles (Red and Blue alternating) -->
+  <path d="M40 60 L47 67 L40 74 L33 67 Z" fill="#FF6B6B"/>
+  <path d="M240 90 L247 97 L240 104 L233 97 Z" fill="#4FC3F7"/>
+  <path d="M30 120 L37 127 L30 134 L23 127 Z" fill="#FF6B6B"/>
+  <path d="M250 150 L257 157 L250 164 L243 157 Z" fill="#4FC3F7"/>
+  
+  <!-- Exhaust (Blue) -->
+  <ellipse cx="50" cy="160" rx="12" ry="5" fill="#BBDEFB" opacity="0.8"/>
+  <ellipse cx="42" cy="150" rx="10" ry="4" fill="#BBDEFB" opacity="0.6"/>
+  <ellipse cx="34" cy="140" rx="8" ry="3" fill="#BBDEFB" opacity="0.4"/>
+</svg>

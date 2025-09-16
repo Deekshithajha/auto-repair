@@ -70,6 +70,21 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Refined auto-repair theme colors (red and blue only)
+        auto: {
+          red: {
+            900: "#7B0000",
+            600: "#D32F2F", 
+            400: "#FF6B6B",
+            200: "#FFCDD2",
+          },
+          blue: {
+            900: "#0D47A1",
+            600: "#1976D2",
+            400: "#4FC3F7", 
+            200: "#BBDEFB",
+          }
+        },
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
@@ -102,10 +117,37 @@ export default {
             height: "0",
           },
         },
+        "gentle-bounce": {
+          "0%, 100%": {
+            transform: "translateY(0) scale(1)",
+          },
+          "50%": {
+            transform: "translateY(-2px) scale(1.02)",
+          },
+        },
+        "mascot-bob": {
+          "0%, 100%": {
+            transform: "translateY(0)",
+          },
+          "50%": {
+            transform: "translateY(-6px)",
+          },
+        },
+        "float-gentle": {
+          "0%, 100%": {
+            transform: "translateY(0) rotate(0deg)",
+          },
+          "50%": {
+            transform: "translateY(-4px) rotate(1deg)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "gentle-bounce": "gentle-bounce 0.12s ease-out",
+        "mascot-bob": "mascot-bob 0.5s ease-in-out infinite",
+        "float-gentle": "float-gentle 3s ease-in-out infinite",
       },
     },
   },

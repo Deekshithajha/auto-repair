@@ -1,0 +1,259 @@
+/* Refined Auto-repair Login Component Styles */
+
+/* Import Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* CSS Variables for Refined Auto-repair Theme */
+:root {
+  --auto-red-900: #7B0000;
+  --auto-red-600: #D32F2F;
+  --auto-red-400: #FF6B6B;
+  --auto-red-200: #FFCDD2;
+  --auto-blue-900: #0D47A1;
+  --auto-blue-600: #1976D2;
+  --auto-blue-400: #4FC3F7;
+  --auto-blue-200: #BBDEFB;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-mascot-bob,
+  .animate-float-gentle,
+  .animate-gentle-bounce {
+    animation: none;
+  }
+  
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+}
+
+/* Custom focus styles for accessibility */
+.login-input:focus {
+  outline: 3px solid var(--auto-blue-600);
+  outline-offset: 2px;
+}
+
+.login-button:focus {
+  outline: 3px solid var(--auto-red-400);
+  outline-offset: 2px;
+}
+
+/* Sculpted shape utilities */
+.sculpt-panel {
+  clip-path: polygon(30% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.sculpt-ellipse {
+  clip-path: ellipse(100% 100% at 0% 100%);
+}
+
+.sculpt-arc {
+  clip-path: ellipse(80% 60% at 50% 0%);
+}
+
+/* Layered shadow utilities using only token colors */
+.shadow-red-subtle {
+  box-shadow: 0 8px 24px rgba(123, 0, 0, 0.12);
+}
+
+.shadow-blue-subtle {
+  box-shadow: 0 8px 24px rgba(13, 71, 161, 0.12);
+}
+
+.shadow-red-elevated {
+  box-shadow: 0 25px 50px rgba(123, 0, 0, 0.15);
+}
+
+.shadow-blue-elevated {
+  box-shadow: 0 25px 50px rgba(13, 71, 161, 0.15);
+}
+
+/* Semi-transparent overlay utilities */
+.overlay-red-light {
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+.overlay-blue-light {
+  background-color: rgba(79, 195, 247, 0.1);
+}
+
+.overlay-red-medium {
+  background-color: rgba(211, 47, 47, 0.2);
+}
+
+.overlay-blue-medium {
+  background-color: rgba(25, 118, 210, 0.2);
+}
+
+/* Pattern utilities */
+.pattern-dots-red {
+  background-image: radial-gradient(circle, var(--auto-red-400) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.pattern-dots-blue {
+  background-image: radial-gradient(circle, var(--auto-blue-400) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.pattern-stripes-red-blue {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--auto-red-400),
+    var(--auto-red-400) 10px,
+    var(--auto-blue-400) 10px,
+    var(--auto-blue-400) 20px
+  );
+}
+
+/* Micro-interaction animations */
+@keyframes gentle-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.02);
+  }
+}
+
+@keyframes mascot-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+/* Apply animations */
+.animate-gentle-bounce {
+  animation: gentle-bounce 0.12s ease-out;
+}
+
+.animate-mascot-bob {
+  animation: mascot-bob 0.5s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+/* Button hover effects */
+.login-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.login-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Input focus effects */
+.login-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.login-input:focus {
+  transform: translateY(-1px);
+}
+
+/* Card hover effect */
+.login-card {
+  transition: all 0.3s ease-in-out;
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Loading spinner customization */
+.loading-spinner {
+  border: 2px solid var(--auto-blue-200);
+  border-top: 2px solid var(--auto-red-600);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .login-card {
+    margin: 1rem;
+  }
+  
+  .animate-mascot-bob {
+    animation-duration: 0.3s;
+  }
+  
+  .sculpt-panel {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .login-input {
+    border-width: 3px;
+  }
+  
+  .login-button {
+    border: 3px solid var(--auto-red-900);
+  }
+}
+
+/* Print styles */
+@media print {
+  .login-card {
+    box-shadow: none;
+    border: 2px solid var(--auto-red-900);
+  }
+  
+  .animate-mascot-bob,
+  .animate-float-gentle {
+    animation: none;
+  }
+}
+
+/* Theme-specific utilities */
+.theme-red-dominant {
+  --primary-color: var(--auto-red-600);
+  --primary-dark: var(--auto-red-900);
+  --primary-light: var(--auto-red-400);
+  --primary-bg: var(--auto-red-200);
+  --accent-color: var(--auto-blue-600);
+  --accent-dark: var(--auto-blue-900);
+  --accent-light: var(--auto-blue-400);
+  --accent-bg: var(--auto-blue-200);
+}
+
+.theme-blue-dominant {
+  --primary-color: var(--auto-blue-600);
+  --primary-dark: var(--auto-blue-900);
+  --primary-light: var(--auto-blue-400);
+  --primary-bg: var(--auto-blue-200);
+  --accent-color: var(--auto-red-600);
+  --accent-dark: var(--auto-red-900);
+  --accent-light: var(--auto-red-400);
+  --accent-bg: var(--auto-red-200);
+}
