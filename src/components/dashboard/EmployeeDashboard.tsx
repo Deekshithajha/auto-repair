@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 import { EmployeeWorkManagement } from '@/components/employee/EmployeeWorkManagement';
+import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import DashboardBackground from '@/components/layout/DashboardBackground';
 
 interface EmployeeDashboardProps {
@@ -19,6 +20,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
   const navigate = useNavigate();
   const [selectedWorkLog, setSelectedWorkLog] = useState<any>(null);
   const [showWorkLogDialog, setShowWorkLogDialog] = useState(false);
+  const [showCreateTicket, setShowCreateTicket] = useState(false);
 
   // Dummy data for demonstration with detailed information
   const dummyWorkLog = [
@@ -159,6 +161,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
     setSelectedWorkLog(workLogEntry);
     setShowWorkLogDialog(true);
   };
+
+  const handleTicketCreated = () => {
+    setShowCreateTicket(false);
+    // You could add a toast notification here if needed
+  };
   
   const dummyAttendance = [
     {
@@ -252,7 +259,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
                 <p className="text-muted-foreground text-sm sm:text-base">View assigned vehicles, start work, and track repairs</p>
               </div>
               <div>
-                <Button onClick={() => setRaiseOpen(true)}>
+                <Button onClick={() => setShowCreateTicket(true)}>
                   Raise New Ticket
                 </Button>
               </div>
@@ -816,6 +823,13 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Create Ticket Dialog */}
+      <CreateTicketDialog 
+        open={showCreateTicket}
+        onOpenChange={setShowCreateTicket}
+        onTicketCreated={handleTicketCreated}
+      />
     </DashboardBackground>
   );
 };
