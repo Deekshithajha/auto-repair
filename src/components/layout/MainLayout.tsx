@@ -37,7 +37,7 @@ export const MainLayout: React.FC = () => {
             <header className="h-12 flex items-center border-b border-border bg-background px-4">
               <SidebarTrigger />
               <div className="ml-4">
-                <h1 className="font-semibold text-foreground">97 Auto Repair</h1>
+                <h1 className="font-semibold text-foreground">AUTO REPAIR INC</h1>
               </div>
             </header>
             <div className="flex-1 overflow-auto">
@@ -59,6 +59,7 @@ export const MainLayout: React.FC = () => {
                 {/* Admin Routes */}
                 <Route path="/admin/tickets" element={profile.role === 'admin' ? <AdminDashboard activeTab="tickets" /> : <Navigate to="/" />} />
                 <Route path="/admin/employees" element={profile.role === 'admin' ? <AdminDashboard activeTab="employees" /> : <Navigate to="/" />} />
+                <Route path="/admin/register" element={profile.role === 'admin' ? <AdminDashboard activeTab="register" /> : <Navigate to="/" />} />
                 <Route path="/admin/monitor" element={profile.role === 'admin' ? <AdminDashboard activeTab="monitor" /> : <Navigate to="/" />} />
                 <Route path="/admin/reports" element={profile.role === 'admin' ? <AdminDashboard activeTab="reports" /> : <Navigate to="/" />} />
                 <Route path="/admin/audit" element={profile.role === 'admin' ? <AdminDashboard activeTab="audit" /> : <Navigate to="/" />} />

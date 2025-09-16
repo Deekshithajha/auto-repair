@@ -39,112 +39,139 @@ export const AdminTicketManagement: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Record<string, string>>({});
   const [declineReason, setDeclineReason] = useState<Record<string, string>>({});
 
+  // Dummy data for demonstration
+  const dummyTickets: Ticket[] = [
+    {
+      id: 'TICKET-001',
+      description: 'Engine making strange noise, needs diagnostic check. Car has been running rough for the past week.',
+      status: 'pending',
+      created_at: '2024-01-16T10:30:00Z',
+      preferred_pickup_time: '2024-01-17T16:00:00Z',
+      user_id: 'user-1',
+      vehicle: {
+        make: 'Toyota',
+        model: 'Camry',
+        year: 2020,
+        reg_no: 'ABC-1234'
+      },
+      customer_name: 'John Smith',
+      customer_phone: '(555) 123-4567'
+    },
+    {
+      id: 'TICKET-002',
+      description: 'Air conditioning not working properly. Blowing warm air instead of cold.',
+      status: 'approved',
+      created_at: '2024-01-16T09:15:00Z',
+      preferred_pickup_time: '2024-01-18T14:00:00Z',
+      user_id: 'user-2',
+      vehicle: {
+        make: 'Honda',
+        model: 'Civic',
+        year: 2019,
+        reg_no: 'XYZ-5678'
+      },
+      customer_name: 'Sarah Johnson',
+      customer_phone: '(555) 234-5678'
+    },
+    {
+      id: 'TICKET-003',
+      description: 'Oil change and brake pad replacement. Regular maintenance service.',
+      status: 'assigned',
+      created_at: '2024-01-15T14:20:00Z',
+      preferred_pickup_time: '2024-01-16T17:00:00Z',
+      user_id: 'user-3',
+      vehicle: {
+        make: 'Ford',
+        model: 'Focus',
+        year: 2021,
+        reg_no: 'DEF-9012'
+      },
+      customer_name: 'Mike Davis',
+      customer_phone: '(555) 345-6789'
+    },
+    {
+      id: 'TICKET-004',
+      description: 'Transmission slipping, especially when shifting gears. Needs immediate attention.',
+      status: 'in_progress',
+      created_at: '2024-01-15T11:45:00Z',
+      preferred_pickup_time: '2024-01-17T12:00:00Z',
+      user_id: 'user-4',
+      vehicle: {
+        make: 'Chevrolet',
+        model: 'Malibu',
+        year: 2018,
+        reg_no: 'GHI-3456'
+      },
+      customer_name: 'Emily Wilson',
+      customer_phone: '(555) 456-7890'
+    },
+    {
+      id: 'TICKET-005',
+      description: 'Brake pads worn out, squeaking noise when braking. Safety concern.',
+      status: 'pending',
+      created_at: '2024-01-16T08:00:00Z',
+      preferred_pickup_time: '2024-01-18T10:00:00Z',
+      user_id: 'user-5',
+      vehicle: {
+        make: 'Nissan',
+        model: 'Altima',
+        year: 2022,
+        reg_no: 'JKL-7890'
+      },
+      customer_name: 'David Brown',
+      customer_phone: '(555) 567-8901'
+    }
+  ];
+
+  const dummyEmployees: Employee[] = [
+    {
+      user_id: 'emp-1',
+      name: 'John Smith'
+    },
+    {
+      user_id: 'emp-2',
+      name: 'Sarah Johnson'
+    },
+    {
+      user_id: 'emp-3',
+      name: 'Mike Davis'
+    },
+    {
+      user_id: 'emp-4',
+      name: 'Lisa Anderson'
+    }
+  ];
+
   useEffect(() => {
-    fetchTickets();
-    fetchEmployees();
+    // Use dummy data instead of fetching from database
+    setTickets(dummyTickets);
+    setEmployees(dummyEmployees);
+    setLoading(false);
   }, []);
 
   const fetchTickets = async () => {
-    try {
-      const { data: ticketData, error } = await supabase
-        .from('tickets')
-        .select(`
-          id,
-          description,
-          status,
-          created_at,
-          preferred_pickup_time,
-          user_id,
-          vehicle:vehicles(make, model, year, reg_no)
-        `)
-        .in('status', ['pending', 'approved', 'assigned', 'in_progress']);
-
-      if (error) throw error;
-
-      // Fetch customer profiles separately
-      const ticketsWithCustomers = await Promise.all(
-        (ticketData || []).map(async (ticket) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, phone')
-            .eq('id', ticket.user_id)
-            .single();
-
-          return {
-            ...ticket,
-            customer_name: profileData?.name || 'Unknown',
-            customer_phone: profileData?.phone || 'Not provided'
-          };
-        })
-      );
-
-      setTickets(ticketsWithCustomers);
-    } catch (error) {
-      console.error('Error fetching tickets:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch tickets",
-        variant: "destructive",
-      });
-    } finally {
+    // Use dummy data instead of fetching from database
+    setTickets(dummyTickets);
       setLoading(false);
-    }
   };
 
   const fetchEmployees = async () => {
-    try {
-      const { data: employeeData, error } = await supabase
-        .from('employees')
-        .select('user_id')
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      // Fetch employee profiles separately
-      const employeesWithProfiles = await Promise.all(
-        (employeeData || []).map(async (employee) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', employee.user_id)
-            .single();
-
-          return {
-            user_id: employee.user_id,
-            name: profileData?.name || 'Unknown Employee'
-          };
-        })
-      );
-
-      setEmployees(employeesWithProfiles);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-    }
+    // Use dummy data instead of fetching from database
+    setEmployees(dummyEmployees);
   };
 
   const handleApprove = async (ticketId: string) => {
-    try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ status: 'approved' })
-        .eq('id', ticketId);
-
-      if (error) throw error;
+    // Update dummy data instead of database
+    setTickets(prev => prev.map(ticket => 
+      ticket.id === ticketId 
+        ? { ...ticket, status: 'approved' }
+        : ticket
+    ));
 
       toast({
         title: "Success",
         description: "Ticket approved successfully",
       });
-
-      fetchTickets();
-    } catch (error) {
-      console.error('Error approving ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to approve ticket",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleDecline = async (ticketId: string) => {
@@ -157,30 +184,17 @@ export const AdminTicketManagement: React.FC = () => {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ 
-          status: 'declined'
-        })
-        .eq('id', ticketId);
-
-      if (error) throw error;
+    // Update dummy data instead of database
+    setTickets(prev => prev.map(ticket => 
+      ticket.id === ticketId 
+        ? { ...ticket, status: 'declined' }
+        : ticket
+    ));
 
       toast({
         title: "Success",
         description: "Ticket declined",
       });
-
-      fetchTickets();
-    } catch (error) {
-      console.error('Error declining ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to decline ticket",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleAssign = async (ticketId: string) => {
@@ -194,91 +208,38 @@ export const AdminTicketManagement: React.FC = () => {
       return;
     }
 
-    try {
-      // Create assignment
-      const { error: assignError } = await supabase
-        .from('ticket_assignments')
-        .insert({
-          ticket_id: ticketId,
-          employee_id: employeeId,
-          admin_id: user?.id,
-          is_auto_assigned: false
-        });
-
-      if (assignError) throw assignError;
-
-      // Update ticket status
-      const { error: updateError } = await supabase
-        .from('tickets')
-        .update({ status: 'assigned' })
-        .eq('id', ticketId);
-
-      if (updateError) throw updateError;
-
-      // Create work session
-      const { error: workSessionError } = await supabase
-        .from('work_sessions')
-        .insert({
-          ticket_id: ticketId,
-          employee_id: employeeId,
-          status: 'not_started'
-        });
-
-      if (workSessionError) throw workSessionError;
+    // Update dummy data instead of database
+    setTickets(prev => prev.map(ticket => 
+      ticket.id === ticketId 
+        ? { ...ticket, status: 'assigned' }
+        : ticket
+    ));
 
       toast({
         title: "Success",
         description: "Ticket assigned successfully",
       });
-
-      fetchTickets();
-    } catch (error) {
-      console.error('Error assigning ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to assign ticket",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleAutoAssign = async (ticketId: string) => {
-    try {
-      const { data, error } = await supabase.rpc('auto_assign_employee', {
-        ticket_id_param: ticketId
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        // Create work session for auto-assigned employee
-        const { error: workSessionError } = await supabase
-          .from('work_sessions')
-          .insert({
-            ticket_id: ticketId,
-            employee_id: data,
-            status: 'not_started'
-          });
-
-        if (workSessionError) console.warn('Work session creation failed:', workSessionError);
+    // Simulate auto-assignment with dummy data
+    const availableEmployees = dummyEmployees;
+    if (availableEmployees.length > 0) {
+      // Update dummy data instead of database
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === ticketId 
+          ? { ...ticket, status: 'assigned' }
+          : ticket
+      ));
 
         toast({
           title: "Success",
           description: "Ticket auto-assigned successfully",
         });
-        fetchTickets();
       } else {
         toast({
           title: "Warning",
           description: "No available employees for auto-assignment",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error auto-assigning ticket:', error);
-      toast({
-        title: "Error",
-        description: "Failed to auto-assign ticket",
         variant: "destructive",
       });
     }

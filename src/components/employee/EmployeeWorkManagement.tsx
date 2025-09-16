@@ -48,128 +48,127 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [partsUsed, setPartsUsed] = useState<Record<string, PartUsed[]>>({});
   const [newPart, setNewPart] = useState<Record<string, PartUsed>>({});
 
+  // Dummy data for demonstration
+  const dummyWorkSessions: WorkSession[] = [
+    {
+      id: '1',
+      ticket_id: 'TICKET-001',
+      status: 'not_started',
+      started_at: '',
+      ended_at: '',
+      notes: '',
+      ticket: {
+        id: 'TICKET-001',
+        description: 'Engine making strange noise, needs diagnostic check. Car has been running rough for the past week.',
+        status: 'pending',
+        user_id: 'user-1',
+        vehicle: {
+          make: 'Toyota',
+          model: 'Camry',
+          year: 2020,
+          reg_no: 'ABC-1234'
+        },
+        customer_name: 'John Smith',
+        customer_phone: '(555) 123-4567'
+      }
+    },
+    {
+      id: '2',
+      ticket_id: 'TICKET-002',
+      status: 'in_progress',
+      started_at: '2024-01-16T08:30:00Z',
+      ended_at: '',
+      notes: '',
+      ticket: {
+        id: 'TICKET-002',
+        description: 'Air conditioning not working properly. Blowing warm air instead of cold.',
+        status: 'in_progress',
+        user_id: 'user-2',
+        vehicle: {
+          make: 'Honda',
+          model: 'Civic',
+          year: 2019,
+          reg_no: 'XYZ-5678'
+        },
+        customer_name: 'Sarah Johnson',
+        customer_phone: '(555) 234-5678'
+      }
+    },
+    {
+      id: '3',
+      ticket_id: 'TICKET-003',
+      status: 'completed',
+      started_at: '2024-01-15T09:00:00Z',
+      ended_at: '2024-01-15T14:30:00Z',
+      notes: 'Oil change completed successfully. Replaced oil filter and topped up fluids. Customer notified.',
+      ticket: {
+        id: 'TICKET-003',
+        description: 'Oil change and brake pad replacement. Regular maintenance service.',
+        status: 'completed',
+        user_id: 'user-3',
+        vehicle: {
+          make: 'Ford',
+          model: 'Focus',
+          year: 2021,
+          reg_no: 'DEF-9012'
+        },
+        customer_name: 'Mike Davis',
+        customer_phone: '(555) 345-6789'
+      }
+    }
+  ];
+
+  const dummyPartsUsed: Record<string, PartUsed[]> = {
+    'TICKET-002': [
+      { name: 'AC Compressor', quantity: 1, unit_price: 450.00 },
+      { name: 'Refrigerant R134a', quantity: 2, unit_price: 25.00 },
+      { name: 'AC Filter', quantity: 1, unit_price: 35.00 }
+    ],
+    'TICKET-003': [
+      { name: 'Motor Oil 5W-30', quantity: 5, unit_price: 8.50 },
+      { name: 'Oil Filter', quantity: 1, unit_price: 12.00 },
+      { name: 'Brake Pads (Front)', quantity: 1, unit_price: 85.00 }
+    ]
+  };
+
   useEffect(() => {
-    fetchWorkSessions();
+    // Use dummy data instead of fetching from database
+    setWorkSessions(dummyWorkSessions);
+    setPartsUsed(dummyPartsUsed);
+    setLoading(false);
   }, [user?.id]);
 
   const fetchWorkSessions = async () => {
-    if (!user?.id) return;
-
-    try {
-      const { data: sessionData, error } = await supabase
-        .from('work_sessions')
-        .select(`
-          id,
-          ticket_id,
-          status,
-          started_at,
-          ended_at,
-          notes,
-          tickets:tickets(
-            id,
-            description,
-            status,
-            user_id,
-            vehicle:vehicles(make, model, year, reg_no)
-          )
-        `)
-        .eq('employee_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch customer profiles for each session
-      const sessionsWithCustomers = await Promise.all(
-        (sessionData || []).map(async (session) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, phone')
-            .eq('id', session.tickets.user_id)
-            .single();
-
-          return {
-            ...session,
-            ticket: {
-              ...session.tickets,
-              customer_name: profileData?.name || 'Unknown',
-              customer_phone: profileData?.phone || 'Not provided'
-            }
-          };
-        })
-      );
-
-      setWorkSessions(sessionsWithCustomers);
-
-      // Fetch parts for each ticket
-      for (const session of sessionsWithCustomers) {
-        await fetchPartsForTicket(session.ticket_id);
-      }
-    } catch (error) {
-      console.error('Error fetching work sessions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch work assignments",
-        variant: "destructive",
-      });
-    } finally {
+    // Use dummy data instead of fetching from database
+    setWorkSessions(dummyWorkSessions);
+    setPartsUsed(dummyPartsUsed);
       setLoading(false);
-    }
   };
 
   const fetchPartsForTicket = async (ticketId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('parts')
-        .select('name, quantity, unit_price')
-        .eq('ticket_id', ticketId);
-
-      if (error) throw error;
-      
+    // Use dummy data instead of fetching from database
       setPartsUsed(prev => ({
         ...prev,
-        [ticketId]: data || []
+      [ticketId]: dummyPartsUsed[ticketId] || []
       }));
-    } catch (error) {
-      console.error('Error fetching parts:', error);
-    }
   };
 
   const handleStartWork = async (sessionId: string, ticketId: string) => {
-    try {
-      const { error: sessionError } = await supabase
-        .from('work_sessions')
-        .update({
+    // Update dummy data instead of database
+    setWorkSessions(prev => prev.map(session => 
+      session.id === sessionId 
+        ? { 
+            ...session, 
           status: 'in_progress',
           started_at: new Date().toISOString()
-        })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
-
-      const { error: ticketError } = await supabase
-        .from('tickets')
-        .update({ 
-          status: 'in_progress',
-          work_started_at: new Date().toISOString()
-        })
-        .eq('id', ticketId);
-
-      if (ticketError) throw ticketError;
+          }
+        : session
+    ));
 
       toast({
         title: "Success",
         description: "Work started successfully",
       });
-
-      fetchWorkSessions();
-    } catch (error) {
-      console.error('Error starting work:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start work",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleAddPart = async (ticketId: string) => {
@@ -183,18 +182,11 @@ export const EmployeeWorkManagement: React.FC = () => {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('parts')
-        .insert({
-          ticket_id: ticketId,
-          name: part.name,
-          quantity: part.quantity,
-          unit_price: part.unit_price,
-          uploaded_by: user?.id
-        });
-
-      if (error) throw error;
+    // Update dummy data instead of database
+    setPartsUsed(prev => ({
+      ...prev,
+      [ticketId]: [...(prev[ticketId] || []), part]
+    }));
 
       toast({
         title: "Success",
@@ -206,81 +198,27 @@ export const EmployeeWorkManagement: React.FC = () => {
         ...prev,
         [ticketId]: { name: '', quantity: 0, unit_price: 0 }
       }));
-
-      // Refresh parts for this ticket
-      fetchPartsForTicket(ticketId);
-    } catch (error) {
-      console.error('Error adding part:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add part",
-        variant: "destructive",
-      });
-    }
   };
 
   const handleFinishWork = async (sessionId: string, ticketId: string) => {
-    try {
-      // Update work session
-      const { error: sessionError } = await supabase
-        .from('work_sessions')
-        .update({
+    // Update dummy data instead of database
+    setWorkSessions(prev => prev.map(session => 
+      session.id === sessionId 
+        ? { 
+            ...session, 
           status: 'completed',
           ended_at: new Date().toISOString(),
           notes: workNotes[sessionId] || ''
-        })
-        .eq('id', sessionId);
-
-      if (sessionError) throw sessionError;
-
-      // Update ticket status
-      const { error: ticketError } = await supabase
-        .from('tickets')
-        .update({ 
-          status: 'completed',
-          work_completed_at: new Date().toISOString()
-        })
-        .eq('id', ticketId);
-
-      if (ticketError) throw ticketError;
-
-      // Send notification to customer
-      await sendCustomerNotification(ticketId);
+          }
+        : session
+    ));
 
       toast({
         title: "Success",
         description: "Work completed! Customer has been notified.",
       });
-
-      fetchWorkSessions();
-    } catch (error) {
-      console.error('Error finishing work:', error);
-      toast({
-        title: "Error",
-        description: "Failed to complete work",
-        variant: "destructive",
-      });
-    }
   };
 
-  const sendCustomerNotification = async (ticketId: string) => {
-    try {
-      const { error } = await supabase.functions.invoke('send-completion-notification', {
-        body: { ticket_id: ticketId }
-      });
-
-      if (error) {
-        console.error('Notification error:', error);
-        toast({
-          title: "Warning",
-          description: "Work completed but customer notification failed",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error sending notification:', error);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

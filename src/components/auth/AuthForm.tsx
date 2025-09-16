@@ -124,7 +124,7 @@ export const AuthForm: React.FC = () => {
               <span className="text-xl sm:text-2xl">🚗</span>
             </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">97</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">AUTO REPAIR INC</h1>
           <p className="text-white/90 text-base sm:text-lg">Auto Repair Excellence</p>
           
           {/* Mode Indicator */}
@@ -182,7 +182,7 @@ export const AuthForm: React.FC = () => {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder={loginMode === 'customer' ? 'your@email.com' : `${loginMode}@97auto.com`}
+                placeholder={loginMode === 'customer' ? 'your@email.com' : `${loginMode}@autorepairinc.com`}
                 value={formData.email} 
                 onChange={(e) => handleInputChange('email', e.target.value)} 
                 className="focus:ring-primary" 
@@ -262,9 +262,277 @@ export const AuthForm: React.FC = () => {
         )}
 
         <div className="text-center text-white/60 text-sm mt-6">
-          <p>🔧 97 Auto Repair • No email confirmation required</p>
+          <p>🔧 AUTO REPAIR INC • No email confirmation required</p>
         </div>
       </div>
     </div>
   );
+};
+
+          <CardHeader className="space-y-1">
+
+            {/* Tab Navigation */}
+
+            <div className="grid w-full grid-cols-2 bg-muted p-1 rounded-md">
+
+              <button
+
+                onClick={() => setIsSignUp(false)}
+
+                className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${
+
+                  !isSignUp 
+
+                    ? 'bg-background text-foreground shadow-sm' 
+
+                    : 'text-muted-foreground hover:text-foreground'
+
+                }`}
+
+              >
+
+                Sign In
+
+              </button>
+
+              <button
+
+                onClick={() => setIsSignUp(true)}
+
+                className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${
+
+                  isSignUp 
+
+                    ? 'bg-background text-foreground shadow-sm' 
+
+                    : 'text-muted-foreground hover:text-foreground'
+
+                }`}
+
+              >
+
+                Sign Up
+
+              </button>
+
+            </div>
+
+            <CardDescription className="text-center text-muted-foreground">
+
+              {modeConfig.subtitle}
+
+            </CardDescription>
+
+          </CardHeader>
+
+
+
+          <CardContent className="space-y-4">
+
+            {isSignUp && (
+
+              <div className="space-y-2">
+
+                <label htmlFor="signup-name" className="text-sm font-medium">Full Name</label>
+
+                <Input 
+
+                  id="signup-name" 
+
+                  type="text" 
+
+                  placeholder="John Doe" 
+
+                  value={formData.name} 
+
+                  onChange={(e) => handleInputChange('name', e.target.value)} 
+
+                  className="focus:ring-primary" 
+
+                />
+
+              </div>
+
+            )}
+
+            <div className="space-y-2">
+
+              <label htmlFor="email" className="text-sm font-medium">Email</label>
+
+              <Input 
+
+                id="email" 
+
+                type="email" 
+
+                placeholder={loginMode === 'customer' ? 'your@email.com' : `${loginMode}@97auto.com`}
+
+                value={formData.email} 
+
+                onChange={(e) => handleInputChange('email', e.target.value)} 
+
+                className="focus:ring-primary" 
+
+              />
+
+            </div>
+
+            <div className="space-y-2">
+
+              <label htmlFor="password" className="text-sm font-medium">Password</label>
+
+              <Input 
+
+                id="password" 
+
+                type="password" 
+
+                value={formData.password} 
+
+                onChange={(e) => handleInputChange('password', e.target.value)} 
+
+                className="focus:ring-primary" 
+
+              />
+
+            </div>
+
+            {isSignUp && (
+
+              <div className="space-y-2">
+
+                <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</label>
+
+                <Input 
+
+                  id="confirmPassword" 
+
+                  type="password" 
+
+                  value={formData.confirmPassword} 
+
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)} 
+
+                  className="focus:ring-primary" 
+
+                />
+
+              </div>
+
+            )}
+
+          </CardContent>
+
+          
+
+          <CardFooter>
+
+            <Button 
+
+              onClick={isSignUp ? handleSignUp : handleSignIn} 
+
+              className={`w-full ${modeConfig.gradient} hover:opacity-90 transition-opacity`} 
+
+              disabled={isLoading || (isSignUp && formData.password !== formData.confirmPassword)}
+
+            >
+
+              {isLoading ? 'Loading...' : (isSignUp ? `Create ${modeConfig.title.replace(' Access', '').replace(' Portal', '')} Account` : `Sign In to ${modeConfig.title}`)}
+
+            </Button>
+
+          </CardFooter>
+
+        </Card>
+
+
+
+        {/* Demo Login Section - More Compact */}
+
+        {loginMode === 'customer' && (
+
+          <div className="mt-6 space-y-3">
+
+            <div className="text-center">
+
+              <p className="text-white/70 text-sm">Quick Demo Access</p>
+
+            </div>
+
+            <div className="grid grid-cols-3 gap-1 sm:gap-2">
+
+              <Button
+
+                variant="outline"
+
+                size="sm"
+
+                onClick={() => handleDemoLogin('customer')}
+
+                disabled={isLoading}
+
+                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs px-2"
+
+              >
+
+                Customer
+
+              </Button>
+
+              <Button
+
+                variant="outline"
+
+                size="sm"
+
+                onClick={() => handleDemoLogin('employee')}
+
+                disabled={isLoading}
+
+                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs px-2"
+
+              >
+
+                Employee
+
+              </Button>
+
+              <Button
+
+                variant="outline"
+
+                size="sm"
+
+                onClick={() => handleDemoLogin('admin')}
+
+                disabled={isLoading}
+
+                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs px-2"
+
+              >
+
+                Admin
+
+              </Button>
+
+            </div>
+
+          </div>
+
+        )}
+
+
+
+        <div className="text-center text-white/60 text-sm mt-6">
+
+          <p>🔧 97 Auto Repair • No email confirmation required</p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
 };

@@ -50,7 +50,7 @@ export function AppSidebar() {
       default: // user
         return [
           { title: 'My Tickets', url: '/user/tickets', icon: '🎫' },
-          { title: 'Vehicles', url: '/user/vehicles', icon: '🚗' },
+          { title: 'My Vehicle Status', url: '/user/vehicles', icon: '🚗' },
           { title: 'Invoices', url: '/user/invoices', icon: '🧾' },
           { title: 'Notifications', url: '/user/notifications', icon: '🔔' },
           { title: 'Profile', url: '/user/profile', icon: '👤' },
@@ -70,7 +70,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div>
-              <h1 className="font-bold text-sidebar-foreground">97</h1>
+              <h1 className="font-bold text-sidebar-foreground">AUTO REPAIR INC</h1>
               <p className="text-xs text-muted-foreground capitalize">{profile?.role} Portal</p>
             </div>
           )}
