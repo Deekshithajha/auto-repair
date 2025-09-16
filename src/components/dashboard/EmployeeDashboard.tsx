@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 import { EmployeeWorkManagement } from '@/components/employee/EmployeeWorkManagement';
+import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface EmployeeDashboardProps {
   activeTab?: string;
@@ -13,6 +14,7 @@ interface EmployeeDashboardProps {
 
 export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab = 'assignments' }) => {
   const { profile } = useAuth();
+  const [raiseOpen, setRaiseOpen] = React.useState(false);
 
   return (
     <div className="min-h-full bg-background">
@@ -48,9 +50,16 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
                 <h2 className="text-xl sm:text-2xl font-bold">My Work Assignments</h2>
                 <p className="text-muted-foreground text-sm sm:text-base">View assigned vehicles, start work, and track repairs</p>
               </div>
+              <div>
+                <Button onClick={() => setRaiseOpen(true)}>
+                  Raise New Ticket
+                </Button>
+              </div>
             </div>
 
             <EmployeeWorkManagement />
+
+            <RaiseTicketWizard open={raiseOpen} onOpenChange={setRaiseOpen} onTicketCreated={() => setRaiseOpen(false)} />
           </TabsContent>
 
           {/* Register Tab */}

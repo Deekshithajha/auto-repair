@@ -155,13 +155,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Sign Out Error",
-        description: error.message,
-        variant: "destructive",
-      });
+    try {
+      const { error } = await supabase.auth.signOut();
+      // Some environments return "Auth session missing" if already signed out.
+      // Treat this as a successful sign-out and do not surface an error toast.
+      if (error && !/session missing/i.test(error.message)) {
+        toast({
+          title: "Sign Out Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      // Network or unexpected error. Still proceed to clear local state.
+      // Optionally surface, but we avoid blocking the UX.
+    } finally {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
     }
   };
 

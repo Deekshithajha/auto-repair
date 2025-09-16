@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 import { AdminTicketManagement } from '@/components/admin/AdminTicketManagement';
+import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
   activeTab?: string;
@@ -13,6 +14,7 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tickets' }) => {
   const { profile } = useAuth();
+  const [raiseOpen, setRaiseOpen] = React.useState(false);
 
   return (
     <div className="min-h-full bg-background">
@@ -52,9 +54,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
                 <h2 className="text-xl sm:text-2xl font-bold">Ticket Approval & Assignment</h2>
                 <p className="text-muted-foreground text-sm sm:text-base">Approve, decline, and assign repair tickets</p>
               </div>
+              <div>
+                <Button onClick={() => setRaiseOpen(true)}>
+                  Raise New Ticket
+                </Button>
+              </div>
             </div>
 
             <AdminTicketManagement />
+
+            <RaiseTicketWizard open={raiseOpen} onOpenChange={setRaiseOpen} onTicketCreated={() => setRaiseOpen(false)} />
           </TabsContent>
 
           {/* Employees Tab */}
