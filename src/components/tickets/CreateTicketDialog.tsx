@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Upload, X } from 'lucide-react';
 
 interface Vehicle {
   id: string;
@@ -237,7 +236,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             <Label>Damage Photos (Optional)</Label>
             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
               <div className="text-center">
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <div className="text-2xl mb-2">📸</div>
                 <p className="text-sm text-muted-foreground mb-2">
                   Upload photos of the damage (max 5 photos)
                 </p>
@@ -274,7 +273,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                         className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
                         onClick={() => removePhoto(index)}
                       >
-                        <X className="h-3 w-3" />
+                        <span className="text-xs">✕</span>
                       </Button>
                     </div>
                   ))}
@@ -292,7 +291,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
               disabled={loading}
               className="bg-gradient-primary"
             >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading && <span className="mr-2 animate-pulse">⚙️</span>}
               Create Ticket
             </Button>
           </DialogFooter>

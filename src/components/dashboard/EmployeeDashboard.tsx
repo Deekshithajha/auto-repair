@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Wrench, Car, Clipboard, Timer, Settings } from 'lucide-react';
 
 interface EmployeeDashboardProps {
   activeTab?: string;
@@ -13,26 +12,25 @@ interface EmployeeDashboardProps {
 export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab = 'assignments' }) => {
   const { profile } = useAuth();
 
-
   return (
     <div className="min-h-full bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
             <TabsTrigger value="assignments" className="flex items-center space-x-2">
-              <Clipboard className="h-4 w-4" />
+              <span>📋</span>
               <span>Assignments</span>
             </TabsTrigger>
             <TabsTrigger value="attendance" className="flex items-center space-x-2">
-              <Timer className="h-4 w-4" />
+              <span>⏰</span>
               <span>Attendance</span>
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center space-x-2">
-              <User className="h-4 w-4" />
+              <span>👤</span>
               <span>Profile</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
-              <Settings className="h-4 w-4" />
+              <span>⚙️</span>
               <span>Settings</span>
             </TabsTrigger>
           </TabsList>
@@ -64,7 +62,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <Timer className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <div className="text-4xl mb-4">⏰</div>
                   <p className="text-muted-foreground">Attendance tracking coming soon</p>
                 </div>
               </CardContent>

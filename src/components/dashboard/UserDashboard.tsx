@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Car, FileText, Bell, Calendar, Clock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
@@ -89,7 +88,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
                 onClick={() => setShowCreateTicket(true)}
                 className="bg-gradient-primary"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <span className="mr-2">➕</span>
                 Raise Ticket
               </Button>
             </div>
@@ -114,14 +113,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
             ) : tickets.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <div className="text-4xl mb-4">📄</div>
                   <h3 className="text-lg font-semibold mb-2">No repair tickets yet</h3>
                   <p className="text-muted-foreground mb-6">Create your first ticket to get started</p>
                   <Button 
                     onClick={() => setShowCreateTicket(true)}
                     className="bg-gradient-primary"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <span className="mr-2">➕</span>
                     Create First Ticket
                   </Button>
                 </CardContent>
@@ -138,7 +137,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
                         <StatusBadge status={ticket.status as any} />
                       </div>
                       <CardDescription className="flex items-center text-xs">
-                        <Calendar className="h-3 w-3 mr-1" />
+                        <span className="mr-1">📅</span>
                         {new Date(ticket.created_at).toLocaleDateString()}
                       </CardDescription>
                     </CardHeader>
@@ -172,7 +171,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <div className="text-4xl mb-4">📄</div>
                     <p className="text-muted-foreground">No invoices available</p>
                   </div>
                 </CardContent>
@@ -194,7 +193,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8">
-                    <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <div className="text-4xl mb-4">🔔</div>
                     <p className="text-muted-foreground">No notifications yet</p>
                   </div>
                 </CardContent>

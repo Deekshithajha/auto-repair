@@ -1,18 +1,3 @@
-import { 
-  Car, 
-  Ticket, 
-  Users, 
-  Monitor, 
-  FileText, 
-  Settings, 
-  ClipboardList,
-  Clock,
-  UserCheck,
-  Bell,
-  Receipt,
-  Shield,
-  LogOut
-} from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -47,28 +32,28 @@ export function AppSidebar() {
     switch (profile?.role) {
       case 'admin':
         return [
-          { title: 'Ticket Inbox', url: '/admin/tickets', icon: Ticket },
-          { title: 'Employee Management', url: '/admin/employees', icon: Users },
-          { title: 'Live Monitor', url: '/admin/monitor', icon: Monitor },
-          { title: 'Reports', url: '/admin/reports', icon: FileText },
-          { title: 'Audit Logs', url: '/admin/audit', icon: Shield },
-          { title: 'Settings', url: '/admin/settings', icon: Settings },
+          { title: 'Ticket Inbox', url: '/admin/tickets', icon: '📧' },
+          { title: 'Employee Management', url: '/admin/employees', icon: '👥' },
+          { title: 'Live Monitor', url: '/admin/monitor', icon: '📊' },
+          { title: 'Reports', url: '/admin/reports', icon: '📈' },
+          { title: 'Audit Logs', url: '/admin/audit', icon: '🛡️' },
+          { title: 'Settings', url: '/admin/settings', icon: '⚙️' },
         ];
       case 'employee':
         return [
-          { title: 'My Assignments', url: '/employee/assignments', icon: ClipboardList },
-          { title: 'Work Log', url: '/employee/worklog', icon: FileText },
-          { title: 'Attendance', url: '/employee/attendance', icon: Clock },
-          { title: 'Profile', url: '/employee/profile', icon: UserCheck },
-          { title: 'Settings', url: '/employee/settings', icon: Settings },
+          { title: 'My Assignments', url: '/employee/assignments', icon: '📋' },
+          { title: 'Work Log', url: '/employee/worklog', icon: '📄' },
+          { title: 'Attendance', url: '/employee/attendance', icon: '⏰' },
+          { title: 'Profile', url: '/employee/profile', icon: '👤' },
+          { title: 'Settings', url: '/employee/settings', icon: '⚙️' },
         ];
       default: // user
         return [
-          { title: 'My Tickets', url: '/user/tickets', icon: Ticket },
-          { title: 'Vehicles', url: '/user/vehicles', icon: Car },
-          { title: 'Invoices', url: '/user/invoices', icon: Receipt },
-          { title: 'Notifications', url: '/user/notifications', icon: Bell },
-          { title: 'Profile', url: '/user/profile', icon: UserCheck },
+          { title: 'My Tickets', url: '/user/tickets', icon: '🎫' },
+          { title: 'Vehicles', url: '/user/vehicles', icon: '🚗' },
+          { title: 'Invoices', url: '/user/invoices', icon: '🧾' },
+          { title: 'Notifications', url: '/user/notifications', icon: '🔔' },
+          { title: 'Profile', url: '/user/profile', icon: '👤' },
         ];
     }
   };
@@ -81,11 +66,11 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
-            <Car className="h-4 w-4 text-primary-foreground" />
+            <span className="text-primary-foreground">🔧</span>
           </div>
           {!collapsed && (
             <div>
-              <h1 className="font-bold text-sidebar-foreground">AutoRepair Pro</h1>
+              <h1 className="font-bold text-sidebar-foreground">97</h1>
               <p className="text-xs text-muted-foreground capitalize">{profile?.role} Portal</p>
             </div>
           )}
@@ -104,7 +89,7 @@ export function AppSidebar() {
                     className={isActive(item.url) ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
                   >
                     <NavLink to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
+                      <span className="text-sm">{item.icon}</span>
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -138,7 +123,7 @@ export function AppSidebar() {
             onClick={handleSignOut}
             className="h-8 w-8 p-0 hover:bg-sidebar-accent"
           >
-            <LogOut className="h-4 w-4" />
+            <span className="text-sm">🚪</span>
           </Button>
         </div>
       </SidebarFooter>

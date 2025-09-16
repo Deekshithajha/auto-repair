@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Car, Edit2, Trash2 } from 'lucide-react';
+// Icons replaced with emojis
 import { toast } from '@/hooks/use-toast';
 
 interface Vehicle {
@@ -161,7 +161,7 @@ export const VehicleManagement: React.FC = () => {
           <p className="text-muted-foreground">Manage your vehicle information</p>
         </div>
         <Button onClick={() => setShowDialog(true)} className="bg-gradient-secondary">
-          <Plus className="h-4 w-4 mr-2" />
+              <span className="mr-2">➕</span>
           Add Vehicle
         </Button>
       </div>
@@ -186,11 +186,11 @@ export const VehicleManagement: React.FC = () => {
       ) : vehicles.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
-            <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <div className="text-4xl mb-4">🚗</div>
             <h3 className="text-lg font-semibold mb-2">No vehicles registered</h3>
             <p className="text-muted-foreground mb-6">Add your first vehicle to create repair tickets</p>
             <Button onClick={() => setShowDialog(true)} className="bg-gradient-secondary">
-              <Plus className="h-4 w-4 mr-2" />
+              <span className="mr-2">➕</span>
               Add First Vehicle
             </Button>
           </CardContent>
@@ -202,7 +202,7 @@ export const VehicleManagement: React.FC = () => {
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg flex items-center">
-                    <Car className="h-5 w-5 mr-2 text-secondary" />
+                    <span className="text-secondary mr-2">🚗</span>
                     {vehicle.make} {vehicle.model}
                   </CardTitle>
                   <div className="flex space-x-1">
@@ -211,7 +211,7 @@ export const VehicleManagement: React.FC = () => {
                       size="sm"
                       onClick={() => handleEdit(vehicle)}
                     >
-                      <Edit2 className="h-4 w-4" />
+                      <span className="text-sm">✏️</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -219,7 +219,7 @@ export const VehicleManagement: React.FC = () => {
                       onClick={() => handleDelete(vehicle.id)}
                       className="text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <span className="text-sm">🗑️</span>
                     </Button>
                   </div>
                 </div>

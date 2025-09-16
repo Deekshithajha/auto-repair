@@ -7,7 +7,6 @@ import { EmployeeDashboard } from '@/components/dashboard/EmployeeDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Loader2 } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
   const { user, profile, loading } = useAuth();
@@ -16,7 +15,7 @@ export const MainLayout: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-hero">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
+          <div className="animate-spin text-4xl mb-4">⚙️</div>
           <p className="text-white/80">Loading...</p>
         </div>
       </div>
@@ -36,7 +35,7 @@ export const MainLayout: React.FC = () => {
             <header className="h-12 flex items-center border-b border-border bg-background px-4">
               <SidebarTrigger />
               <div className="ml-4">
-                <h1 className="font-semibold text-foreground">AutoRepair Pro</h1>
+                <h1 className="font-semibold text-foreground">97 Auto Repair</h1>
               </div>
             </header>
             <div className="flex-1 overflow-auto">

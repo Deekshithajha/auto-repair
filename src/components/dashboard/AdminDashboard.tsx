@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Wrench, Car, Inbox, Users, BarChart3, Settings, Monitor } from 'lucide-react';
 
 interface AdminDashboardProps {
   activeTab?: string;
@@ -13,30 +12,29 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tickets' }) => {
   const { profile } = useAuth();
 
-
   return (
     <div className="min-h-full bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
             <TabsTrigger value="tickets" className="flex items-center space-x-2">
-              <Inbox className="h-4 w-4" />
+              <span>📧</span>
               <span>Tickets</span>
             </TabsTrigger>
             <TabsTrigger value="employees" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
+              <span>👥</span>
               <span>Employees</span>
             </TabsTrigger>
             <TabsTrigger value="monitor" className="flex items-center space-x-2">
-              <Monitor className="h-4 w-4" />
+              <span>📊</span>
               <span>Live Monitor</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4" />
+              <span>📈</span>
               <span>Reports</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
-              <Settings className="h-4 w-4" />
+              <span>⚙️</span>
               <span>Settings</span>
             </TabsTrigger>
           </TabsList>
@@ -91,7 +89,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <Monitor className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <div className="text-4xl mb-4">📊</div>
                   <p className="text-muted-foreground">No active work sessions</p>
                 </div>
               </CardContent>
@@ -107,7 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <div className="text-4xl mb-4">📈</div>
                   <p className="text-muted-foreground">Reports coming soon</p>
                 </div>
               </CardContent>
