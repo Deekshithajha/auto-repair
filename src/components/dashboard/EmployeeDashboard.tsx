@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 
 interface EmployeeDashboardProps {
   activeTab?: string;
@@ -14,32 +15,35 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
-            <TabsTrigger value="assignments" className="flex items-center space-x-2">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto text-xs sm:text-sm">
+            <TabsTrigger value="assignments" className="flex items-center space-x-1 sm:space-x-2">
               <span>📋</span>
-              <span>Assignments</span>
+              <span className="hidden sm:inline">Assignments</span>
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center space-x-2">
+            <TabsTrigger value="attendance" className="flex items-center space-x-1 sm:space-x-2">
               <span>⏰</span>
-              <span>Attendance</span>
+              <span className="hidden sm:inline">Attendance</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center space-x-2">
+            <TabsTrigger value="profile" className="flex items-center space-x-1 sm:space-x-2">
               <span>👤</span>
-              <span>Profile</span>
+              <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <TabsTrigger value="settings" className="flex items-center space-x-1 sm:space-x-2">
               <span>⚙️</span>
-              <span>Settings</span>
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Assignments Tab */}
-          <TabsContent value="assignments" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">My Assignments</h2>
-              <p className="text-muted-foreground">Work on assigned repair tickets</p>
+          <TabsContent value="assignments" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">My Assignments</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Work on assigned repair tickets</p>
+              </div>
+              <CustomerRegistration />
             </div>
 
             <Card>

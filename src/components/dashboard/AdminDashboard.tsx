@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 
 interface AdminDashboardProps {
   activeTab?: string;
@@ -14,36 +15,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
-            <TabsTrigger value="tickets" className="flex items-center space-x-2">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 lg:w-auto text-xs sm:text-sm">
+            <TabsTrigger value="tickets" className="flex items-center space-x-1 sm:space-x-2">
               <span>📧</span>
-              <span>Tickets</span>
+              <span className="hidden sm:inline">Tickets</span>
             </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center space-x-2">
+            <TabsTrigger value="employees" className="flex items-center space-x-1 sm:space-x-2">
               <span>👥</span>
-              <span>Employees</span>
+              <span className="hidden sm:inline">Employees</span>
             </TabsTrigger>
-            <TabsTrigger value="monitor" className="flex items-center space-x-2">
+            <TabsTrigger value="monitor" className="flex items-center space-x-1 sm:space-x-2">
               <span>📊</span>
-              <span>Live Monitor</span>
+              <span className="hidden sm:inline">Monitor</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center space-x-2">
+            <TabsTrigger value="reports" className="flex items-center space-x-1 sm:space-x-2">
               <span>📈</span>
-              <span>Reports</span>
+              <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <TabsTrigger value="settings" className="flex items-center space-x-1 sm:space-x-2">
               <span>⚙️</span>
-              <span>Settings</span>
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Tickets Tab */}
-          <TabsContent value="tickets" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">Ticket Inbox</h2>
-              <p className="text-muted-foreground">Approve, decline, and assign repair tickets</p>
+          <TabsContent value="tickets" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">Ticket Inbox</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Approve, decline, and assign repair tickets</p>
+              </div>
+              <CustomerRegistration />
             </div>
 
             <Card>
@@ -59,9 +63,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
 
           {/* Employees Tab */}
           <TabsContent value="employees">
-            <div>
-              <h2 className="text-2xl font-bold">Employee Management</h2>
-              <p className="text-muted-foreground">Manage employees, attendance, and assignments</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">Employee Management</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Manage employees, attendance, and assignments</p>
+              </div>
+              <CustomerRegistration />
             </div>
 
             <Card>

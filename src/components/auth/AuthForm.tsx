@@ -88,18 +88,18 @@ export const AuthForm: React.FC = () => {
   const modeConfig = getModeConfig(loginMode);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-2 sm:p-4">
+      <div className="w-full max-w-sm sm:max-w-md">
         {/* Role Switching Buttons - Top Right Style */}
-        <div className="flex justify-end mb-4 space-x-2">
+        <div className="flex justify-end mb-4 space-x-1 sm:space-x-2">
           <Button
             variant={loginMode === 'employee' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setLoginMode('employee')}
-            className={loginMode === 'employee' 
+            className={`text-xs sm:text-sm px-2 sm:px-3 ${loginMode === 'employee' 
               ? 'bg-secondary hover:bg-secondary/90' 
               : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-            }
+            }`}
           >
             Employee
           </Button>
@@ -107,29 +107,29 @@ export const AuthForm: React.FC = () => {
             variant={loginMode === 'admin' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setLoginMode('admin')}
-            className={loginMode === 'admin' 
+            className={`text-xs sm:text-sm px-2 sm:px-3 ${loginMode === 'admin' 
               ? 'bg-primary hover:bg-primary/90' 
               : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
-            }
+            }`}
           >
             Admin
           </Button>
         </div>
 
         {/* Logo/Brand Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-background rounded-full shadow-glow mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-background rounded-full shadow-glow mb-4">
             <div className="flex items-center space-x-1">
-              <span className="text-2xl">🔧</span>
-              <span className="text-2xl">🚗</span>
+              <span className="text-xl sm:text-2xl">🔧</span>
+              <span className="text-xl sm:text-2xl">🚗</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">97</h1>
-          <p className="text-white/90 text-lg">Auto Repair Excellence</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">97</h1>
+          <p className="text-white/90 text-base sm:text-lg">Auto Repair Excellence</p>
           
           {/* Mode Indicator */}
           <div className="mt-4 flex items-center justify-center space-x-2">
-            <span className="text-white/80 font-medium">{modeConfig.title}</span>
+            <span className="text-white/80 font-medium text-sm sm:text-base">{modeConfig.title}</span>
           </div>
         </div>
 
@@ -229,13 +229,13 @@ export const AuthForm: React.FC = () => {
             <div className="text-center">
               <p className="text-white/70 text-sm">Quick Demo Access</p>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1 sm:gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleDemoLogin('customer')}
                 disabled={isLoading}
-                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs"
+                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs px-2"
               >
                 Customer
               </Button>
@@ -244,7 +244,7 @@ export const AuthForm: React.FC = () => {
                 size="sm"
                 onClick={() => handleDemoLogin('employee')}
                 disabled={isLoading}
-                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs"
+                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs px-2"
               >
                 Employee
               </Button>
@@ -253,7 +253,7 @@ export const AuthForm: React.FC = () => {
                 size="sm"
                 onClick={() => handleDemoLogin('admin')}
                 disabled={isLoading}
-                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs"
+                className="bg-white/5 text-white border-white/20 hover:bg-white/10 text-xs px-2"
               >
                 Admin
               </Button>

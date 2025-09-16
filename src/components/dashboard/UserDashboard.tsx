@@ -75,21 +75,22 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
 
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} className="w-full">
           {/* My Tickets Tab */}
-          <TabsContent value="tickets" className="space-y-6">
-            <div className="flex justify-between items-center">
+          <TabsContent value="tickets" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div>
-                <h2 className="text-2xl font-bold">My Tickets</h2>
-                <p className="text-muted-foreground">Track your repair requests</p>
+                <h2 className="text-xl sm:text-2xl font-bold">My Tickets</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Track your repair requests</p>
               </div>
               <Button 
                 onClick={() => setShowCreateTicket(true)}
-                className="bg-gradient-primary"
+                className="bg-gradient-primary w-full sm:w-auto"
               >
                 <span className="mr-2">➕</span>
-                Raise Ticket
+                <span className="hidden sm:inline">Raise Ticket</span>
+                <span className="sm:hidden">Raise</span>
               </Button>
             </div>
 
@@ -154,15 +155,21 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
 
           {/* Vehicles Tab */}
           <TabsContent value="vehicles">
-            <VehicleManagement />
+            <div className="space-y-4 sm:space-y-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">My Vehicles</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Manage your vehicles and service history</p>
+              </div>
+              <VehicleManagement />
+            </div>
           </TabsContent>
 
           {/* Invoices Tab */}
           <TabsContent value="invoices">
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h2 className="text-2xl font-bold">Invoices</h2>
-                <p className="text-muted-foreground">View your repair invoices</p>
+                <h2 className="text-xl sm:text-2xl font-bold">Invoices</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">View your repair invoices</p>
               </div>
               <Card>
                 <CardHeader>
@@ -181,10 +188,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
 
           {/* Notifications Tab */}
           <TabsContent value="notifications">
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h2 className="text-2xl font-bold">Notifications</h2>
-                <p className="text-muted-foreground">Stay updated on your repairs</p>
+                <h2 className="text-xl sm:text-2xl font-bold">Notifications</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Stay updated on your repairs</p>
               </div>
               <Card>
                 <CardHeader>
@@ -203,10 +210,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
 
           {/* Profile Tab */}
           <TabsContent value="profile">
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h2 className="text-2xl font-bold">Profile</h2>
-                <p className="text-muted-foreground">Manage your account information</p>
+                <h2 className="text-xl sm:text-2xl font-bold">Profile</h2>
+                <p className="text-muted-foreground text-sm sm:text-base">Manage your account information</p>
               </div>
               <Card>
                 <CardHeader>
