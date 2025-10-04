@@ -278,6 +278,7 @@ export type Database = {
           discount_amount: number
           id: string
           invoice_number: string
+          payment_status: string | null
           print_url: string | null
           subtotal: number
           tax_amount: number
@@ -291,6 +292,7 @@ export type Database = {
           discount_amount?: number
           id?: string
           invoice_number: string
+          payment_status?: string | null
           print_url?: string | null
           subtotal?: number
           tax_amount?: number
@@ -304,6 +306,7 @@ export type Database = {
           discount_amount?: number
           id?: string
           invoice_number?: string
+          payment_status?: string | null
           print_url?: string | null
           subtotal?: number
           tax_amount?: number
@@ -423,11 +426,13 @@ export type Database = {
           invoice_count: number | null
           is_deleted: boolean
           legacy_status: string | null
+          license_plate: string | null
           name: string
           phone: string | null
           preferred_notification: string | null
           role: Database["public"]["Enums"]["user_role"]
           state: string | null
+          system_id: string | null
           updated_at: string
           zip_code: string | null
         }
@@ -446,11 +451,13 @@ export type Database = {
           invoice_count?: number | null
           is_deleted?: boolean
           legacy_status?: string | null
+          license_plate?: string | null
           name: string
           phone?: string | null
           preferred_notification?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
+          system_id?: string | null
           updated_at?: string
           zip_code?: string | null
         }
@@ -469,11 +476,13 @@ export type Database = {
           invoice_count?: number | null
           is_deleted?: boolean
           legacy_status?: string | null
+          license_plate?: string | null
           name?: string
           phone?: string | null
           preferred_notification?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
+          system_id?: string | null
           updated_at?: string
           zip_code?: string | null
         }
@@ -518,10 +527,20 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          estimated_completion_date: string | null
+          expected_return_date: string | null
           id: string
+          labor_cost: number | null
+          labor_hours: number | null
+          parts_cost: number | null
           preferred_pickup_time: string | null
+          primary_mechanic_id: string | null
           scheduled_pickup_time: string | null
+          secondary_mechanic_id: string | null
           status: Database["public"]["Enums"]["ticket_status"]
+          tax_amount: number | null
+          ticket_number: string | null
+          total_amount: number | null
           updated_at: string
           user_id: string
           vehicle_id: string
@@ -531,10 +550,20 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
+          estimated_completion_date?: string | null
+          expected_return_date?: string | null
           id?: string
+          labor_cost?: number | null
+          labor_hours?: number | null
+          parts_cost?: number | null
           preferred_pickup_time?: string | null
+          primary_mechanic_id?: string | null
           scheduled_pickup_time?: string | null
+          secondary_mechanic_id?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
+          tax_amount?: number | null
+          ticket_number?: string | null
+          total_amount?: number | null
           updated_at?: string
           user_id: string
           vehicle_id: string
@@ -544,10 +573,20 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          estimated_completion_date?: string | null
+          expected_return_date?: string | null
           id?: string
+          labor_cost?: number | null
+          labor_hours?: number | null
+          parts_cost?: number | null
           preferred_pickup_time?: string | null
+          primary_mechanic_id?: string | null
           scheduled_pickup_time?: string | null
+          secondary_mechanic_id?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
+          tax_amount?: number | null
+          ticket_number?: string | null
+          total_amount?: number | null
           updated_at?: string
           user_id?: string
           vehicle_id?: string
@@ -556,6 +595,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tickets_primary_mechanic_id_fkey"
+            columns: ["primary_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_secondary_mechanic_id_fkey"
+            columns: ["secondary_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
@@ -563,6 +616,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       vehicle_ownership_history: {
         Row: {
@@ -670,6 +747,8 @@ export type Database = {
           make: string
           mileage: number | null
           model: string
+          owner_id: string | null
+          photos: string[] | null
           reg_no: string | null
           trim_code: string | null
           updated_at: string
@@ -689,6 +768,8 @@ export type Database = {
           make: string
           mileage?: number | null
           model: string
+          owner_id?: string | null
+          photos?: string[] | null
           reg_no?: string | null
           trim_code?: string | null
           updated_at?: string
@@ -708,6 +789,8 @@ export type Database = {
           make?: string
           mileage?: number | null
           model?: string
+          owner_id?: string | null
+          photos?: string[] | null
           reg_no?: string | null
           trim_code?: string | null
           updated_at?: string
@@ -715,7 +798,15 @@ export type Database = {
           vin?: string | null
           year?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       work_sessions: {
         Row: {
@@ -793,12 +884,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_primary_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "employee" | "user"
       attendance_status: "present" | "absent" | "late" | "half_day"
       notification_type:
         | "ticket_created"
@@ -945,6 +1048,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "employee", "user"],
       attendance_status: ["present", "absent", "late", "half_day"],
       notification_type: [
         "ticket_created",
