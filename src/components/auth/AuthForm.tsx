@@ -20,9 +20,9 @@ export const AuthForm: React.FC = () => {
 
   // Demo login credentials
   const demoUsers = {
-    customer: { email: 'demo-customer@97auto.com', password: 'demo123', name: 'Demo Customer' },
-    employee: { email: 'demo-employee@97auto.com', password: 'demo123', name: 'Demo Employee' },
-    admin: { email: 'demo-admin@97auto.com', password: 'demo123', name: 'Demo Admin' }
+    customer: { email: 'demo-customer@76auto.com', password: 'demo123', name: 'Demo Customer' },
+    employee: { email: 'demo-employee@76auto.com', password: 'demo123', name: 'Demo Employee' },
+    admin: { email: 'demo-admin@76auto.com', password: 'demo123', name: 'Demo Admin' }
   };
 
   const handleInputChange = (field: string, value: string) => {

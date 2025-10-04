@@ -120,7 +120,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
       name: 'AUTO REPAIR INC',
       address: '123 Main Street, City, State 12345',
       phone: '(555) 123-4567',
-      email: 'info@97autorepair.com',
+      email: 'info@76autorepair.com',
       hours: 'Mon-Fri: 8AM-6PM, Sat: 9AM-4PM'
     },
     notifications: {

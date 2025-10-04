@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Enhanced Red-Blue Theme for 97 */
+    /* Enhanced Red-Blue Theme for 76 Auto Repair */
     --primary: 358 89% 52%; /* Vibrant Crimson Red */
     --primary-foreground: 0 0% 98%;
     --primary-light: 358 79% 62%;
@@ -52,7 +52,7 @@ All colors MUST be HSL.
     --status-ready: 173 58% 39%; /* Teal */
     --status-completed: 142 76% 36%; /* Green */
 
-    /* Enhanced Gradients for 97 */
+    /* Enhanced Gradients for 76 Auto Repair */
     --gradient-primary: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary-light)));
     --gradient-secondary: linear-gradient(145deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
