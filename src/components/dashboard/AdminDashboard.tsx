@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 import { AdminTicketManagement } from '@/components/admin/AdminTicketManagement';
+import { CustomerList } from '@/components/admin/CustomerList';
 import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
@@ -191,13 +192,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
     <DashboardBackground>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} onValueChange={(val) => navigate(`/admin/${val}`)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 lg:w-auto text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 lg:w-auto text-xs sm:text-sm">
             <TabsTrigger value="tickets" className="flex items-center space-x-1 sm:space-x-2">
               <span>📧</span>
               <span className="hidden sm:inline">Approve</span>
             </TabsTrigger>
-            <TabsTrigger value="employees" className="flex items-center space-x-1 sm:space-x-2">
+            <TabsTrigger value="customers" className="flex items-center space-x-1 sm:space-x-2">
               <span>👥</span>
+              <span className="hidden sm:inline">Customers</span>
+            </TabsTrigger>
+            <TabsTrigger value="employees" className="flex items-center space-x-1 sm:space-x-2">
+              <span>🔧</span>
               <span className="hidden sm:inline">Employees</span>
             </TabsTrigger>
             <TabsTrigger value="register" className="flex items-center space-x-1 sm:space-x-2">
@@ -232,6 +237,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
             </div>
 
             <AdminTicketManagement />
+          </TabsContent>
+
+          {/* Customers Tab */}
+          <TabsContent value="customers" className="space-y-4 sm:space-y-6">
+            <CustomerList />
           </TabsContent>
 
           {/* Employees Tab */}

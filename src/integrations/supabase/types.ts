@@ -94,6 +94,54 @@ export type Database = {
         }
         Relationships: []
       }
+      communications_log: {
+        Row: {
+          communication_type: string
+          created_at: string
+          created_by: string
+          customer_id: string
+          direction: string
+          id: string
+          notes: string | null
+          timestamp: string
+        }
+        Insert: {
+          communication_type: string
+          created_at?: string
+          created_by: string
+          customer_id: string
+          direction: string
+          id?: string
+          notes?: string | null
+          timestamp?: string
+        }
+        Update: {
+          communication_type?: string
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          direction?: string
+          id?: string
+          notes?: string | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communications_log_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communications_log_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_notifications: {
         Row: {
           created_at: string
@@ -131,6 +179,64 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      damage_log: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          logged_at: string
+          logged_by: string
+          photo_ids: string[] | null
+          ticket_id: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          logged_at?: string
+          logged_by: string
+          photo_ids?: string[] | null
+          ticket_id?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          logged_at?: string
+          logged_by?: string
+          photo_ids?: string[] | null
+          ticket_id?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "damage_log_logged_by_fkey"
+            columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damage_log_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damage_log_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -303,40 +409,73 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          campaign_notes: string | null
+          city: string | null
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
+          dob_month: number | null
+          email: string | null
           employee_id: string | null
           id: string
+          invoice_count: number | null
           is_deleted: boolean
+          legacy_status: string | null
           name: string
           phone: string | null
+          preferred_notification: string | null
           role: Database["public"]["Enums"]["user_role"]
+          state: string | null
           updated_at: string
+          zip_code: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          campaign_notes?: string | null
+          city?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          dob_month?: number | null
+          email?: string | null
           employee_id?: string | null
           id: string
+          invoice_count?: number | null
           is_deleted?: boolean
+          legacy_status?: string | null
           name: string
           phone?: string | null
+          preferred_notification?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          state?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          campaign_notes?: string | null
+          city?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
+          dob_month?: number | null
+          email?: string | null
           employee_id?: string | null
           id?: string
+          invoice_count?: number | null
           is_deleted?: boolean
+          legacy_status?: string | null
           name?: string
           phone?: string | null
+          preferred_notification?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          state?: string | null
           updated_at?: string
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -425,38 +564,155 @@ export type Database = {
           },
         ]
       }
-      vehicles: {
+      vehicle_ownership_history: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          started_at: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          started_at?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          started_at?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_ownership_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_ownership_history_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_photos: {
         Row: {
           created_at: string
           id: string
-          license_no: string | null
-          make: string
-          model: string
-          reg_no: string | null
-          updated_at: string
-          user_id: string
-          year: number | null
+          photo_type: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+          vehicle_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          license_no?: string | null
-          make: string
-          model: string
-          reg_no?: string | null
-          updated_at?: string
-          user_id: string
-          year?: number | null
+          photo_type: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+          vehicle_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          photo_type?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_photos_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          drive_train: string | null
+          engine_size: string | null
+          expected_return_date: string | null
+          id: string
+          is_active: boolean | null
+          license_no: string | null
+          location_status: string | null
+          make: string
+          mileage: number | null
+          model: string
+          reg_no: string | null
+          trim_code: string | null
+          updated_at: string
+          user_id: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          drive_train?: string | null
+          engine_size?: string | null
+          expected_return_date?: string | null
+          id?: string
+          is_active?: boolean | null
           license_no?: string | null
+          location_status?: string | null
+          make: string
+          mileage?: number | null
+          model: string
+          reg_no?: string | null
+          trim_code?: string | null
+          updated_at?: string
+          user_id: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          drive_train?: string | null
+          engine_size?: string | null
+          expected_return_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          license_no?: string | null
+          location_status?: string | null
           make?: string
+          mileage?: number | null
           model?: string
           reg_no?: string | null
+          trim_code?: string | null
           updated_at?: string
           user_id?: string
+          vin?: string | null
           year?: number | null
         }
         Relationships: []

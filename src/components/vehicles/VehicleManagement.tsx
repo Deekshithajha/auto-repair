@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-// Icons replaced with emojis
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { EnhancedVehicleProfile } from './EnhancedVehicleProfile';
 
 interface Vehicle {
   id: string;
@@ -15,6 +14,8 @@ interface Vehicle {
   year: number;
   reg_no?: string;
   license_no?: string;
+  is_active?: boolean;
+  location_status?: string;
   created_at: string;
 }
 
@@ -22,14 +23,7 @@ export const VehicleManagement: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
-  const [formData, setFormData] = useState({
-    make: '',
-    model: '',
-    year: new Date().getFullYear(),
-    reg_no: '',
-    license_no: ''
-  });
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>();
 
   useEffect(() => {
     fetchVehicles();
@@ -56,101 +50,15 @@ export const VehicleManagement: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('User not authenticated');
-
-      if (editingVehicle) {
-        const { error } = await supabase
-          .from('vehicles')
-          .update(formData)
-          .eq('id', editingVehicle.id);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Vehicle updated successfully"
-        });
-      } else {
-        const { error } = await supabase
-          .from('vehicles')
-          .insert([{
-            ...formData,
-            user_id: user.id
-          }]);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Vehicle added successfully"
-        });
-      }
-      
-      fetchVehicles();
-      handleCloseDialog();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEdit = (vehicle: Vehicle) => {
-    setEditingVehicle(vehicle);
-    setFormData({
-      make: vehicle.make,
-      model: vehicle.model,
-      year: vehicle.year,
-      reg_no: vehicle.reg_no || '',
-      license_no: vehicle.license_no || ''
-    });
+  const handleOpenVehicle = (vehicleId?: string) => {
+    setSelectedVehicleId(vehicleId);
     setShowDialog(true);
-  };
-
-  const handleDelete = async (vehicleId: string) => {
-    if (!confirm('Are you sure you want to delete this vehicle?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('vehicles')
-        .delete()
-        .eq('id', vehicleId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Vehicle deleted successfully"
-      });
-      
-      fetchVehicles();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
   };
 
   const handleCloseDialog = () => {
     setShowDialog(false);
-    setEditingVehicle(null);
-    setFormData({
-      make: '',
-      model: '',
-      year: new Date().getFullYear(),
-      reg_no: '',
-      license_no: ''
-    });
+    setSelectedVehicleId(undefined);
+    fetchVehicles();
   };
 
   return (
@@ -160,8 +68,8 @@ export const VehicleManagement: React.FC = () => {
           <h2 className="text-2xl font-bold">My Vehicles</h2>
           <p className="text-muted-foreground">Manage your vehicle information</p>
         </div>
-        <Button onClick={() => setShowDialog(true)} className="bg-gradient-secondary">
-              <span className="mr-2">➕</span>
+        <Button onClick={() => handleOpenVehicle()} className="bg-gradient-secondary">
+          <span className="mr-2">➕</span>
           Add Vehicle
         </Button>
       </div>
@@ -189,7 +97,7 @@ export const VehicleManagement: React.FC = () => {
             <div className="text-4xl mb-4">🚗</div>
             <h3 className="text-lg font-semibold mb-2">No vehicles registered</h3>
             <p className="text-muted-foreground mb-6">Add your first vehicle to create repair tickets</p>
-            <Button onClick={() => setShowDialog(true)} className="bg-gradient-secondary">
+            <Button onClick={() => handleOpenVehicle()} className="bg-gradient-secondary">
               <span className="mr-2">➕</span>
               Add First Vehicle
             </Button>
@@ -201,31 +109,30 @@ export const VehicleManagement: React.FC = () => {
             <Card key={vehicle.id} className="hover:shadow-elegant transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg flex items-center">
-                    <span className="text-secondary mr-2">🚗</span>
-                    {vehicle.make} {vehicle.model}
-                  </CardTitle>
-                  <div className="flex space-x-1">
+                  <div>
+                    <CardTitle className="text-lg flex items-center">
+                      <span className="text-secondary mr-2">🚗</span>
+                      {vehicle.make} {vehicle.model}
+                    </CardTitle>
+                    <CardDescription>
+                      Year: {vehicle.year}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {vehicle.location_status && (
+                      <Badge variant={vehicle.location_status === 'in_shop' ? 'default' : 'outline'}>
+                        {vehicle.location_status === 'in_shop' ? '🏭' : '🏠'}
+                      </Badge>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleEdit(vehicle)}
+                      onClick={() => handleOpenVehicle(vehicle.id)}
                     >
-                      <span className="text-sm">✏️</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(vehicle.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <span className="text-sm">🗑️</span>
+                      <span className="text-sm">👁️</span>
                     </Button>
                   </div>
                 </div>
-                <CardDescription>
-                  Year: {vehicle.year}
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm">
@@ -249,84 +156,13 @@ export const VehicleManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Add/Edit Vehicle Dialog */}
+      {/* Vehicle Details Dialog */}
       <Dialog open={showDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingVehicle ? 'Update your vehicle information' : 'Add a new vehicle to your account'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="make">Make</Label>
-                <Input
-                  id="make"
-                  value={formData.make}
-                  onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                  placeholder="Toyota, Honda, etc."
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="model">Model</Label>
-                <Input
-                  id="model"
-                  value={formData.model}
-                  onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                  placeholder="Camry, Civic, etc."
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="year">Year</Label>
-              <Input
-                id="year"
-                type="number"
-                value={formData.year}
-                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                min="1900"
-                max={new Date().getFullYear() + 1}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="reg_no">Registration Number (Optional)</Label>
-              <Input
-                id="reg_no"
-                value={formData.reg_no}
-                onChange={(e) => setFormData(prev => ({ ...prev, reg_no: e.target.value }))}
-                placeholder="ABC-1234"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="license_no">License Number (Optional)</Label>
-              <Input
-                id="license_no"
-                value={formData.license_no}
-                onChange={(e) => setFormData(prev => ({ ...prev, license_no: e.target.value }))}
-                placeholder="DL123456789"
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-gradient-primary">
-                {editingVehicle ? 'Update' : 'Add'} Vehicle
-              </Button>
-            </DialogFooter>
-          </form>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <EnhancedVehicleProfile 
+            vehicleId={selectedVehicleId} 
+            onClose={handleCloseDialog}
+          />
         </DialogContent>
       </Dialog>
     </div>
