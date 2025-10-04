@@ -7,8 +7,10 @@ interface Profile {
   id: string;
   name: string;
   phone?: string;
-  role: 'user' | 'employee' | 'admin';
+  role?: 'user' | 'employee' | 'admin'; // Fetched from user_roles table
   employee_id?: string;
+  system_id?: string;
+  license_plate?: string;
   is_deleted: boolean;
 }
 
@@ -18,7 +20,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, loginType?: 'email' | 'system_id' | 'license') => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
 }
@@ -47,18 +49,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
-          const { data: profileData, error } = await supabase
+          // Fetch user profile and role from user_roles table
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
           
-          if (error) {
-            console.error('Error fetching profile:', error);
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
             setProfile(null);
           } else {
-            setProfile(profileData);
+            // Fetch user's primary role from user_roles table
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .order('role', { ascending: true })
+              .limit(1)
+              .single();
+            
+            setProfile({
+              ...profileData,
+              role: roleData?.role || 'user'
+            });
           }
         } else {
           setProfile(null);
@@ -78,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile asynchronously
+          // Fetch user profile and role asynchronously
           setTimeout(async () => {
             const { data: profileData, error } = await supabase
               .from('profiles')
@@ -90,7 +104,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error('Error fetching profile:', error);
               setProfile(null);
             } else {
-              setProfile(profileData);
+              // Fetch user's primary role from user_roles table
+              const { data: roleData } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .order('role', { ascending: true })
+                .limit(1)
+                .single();
+              
+              setProfile({
+                ...profileData,
+                role: roleData?.role || 'user'
+              });
             }
           }, 0);
         } else {
@@ -137,9 +163,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, loginType?: 'email' | 'system_id' | 'license') => {
+    let authEmail = email;
+    
+    // Handle alternate login methods
+    if (loginType === 'system_id') {
+      // Find user by system_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('system_id', email)
+        .single();
+      
+      if (profile?.email) {
+        authEmail = profile.email;
+      } else {
+        toast({
+          title: "Sign In Error",
+          description: "Invalid system ID",
+          variant: "destructive",
+        });
+        return { error: new Error('Invalid system ID') };
+      }
+    } else if (loginType === 'license') {
+      // Find user by license_plate
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('license_plate', email)
+        .single();
+      
+      if (profile?.email) {
+        authEmail = profile.email;
+      } else {
+        toast({
+          title: "Sign In Error",
+          description: "Invalid license plate",
+          variant: "destructive",
+        });
+        return { error: new Error('Invalid license plate') };
+      }
+    }
+    
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: authEmail,
       password,
     });
 
@@ -191,14 +258,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
     } else {
-      // Refresh profile
+      // Refresh profile with role
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
       
-      if (profileData) setProfile(profileData);
+      if (profileData) {
+        // Fetch role from user_roles
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .order('role', { ascending: true })
+          .limit(1)
+          .single();
+        
+        setProfile({
+          ...profileData,
+          role: roleData?.role || 'user'
+        });
+      }
       
       toast({
         title: "Profile Updated",

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import Login from '@/components/auth/Login';
+import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
 import { UserDashboard } from '@/components/dashboard/UserDashboard';
 import { EmployeeDashboard } from '@/components/dashboard/EmployeeDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
@@ -24,7 +24,7 @@ export const MainLayout: React.FC = () => {
   }
 
   if (!user || !profile) {
-    return <Login onSubmit={async (credentials) => {
+    return <EnhancedLogin onSubmit={async (credentials) => {
       const { email, password } = credentials;
       const attempt = await signIn(email, password);
       if (attempt.error) {

@@ -1,1 +1,7 @@
 project_id = "vlelbfqrszjzyuplrogx"
+
+[functions.send-completion-notification]
+verify_jwt = true
+
+[functions.manage-workorder]
+verify_jwt = true
