@@ -7,6 +7,7 @@ import { EmployeeDashboard } from '@/components/dashboard/EmployeeDashboard';
 import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export const MainLayout: React.FC = () => {
   const { user, profile, loading, signIn, signUp } = useAuth();
@@ -48,11 +49,12 @@ export const MainLayout: React.FC = () => {
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
           <main className="flex-1 flex flex-col">
-            <header className="h-12 flex items-center border-b border-border bg-background px-4">
-              <SidebarTrigger />
-              <div className="ml-4">
+            <header className="h-12 flex items-center justify-between border-b border-border bg-background px-4">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
                 <h1 className="font-semibold text-foreground">AUTO REPAIR INC</h1>
               </div>
+              <NotificationCenter />
             </header>
             <div className="flex-1 overflow-auto">
               <Routes>
@@ -72,6 +74,7 @@ export const MainLayout: React.FC = () => {
                 
                 {/* Admin Routes */}
                 <Route path="/admin/tickets" element={profile.role === 'admin' ? <AdminDashboard activeTab="tickets" /> : <Navigate to="/" />} />
+                <Route path="/admin/customers" element={profile.role === 'admin' ? <AdminDashboard activeTab="customers" /> : <Navigate to="/" />} />
                 <Route path="/admin/employees" element={profile.role === 'admin' ? <AdminDashboard activeTab="employees" /> : <Navigate to="/" />} />
                 <Route path="/admin/register" element={profile.role === 'admin' ? <AdminDashboard activeTab="register" /> : <Navigate to="/" />} />
                 <Route path="/admin/monitor" element={profile.role === 'admin' ? <AdminDashboard activeTab="monitor" /> : <Navigate to="/" />} />

@@ -132,4 +132,55 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ensure dropdowns and popovers have proper backgrounds and z-index */
+  [role="dialog"],
+  [data-radix-popper-content-wrapper] {
+    @apply z-50;
+  }
+}
+
+/* Mobile-First Responsive Utilities */
+@layer utilities {
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    @apply p-4 sm:p-6;
+  }
+
+  /* Mobile-optimized text */
+  .text-mobile-sm {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-mobile-base {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-mobile-lg {
+    @apply text-base sm:text-lg;
+  }
+
+  /* Mobile grid layouts */
+  .grid-mobile-1 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+
+  /* Responsive flex utilities */
+  .flex-mobile-col {
+    @apply flex flex-col sm:flex-row;
+  }
+
+  /* Image optimization for mobile */
+  .img-mobile-contain {
+    @apply w-full h-auto object-contain;
+  }
+
+  /* Safe area padding for mobile notches */
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0.5rem);
+  }
+
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
 }

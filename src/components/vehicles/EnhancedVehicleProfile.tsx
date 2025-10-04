@@ -15,6 +15,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
+import { PhotoViewerModal } from '../shared/PhotoViewerModal';
+import { VehicleServiceHistory } from './VehicleServiceHistory';
 
 interface Vehicle {
   id: string;
@@ -86,11 +88,15 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
     is_active: true
   });
 
-  // Damage log form
   const [damageFormData, setDamageFormData] = useState({
     description: '',
     photoFile: null as File | null
   });
+
+  // Photo viewer state
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [viewerPhotos, setViewerPhotos] = useState<Array<{ id: string; url: string; caption?: string; date?: string }>>([]);
+  const [initialPhotoIndex, setInitialPhotoIndex] = useState(0);
 
   useEffect(() => {
     if (vehicleId) {
@@ -324,6 +330,21 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
       .from('vehicle-photos')
       .getPublicUrl(storagePath);
     return data.publicUrl;
+  };
+
+  const handleOpenPhotoViewer = (photoType: string) => {
+    const typePhotos = photos
+      .filter(p => p.photo_type === photoType)
+      .map(p => ({
+        id: p.id,
+        url: getPhotoUrl(p.storage_path),
+        caption: `${photoType.replace('_', ' ')} photo`,
+        date: new Date(p.uploaded_at).toLocaleDateString()
+      }));
+    
+    setViewerPhotos(typePhotos);
+    setInitialPhotoIndex(0);
+    setPhotoViewerOpen(true);
   };
 
   if (loading) {
@@ -591,12 +612,17 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
                       disabled={uploading || !vehicleId}
                     />
                     {photos.filter(p => p.photo_type === type).map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={getPhotoUrl(photo.storage_path)}
-                        alt={type}
-                        className="w-full h-32 object-cover rounded border"
-                      />
+                      <div key={photo.id} className="relative group">
+                        <img
+                          src={getPhotoUrl(photo.storage_path)}
+                          alt={type}
+                          className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleOpenPhotoViewer(type)}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded">
+                          <span className="text-white text-sm">👁️ View</span>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ))}
@@ -650,18 +676,27 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
         </TabsContent>
 
         {/* History Tab */}
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Service History</CardTitle>
-              <CardDescription>All service tickets for this vehicle</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground py-8">Service history feature coming soon</p>
-            </CardContent>
-          </Card>
+        <TabsContent value="history" className="space-y-4">
+          {vehicleId ? (
+            <VehicleServiceHistory vehicleId={vehicleId} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Service History</CardTitle>
+                <CardDescription>Service history will be available after vehicle is created</CardDescription>
+              </CardHeader>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Photo Viewer Modal */}
+      <PhotoViewerModal
+        photos={viewerPhotos}
+        initialIndex={initialPhotoIndex}
+        open={photoViewerOpen}
+        onClose={() => setPhotoViewerOpen(false)}
+      />
     </div>
   );
 };
