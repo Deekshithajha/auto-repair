@@ -14,13 +14,18 @@ interface CustomerData {
   phone: string;
   password: string;
   confirmPassword: string;
+  licensePlate: string;
+  make: string;
+  model: string;
+  year: string; // keep as string for input; validate/convert on submit
 }
 
 interface CustomerRegistrationProps {
   onSuccess?: () => void;
+  trigger?: React.ReactNode;
 }
 
-export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSuccess }) => {
+export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSuccess, trigger }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [customerData, setCustomerData] = useState<CustomerData>({
@@ -28,7 +33,11 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    licensePlate: '',
+    make: '',
+    model: '',
+    year: ''
   });
   const { toast } = useToast();
 
@@ -72,6 +81,30 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       });
       return false;
     }
+    if (!customerData.make.trim() || !customerData.model.trim()) {
+      toast({
+        title: "Error",
+        description: "Vehicle make and model are required",
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (!customerData.licensePlate.trim()) {
+      toast({
+        title: "Error",
+        description: "License plate is required",
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (customerData.year && !/^\d{4}$/.test(customerData.year)) {
+      toast({
+        title: "Error",
+        description: "Year must be 4 digits",
+        variant: "destructive",
+      });
+      return false;
+    }
     return true;
   };
 
@@ -102,11 +135,33 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ phone: customerData.phone })
+          .update({ phone: customerData.phone, license_plate: customerData.licensePlate })
           .eq('id', authData.user.id);
 
         if (profileError) {
           console.warn('Profile update failed:', profileError);
+        }
+
+        // Create initial vehicle for the customer
+        const yearNumber = customerData.year ? parseInt(customerData.year, 10) : null;
+        const { error: vehicleError } = await supabase
+          .from('vehicles')
+          .insert({
+            user_id: authData.user.id,
+            make: customerData.make,
+            model: customerData.model,
+            year: yearNumber,
+            license_no: customerData.licensePlate,
+            owner_id: authData.user.id
+          });
+
+        if (vehicleError) {
+          console.warn('Vehicle creation failed:', vehicleError);
+          toast({
+            title: "Vehicle Not Saved",
+            description: "Account created, but vehicle could not be saved.",
+            variant: "destructive",
+          });
         }
       }
 
@@ -121,7 +176,11 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
         email: '',
         phone: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        licensePlate: '',
+        make: '',
+        model: '',
+        year: ''
       });
       
       setOpen(false);
@@ -141,10 +200,14 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full sm:w-auto">
-          <span className="mr-2">👤</span>
-          Register New Customer
-        </Button>
+        {trigger ? (
+          <>{trigger}</>
+        ) : (
+          <Button variant="outline" className="w-full sm:w-auto">
+            <span className="mr-2">👤</span>
+            Register New Customer
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -190,6 +253,56 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
             />
           </div>
           
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="vehicle-make">Vehicle Make *</Label>
+              <Input
+                id="vehicle-make"
+                type="text"
+                placeholder="Toyota"
+                value={customerData.make}
+                onChange={(e) => handleInputChange('make', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="vehicle-model">Vehicle Model *</Label>
+              <Input
+                id="vehicle-model"
+                type="text"
+                placeholder="Camry"
+                value={customerData.model}
+                onChange={(e) => handleInputChange('model', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="vehicle-year">Year</Label>
+              <Input
+                id="vehicle-year"
+                type="text"
+                placeholder="2018"
+                inputMode="numeric"
+                value={customerData.year}
+                onChange={(e) => handleInputChange('year', e.target.value.replace(/[^0-9]/g, ''))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="license-plate">License Plate *</Label>
+              <Input
+                id="license-plate"
+                type="text"
+                placeholder="ABC-1234"
+                value={customerData.licensePlate}
+                onChange={(e) => handleInputChange('licensePlate', e.target.value.toUpperCase())}
+                required
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="customer-password">Password *</Label>
             <Input

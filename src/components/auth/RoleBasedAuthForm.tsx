@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 
 type LoginMode = 'customer' | 'employee' | 'admin';
 
 export const RoleBasedAuthForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<LoginMode>('customer');
-  const { signIn } = useAuth();
+  const { signIn, signUp } = useAuth();
 
   // Customer login state
   const [customerData, setCustomerData] = useState({
@@ -36,6 +37,24 @@ export const RoleBasedAuthForm: React.FC = () => {
   const handleStaffLogin = async () => {
     setIsLoading(true);
     await signIn(staffData.systemId, staffData.password, 'system_id');
+    setIsLoading(false);
+  };
+
+  // Demo login support
+  const demoUsers = {
+    customer: { email: 'demo-customer@autorepair.com', password: 'demo123', name: 'Demo Customer' },
+    employee: { email: 'demo-employee@autorepair.com', password: 'demo123', name: 'Demo Employee' },
+    admin: { email: 'demo-admin@autorepair.com', password: 'demo123', name: 'Demo Admin' }
+  } as const;
+
+  const handleDemoLogin = async (role: 'customer' | 'employee' | 'admin') => {
+    setIsLoading(true);
+    const demo = demoUsers[role];
+    const attempt = await signIn(demo.email, demo.password);
+    if (attempt.error) {
+      await signUp(demo.email, demo.password, demo.name);
+      await signIn(demo.email, demo.password);
+    }
     setIsLoading(false);
   };
 
@@ -65,8 +84,89 @@ export const RoleBasedAuthForm: React.FC = () => {
   const modeConfig = getModeConfig(loginMode);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Animated SVG Background */}
+      <svg
+        aria-hidden
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <linearGradient id="gradBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#0b1220" />
+            <stop offset="100%" stopColor="#141a2a" />
+          </linearGradient>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#6ee7ff" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#6ee7ff" stopOpacity="0" />
+          </radialGradient>
+          <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="24" />
+          </filter>
+        </defs>
+
+        <rect x="0" y="0" width="1440" height="900" fill="url(#gradBg)" />
+        {/* Ambient glows */}
+        <circle cx="250" cy="180" r="180" fill="url(#glow)" filter="url(#softBlur)" />
+        <circle cx="1220" cy="720" r="220" fill="url(#glow)" filter="url(#softBlur)" />
+
+        {/* Rotating gears */}
+        <g transform="translate(240 580)">
+          <g style={{ transformOrigin: 'center', animation: 'spin-slow 32s linear infinite' as any }}>
+            <circle r="90" fill="none" stroke="#657089" strokeWidth="6" />
+            {Array.from({ length: 12 }).map((_, i) => (
+              <rect key={i} x="-6" y="-104" width="12" height="24" fill="#8fa3c0" transform={`rotate(${i * 30})`} rx="3" />
+            ))}
+            <circle r="12" fill="#8fa3c0" />
+          </g>
+        </g>
+
+        <g transform="translate(1160 260)">
+          <g style={{ transformOrigin: 'center', animation: 'spin 18s linear infinite' as any }}>
+            <circle r="60" fill="none" stroke="#7a86a8" strokeWidth="5" />
+            {Array.from({ length: 10 }).map((_, i) => (
+              <rect key={i} x="-5" y="-72" width="10" height="18" fill="#a6b4d3" transform={`rotate(${i * 36})`} rx="2" />
+            ))}
+            <circle r="10" fill="#a6b4d3" />
+          </g>
+        </g>
+
+        <g transform="translate(920 680)">
+          <g style={{ transformOrigin: 'center', animation: 'spin-slower 46s linear infinite reverse' as any }}>
+            <circle r="110" fill="none" stroke="#4f5a78" strokeWidth="6" />
+            {Array.from({ length: 14 }).map((_, i) => (
+              <rect key={i} x="-7" y="-126" width="14" height="28" fill="#6d7aa0" transform={`rotate(${i * 25.714})`} rx="3" />
+            ))}
+            <circle r="14" fill="#6d7aa0" />
+          </g>
+        </g>
+
+        {/* Floating bolts */}
+        {[
+          { x: 180, y: 220, d: 36, delay: 0 },
+          { x: 360, y: 140, d: 28, delay: 2 },
+          { x: 1080, y: 760, d: 34, delay: 1.2 },
+          { x: 1280, y: 620, d: 26, delay: 3.1 },
+          { x: 720, y: 180, d: 30, delay: 0.7 }
+        ].map((b, idx) => (
+          <g key={idx} transform={`translate(${b.x} ${b.y})`} style={{ animation: `float ${14 + b.delay}s ease-in-out ${b.delay}s infinite alternate` as any }}>
+            <circle r={b.d / 2} fill="none" stroke="#3e4761" strokeWidth="2" />
+            <circle r={b.d / 6} fill="#96a7c7" />
+          </g>
+        ))}
+
+        <style>{`
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes spin-slower { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes float { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
+        `}</style>
+      </svg>
+
+      {/* Foreground content */}
+      <div className="relative z-10 flex items-center justify-center p-4 min-h-screen">
+        <div className="w-full max-w-md">
         {/* Logo/Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-background rounded-full shadow-glow mb-4">
@@ -79,7 +179,7 @@ export const RoleBasedAuthForm: React.FC = () => {
           <p className="text-white/90 text-lg">Auto Repair Excellence</p>
         </div>
 
-        <Card className="shadow-glow border-0 bg-background/95 backdrop-blur">
+        <Card className="shadow-glow border-0 bg-background/90 backdrop-blur">
           <CardHeader className="space-y-4">
             <Tabs value={loginMode} onValueChange={(value) => setLoginMode(value as LoginMode)}>
               <TabsList className="grid w-full grid-cols-3">
@@ -165,8 +265,56 @@ export const RoleBasedAuthForm: React.FC = () => {
           </CardFooter>
         </Card>
 
+        {loginMode === 'customer' && (
+          <div className="text-center mt-4 space-y-4">
+            <CustomerRegistration
+              trigger={
+                <Button variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                  New here? Register
+                </Button>
+              }
+            />
+            <div className="space-y-2">
+              <p className="text-white/80 text-sm">Quick Demo Access</p>
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDemoLogin('customer')}
+                  disabled={isLoading}
+                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                >
+                  Customer
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDemoLogin('employee')}
+                  disabled={isLoading}
+                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                >
+                  Employee
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDemoLogin('admin')}
+                  disabled={isLoading}
+                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                >
+                  Admin
+                </Button>
+              </div>
+              <div className="text-white/70 text-xs">
+                <p>Demo email: demo-[role]@autorepair.com • Password: demo123</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="text-center text-white/60 text-sm mt-6">
           <p>🔧 AUTO REPAIR INC • Secure Login</p>
+        </div>
         </div>
       </div>
     </div>

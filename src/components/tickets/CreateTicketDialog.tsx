@@ -32,6 +32,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
     make: '',
     model: '',
     year: new Date().getFullYear(),
+    license_no: '',
     description: '',
     preferred_pickup_time: ''
   });
@@ -67,10 +68,10 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.make || !formData.model || !formData.description) {
+    if (!formData.make || !formData.model || !formData.description || !formData.license_no) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields (make, model, year, license plate, description)",
         variant: "destructive"
       });
       return;
@@ -90,6 +91,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
           make: formData.make,
           model: formData.model,
           year: formData.year,
+          license_no: formData.license_no,
           user_id: user.id
         }])
         .select()
@@ -126,6 +128,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         make: '',
         model: '',
         year: new Date().getFullYear(),
+        license_no: '',
         description: '',
         preferred_pickup_time: ''
       });
@@ -194,18 +197,31 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="year" className="text-sm">Year</Label>
-              <Input
-                id="year"
-                type="number"
-                value={formData.year}
-                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                min="1900"
-                max={new Date().getFullYear() + 1}
-                required
-                className="h-10 sm:h-11 text-sm sm:text-base"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="year" className="text-sm">Year</Label>
+                <Input
+                  id="year"
+                  type="number"
+                  value={formData.year}
+                  onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                  min="1900"
+                  max={new Date().getFullYear() + 1}
+                  required
+                  className="h-10 sm:h-11 text-sm sm:text-base"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="license" className="text-sm">License Plate</Label>
+                <Input
+                  id="license"
+                  value={formData.license_no}
+                  onChange={(e) => setFormData(prev => ({ ...prev, license_no: e.target.value.toUpperCase() }))}
+                  placeholder="ABC-1234"
+                  required
+                  className="h-10 sm:h-11 text-sm sm:text-base"
+                />
+              </div>
             </div>
           </div>
 

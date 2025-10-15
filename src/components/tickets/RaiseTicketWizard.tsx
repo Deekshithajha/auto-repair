@@ -26,6 +26,7 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
+  license_no?: string | null;
 }
 
 type Step = 1 | 2;
@@ -50,6 +51,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
     make: '',
     model: '',
     year: new Date().getFullYear(),
+    license_no: '',
   });
   const [ticketDetails, setTicketDetails] = useState({
     description: '',
@@ -96,7 +98,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
         // load vehicles for this customer
         const { data: vehiclesData, error: vehErr } = await supabase
           .from('vehicles')
-          .select('id, make, model, year')
+          .select('id, make, model, year, license_no')
           .eq('user_id', u.id)
           .order('updated_at', { ascending: false });
         if (!vehErr && vehiclesData) setVehicles(vehiclesData as any);
@@ -173,7 +175,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
         // insert new vehicle
         const { data: veh, error: vehErr } = await supabase
           .from('vehicles')
-          .insert([{ make: newVehicle.make, model: newVehicle.model, year: newVehicle.year, user_id: selectedCustomer.id }])
+          .insert([{ make: newVehicle.make, model: newVehicle.model, year: newVehicle.year, license_no: newVehicle.license_no, user_id: selectedCustomer.id }])
           .select()
           .single();
         if (vehErr) throw vehErr;
@@ -277,7 +279,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
               )}
 
               {/* New vehicle fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="make">Make</Label>
                   <Input id="make" value={newVehicle.make} onChange={(e) => setNewVehicle(prev => ({ ...prev, make: e.target.value }))} placeholder="Toyota" />
@@ -289,6 +291,10 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
                 <div className="space-y-2">
                   <Label htmlFor="year">Year</Label>
                   <Input id="year" type="number" value={newVehicle.year} onChange={(e) => setNewVehicle(prev => ({ ...prev, year: parseInt(e.target.value || '0') }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="license_no">License Plate</Label>
+                  <Input id="license_no" value={newVehicle.license_no} onChange={(e) => setNewVehicle(prev => ({ ...prev, license_no: e.target.value.toUpperCase() }))} placeholder="ABC-1234" />
                 </div>
               </div>
 
