@@ -337,10 +337,21 @@ export const EmployeeWorkLog: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Work Log</h2>
-          <p className="text-muted-foreground">Track your work hours and activities</p>
+      <div>
+        <h2 className="text-2xl font-bold">Work Log</h2>
+        <p className="text-muted-foreground">Record and track your work activities, hours spent, and job progress</p>
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">What is the Work Log for?</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• <strong>Time Tracking:</strong> Record hours worked on specific jobs and tasks</li>
+            <li>• <strong>Activity Documentation:</strong> Document what work was performed on each vehicle</li>
+            <li>• <strong>Progress Tracking:</strong> Track job status (in progress, completed, paused)</li>
+            <li>• <strong>Performance Records:</strong> Maintain records of your work efficiency and productivity</li>
+            <li>• <strong>Billing Support:</strong> Provide accurate time records for customer billing</li>
+            <li>• <strong>Quality Assurance:</strong> Document work performed for quality control and training</li>
+          </ul>
         </div>
+      </div>
         <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
           + Add Work Log
         </Button>

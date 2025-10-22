@@ -77,6 +77,15 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [showEditDamageDialog, setShowEditDamageDialog] = useState<Record<string, boolean>>({});
   const [editDamageDescription, setEditDamageDescription] = useState<Record<string, string>>({});
   const [editDamagePhotos, setEditDamagePhotos] = useState<Record<string, File[]>>({});
+  const [issueEdits, setIssueEdits] = useState<Record<string, string>>({});
+  const [showIssueDialog, setShowIssueDialog] = useState<Record<string, boolean>>({});
+  const [vehicleEdits, setVehicleEdits] = useState<Record<string, { vin?: string; engine_size?: string; mileage?: string; trim_code?: string; drivetrain?: string }>>({});
+  const [vinStickerPhotos, setVinStickerPhotos] = useState<Record<string, File[]>>({});
+  const [interiorPhotos, setInteriorPhotos] = useState<Record<string, File[]>>({});
+  const [exteriorPhotos, setExteriorPhotos] = useState<Record<string, File[]>>({});
+  const [rescheduleReason, setRescheduleReason] = useState<Record<string, string>>({});
+  const [rescheduleDate, setRescheduleDate] = useState<Record<string, string>>({});
+  const [upcomingReturns, setUpcomingReturns] = useState<any[]>([]);
 
   // Dummy data for demonstration
   const dummyWorkSessions: WorkSession[] = [
@@ -172,6 +181,7 @@ export const EmployeeWorkManagement: React.FC = () => {
     setWorkSessions(dummyWorkSessions);
     setPartsUsed(dummyPartsUsed);
     setLoading(false);
+    fetchUpcomingReturns();
   }, [user?.id]);
 
   const fetchWorkSessions = async () => {
@@ -558,6 +568,301 @@ export const EmployeeWorkManagement: React.FC = () => {
     }));
   };
 
+  const handleSaveIssue = async (sessionId: string, ticketId: string) => {
+    const description = issueEdits[sessionId];
+    if (!description?.trim()) {
+      toast({ title: "Error", description: "Please enter an issue description", variant: "destructive" });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ description: description.trim(), updated_at: new Date().toISOString() })
+        .eq('id', ticketId);
+      if (error) throw error;
+      setWorkSessions(prev => prev.map(s => s.id === sessionId ? ({ ...s, ticket: { ...s.ticket, description: description.trim() } }) : s));
+      setShowIssueDialog(prev => ({ ...prev, [sessionId]: false }));
+      toast({ title: 'Issue Updated', description: 'Customer issue has been updated.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to update issue', variant: 'destructive' });
+    }
+  };
+
+  const handleSaveVehicleDetails = async (sessionId: string, vehicleId: string) => {
+    const edits = vehicleEdits[sessionId] || {};
+    try {
+      const payload: any = {
+        updated_at: new Date().toISOString()
+      };
+      if (edits.vin !== undefined) payload.vin = edits.vin || null;
+      if (edits.engine_size !== undefined) payload.engine_size = edits.engine_size || null;
+      if (edits.mileage !== undefined) payload.mileage = edits.mileage ? parseInt(edits.mileage) : null;
+      if (edits.trim_code !== undefined) payload.trim_code = edits.trim_code || null;
+      if (edits.drivetrain !== undefined) payload.drivetrain = edits.drivetrain || null;
+
+      const { error } = await supabase
+        .from('vehicles')
+        .update(payload)
+        .eq('id', vehicleId);
+      if (error) throw error;
+
+      setWorkSessions(prev => prev.map(s => s.id === sessionId ? ({
+        ...s,
+        ticket: {
+          ...s.ticket,
+          vehicle: {
+            ...s.ticket.vehicle,
+            vin: edits.vin ?? s.ticket.vehicle['vin'],
+            engine_size: edits.engine_size ?? s.ticket.vehicle['engine_size'],
+            mileage: edits.mileage ? parseInt(edits.mileage) : (s.ticket.vehicle as any)['mileage'],
+            trim_code: edits.trim_code ?? (s.ticket.vehicle as any)['trim_code'],
+            drivetrain: edits.drivetrain ?? (s.ticket.vehicle as any)['drivetrain']
+          }
+        }
+      }) : s));
+      toast({ title: 'Vehicle Updated', description: 'Vehicle details saved.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to save vehicle details', variant: 'destructive' });
+    }
+  };
+
+  const uploadPhotos = async (files: File[], pathPrefix: string) => {
+    const uploaded: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const ext = file.name.split('.').pop();
+      const fileName = `${pathPrefix}-${Date.now()}-${i}.${ext}`;
+      const { error } = await supabase.storage.from('vehicle-photos').upload(fileName, file);
+      if (error) throw error;
+      uploaded.push(fileName);
+    }
+    return uploaded;
+  };
+
+  const handleUploadVehiclePhotos = async (sessionId: string, vehicleId: string) => {
+    try {
+      const vinFiles = vinStickerPhotos[sessionId] || [];
+      const intFiles = interiorPhotos[sessionId] || [];
+      const extFiles = exteriorPhotos[sessionId] || [];
+      if (vinFiles.length === 0 && intFiles.length === 0 && extFiles.length === 0) {
+        toast({ title: 'No Photos', description: 'Please select photos to upload.' });
+        return;
+      }
+      await uploadPhotos(vinFiles, `${vehicleId}/vin-sticker`);
+      await uploadPhotos(intFiles, `${vehicleId}/interior`);
+      await uploadPhotos(extFiles, `${vehicleId}/exterior`);
+      setVinStickerPhotos(prev => ({ ...prev, [sessionId]: [] }));
+      setInteriorPhotos(prev => ({ ...prev, [sessionId]: [] }));
+      setExteriorPhotos(prev => ({ ...prev, [sessionId]: [] }));
+      toast({ title: 'Photos Uploaded', description: 'VIN sticker and vehicle photos uploaded.' });
+    } catch (e: any) {
+      toast({ title: 'Upload Failed', description: e.message || 'Failed to upload photos', variant: 'destructive' });
+    }
+  };
+
+  const handleReschedule = async (sessionId: string, ticketId: string) => {
+    const reason = rescheduleReason[sessionId];
+    const date = rescheduleDate[sessionId];
+    if (!date) {
+      toast({ title: 'Error', description: 'Please select a reschedule date/time', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ reschedule_date: new Date(date).toISOString(), reschedule_reason: reason || null, not_in_shop_reason: vehicleLocationReason[sessionId] || null, updated_at: new Date().toISOString() })
+        .eq('id', ticketId);
+      if (error) throw error;
+
+      // Send reminders to customer, employee, and first admin
+      const userId = workSessions.find(s => s.id === sessionId)?.ticket.user_id;
+      const employeeUserId = user?.id;
+      let adminId: string | null = null;
+      const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(1);
+      if (admins && admins.length > 0) adminId = admins[0].id;
+
+      const inserts: any[] = [];
+      if (userId) inserts.push({ user_id: userId, type: 'vehicle_reschedule_reminder', title: 'Vehicle Rescheduled', message: 'Your vehicle is scheduled to return for service.', metadata: { ticket_id: ticketId, reschedule_date: date } });
+      if (employeeUserId) inserts.push({ user_id: employeeUserId, type: 'vehicle_reschedule_reminder', title: 'Vehicle Rescheduled', message: 'A vehicle has been rescheduled.', metadata: { ticket_id: ticketId, reschedule_date: date } });
+      if (adminId) inserts.push({ user_id: adminId, type: 'vehicle_reschedule_reminder', title: 'Vehicle Rescheduled', message: 'A vehicle has been rescheduled.', metadata: { ticket_id: ticketId, reschedule_date: date } });
+      if (inserts.length > 0) {
+        await supabase.from('notifications').insert(inserts);
+      }
+
+      setWorkSessions(prev => prev.map(s => s.id === sessionId ? ({
+        ...s,
+        ticket: {
+          ...s.ticket,
+          vehicle: { ...s.ticket.vehicle, expected_return_date: date }
+        }
+      }) : s));
+
+      toast({ title: 'Rescheduled', description: 'Reschedule date saved and reminders scheduled.' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to reschedule', variant: 'destructive' });
+    }
+  };
+
+  const fetchUpcomingReturns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          id,
+          ticket_number,
+          description,
+          reschedule_date,
+          reschedule_reason,
+          vehicles (
+            make,
+            model,
+            year,
+            license_no
+          ),
+          profiles (
+            name,
+            phone
+          )
+        `)
+        .not('reschedule_date', 'is', null)
+        .order('reschedule_date', { ascending: true });
+
+      if (error) throw error;
+      setUpcomingReturns(data || []);
+    } catch (e: any) {
+      console.error('Error fetching upcoming returns:', e);
+    }
+  };
+
+  const printIssue = (session: WorkSession) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Issue Report - ${session.ticket['ticket_number'] || session.ticket.id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+          .section { margin-bottom: 20px; }
+          .label { font-weight: bold; margin-bottom: 5px; }
+          .content { margin-left: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Issue Report</h1>
+          <p><strong>Ticket Number:</strong> ${session.ticket['ticket_number'] || session.ticket.id}</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+        
+        <div class="section">
+          <div class="label">Vehicle Information:</div>
+          <div class="content">
+            <p><strong>Vehicle:</strong> ${session.ticket.vehicle.year} ${session.ticket.vehicle.make} ${session.ticket.vehicle.model}</p>
+            <p><strong>Registration:</strong> ${session.ticket.vehicle.reg_no}</p>
+            <p><strong>License:</strong> ${session.ticket.vehicle.license_no || 'N/A'}</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Customer Information:</div>
+          <div class="content">
+            <p><strong>Name:</strong> ${session.ticket.customer_name}</p>
+            <p><strong>Phone:</strong> ${session.ticket.customer_phone}</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Issue Description:</div>
+          <div class="content">
+            <p>${session.ticket.description}</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Work Status:</div>
+          <div class="content">
+            <p><strong>Status:</strong> ${session.status.replace('_', ' ').toUpperCase()}</p>
+            ${session.started_at ? `<p><strong>Started:</strong> ${new Date(session.started_at).toLocaleString()}</p>` : ''}
+            ${session.ended_at ? `<p><strong>Completed:</strong> ${new Date(session.ended_at).toLocaleString()}</p>` : ''}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  const printDamageLog = (session: WorkSession) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const damageLogsForSession = damageLogs[session.id] || [];
+    
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Damage Log - ${session.ticket['ticket_number'] || session.ticket.id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+          .section { margin-bottom: 20px; }
+          .label { font-weight: bold; margin-bottom: 5px; }
+          .content { margin-left: 10px; }
+          .damage-entry { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+          .damage-type { font-weight: bold; color: #d32f2f; }
+          .damage-old { font-weight: bold; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Damage Log Report</h1>
+          <p><strong>Ticket Number:</strong> ${session.ticket['ticket_number'] || session.ticket.id}</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+        
+        <div class="section">
+          <div class="label">Vehicle Information:</div>
+          <div class="content">
+            <p><strong>Vehicle:</strong> ${session.ticket.vehicle.year} ${session.ticket.vehicle.make} ${session.ticket.vehicle.model}</p>
+            <p><strong>Registration:</strong> ${session.ticket.vehicle.reg_no}</p>
+            <p><strong>License:</strong> ${session.ticket.vehicle.license_no || 'N/A'}</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Damage Entries:</div>
+          <div class="content">
+            ${damageLogsForSession.length > 0 ? 
+              damageLogsForSession.map(log => `
+                <div class="damage-entry">
+                  <div class="${log.is_new_damage ? 'damage-type' : 'damage-old'}">
+                    ${log.is_new_damage ? 'NEW DAMAGE' : 'PREVIOUS DAMAGE'} - ${new Date(log.logged_at).toLocaleDateString()}
+                  </div>
+                  <p><strong>Description:</strong> ${log.description}</p>
+                  ${log.photo_ids && log.photo_ids.length > 0 ? `<p><strong>Photos:</strong> ${log.photo_ids.length} photo(s) attached</p>` : ''}
+                </div>
+              `).join('') : 
+              '<p>No damage entries recorded for this vehicle.</p>'
+            }
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const syncUpdatesToProfiles = async (sessionId: string, vehicleId: string, ticketId: string) => {
     try {
       // Get current session data
@@ -666,6 +971,40 @@ export const EmployeeWorkManagement: React.FC = () => {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
+      {/* Upcoming Returns */}
+      {upcomingReturns.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">📅 Upcoming Vehicle Returns</CardTitle>
+            <CardDescription>Vehicles scheduled to return to the shop</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {upcomingReturns.slice(0, 5).map((returnItem) => (
+                <div key={returnItem.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                  <div>
+                    <div className="font-medium">
+                      {returnItem.vehicles?.year} {returnItem.vehicles?.make} {returnItem.vehicles?.model}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {returnItem.profiles?.name} • {returnItem.vehicles?.license_no}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {new Date(returnItem.reschedule_date).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {returnItem.ticket_number}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 md:gap-6">
         {workSessions.length === 0 ? (
           <Card>
@@ -699,6 +1038,31 @@ export const EmployeeWorkManagement: React.FC = () => {
                   </div>
                   <div>
                     <strong>Customer Phone:</strong> {session.ticket.customer_phone}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <Button size="sm" variant="outline" onClick={() => setShowIssueDialog(prev => ({ ...prev, [session.id]: true }))}>✏️ Edit Issue</Button>
+                      <Button size="sm" variant="outline" onClick={() => printIssue(session)}>🖨️ Print Issue</Button>
+                      <span className="text-xs text-muted-foreground">Ticket: {session.ticket['ticket_number'] || session.ticket.id}</span>
+                    </div>
+                    <Dialog open={showIssueDialog[session.id] || false} onOpenChange={(open) => setShowIssueDialog(prev => ({ ...prev, [session.id]: open }))}>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Edit Customer Issue</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Textarea
+                            value={issueEdits[session.id] ?? session.ticket.description}
+                            onChange={(e) => setIssueEdits(prev => ({ ...prev, [session.id]: e.target.value }))}
+                            rows={4}
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setShowIssueDialog(prev => ({ ...prev, [session.id]: false }))}>Cancel</Button>
+                            <Button onClick={() => handleSaveIssue(session.id, session.ticket.id)}>Save</Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                   {session.started_at && (
                     <div>
@@ -862,6 +1226,20 @@ export const EmployeeWorkManagement: React.FC = () => {
                         value={expectedReturnDate[session.id] || ''}
                         onChange={(e) => setExpectedReturnDate(prev => ({ ...prev, [session.id]: e.target.value }))}
                       />
+                      <Input
+                        type="datetime-local"
+                        placeholder="Reschedule date"
+                        value={rescheduleDate[session.id] || ''}
+                        onChange={(e) => setRescheduleDate(prev => ({ ...prev, [session.id]: e.target.value }))}
+                      />
+                      <Input
+                        placeholder="Reschedule reason (optional)"
+                        value={rescheduleReason[session.id] || ''}
+                        onChange={(e) => setRescheduleReason(prev => ({ ...prev, [session.id]: e.target.value }))}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleReschedule(session.id, session.ticket.id)}>Save Reschedule & Notify</Button>
+                      </div>
                     </div>
                   )}
 
@@ -876,16 +1254,24 @@ export const EmployeeWorkManagement: React.FC = () => {
                 <div className="space-y-3 pt-4 border-t">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Damage Log</Label>
-                    <Dialog open={showDamageDialog[session.id] || false} onOpenChange={(open) => setShowDamageDialog(prev => ({ ...prev, [session.id]: open }))}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => fetchDamageLogs(session.ticket.vehicle.id, session.id)}
-                        >
-                          📝 Add Damage Entry
-                        </Button>
-                      </DialogTrigger>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => printDamageLog(session)}
+                      >
+                        🖨️ Print Damage Log
+                      </Button>
+                      <Dialog open={showDamageDialog[session.id] || false} onOpenChange={(open) => setShowDamageDialog(prev => ({ ...prev, [session.id]: open }))}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => fetchDamageLogs(session.ticket.vehicle.id, session.id)}
+                          >
+                            📝 Add Damage Entry
+                          </Button>
+                        </DialogTrigger>
                       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Add Damage Log Entry</DialogTitle>
@@ -1133,6 +1519,43 @@ export const EmployeeWorkManagement: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Vehicle Details & Photos */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Vehicle Details</Label>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Input placeholder="VIN" value={(vehicleEdits[session.id]?.vin) ?? (session.ticket.vehicle as any)['vin'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), vin: e.target.value } }))} />
+                    <Input placeholder="Engine Size" value={(vehicleEdits[session.id]?.engine_size) ?? (session.ticket.vehicle as any)['engine_size'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), engine_size: e.target.value } }))} />
+                    <Input placeholder="Mileage" type="number" value={(vehicleEdits[session.id]?.mileage) ?? String((session.ticket.vehicle as any)['mileage'] ?? '')} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), mileage: e.target.value } }))} />
+                    <Input placeholder="Trim Code" value={(vehicleEdits[session.id]?.trim_code) ?? (session.ticket.vehicle as any)['trim_code'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), trim_code: e.target.value } }))} />
+                    <Input placeholder="Drivetrain" value={(vehicleEdits[session.id]?.drivetrain) ?? (session.ticket.vehicle as any)['drivetrain'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), drivetrain: e.target.value } }))} />
+                    <Button variant="outline" onClick={() => handleSaveVehicleDetails(session.id, session.ticket.vehicle.id)}>Save Vehicle</Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <Label>VIN Sticker</Label>
+                      <div className="mt-2">
+                        <Input type="file" accept="image/*" capture="environment" onChange={(e) => setVinStickerPhotos(prev => ({ ...prev, [session.id]: e.target.files ? Array.from(e.target.files) : [] }))} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Interior Photos</Label>
+                      <div className="mt-2">
+                        <Input type="file" accept="image/*" multiple capture="environment" onChange={(e) => setInteriorPhotos(prev => ({ ...prev, [session.id]: e.target.files ? Array.from(e.target.files) : [] }))} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Exterior Photos</Label>
+                      <div className="mt-2">
+                        <Input type="file" accept="image/*" multiple capture="environment" onChange={(e) => setExteriorPhotos(prev => ({ ...prev, [session.id]: e.target.files ? Array.from(e.target.files) : [] }))} />
+                      </div>
+                    </div>
+                  </div>
+                  <Button className="mt-2" onClick={() => handleUploadVehiclePhotos(session.id, session.ticket.vehicle.id)}>Upload Selected Photos</Button>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex flex-col space-y-3 pt-4 border-t">
                   {session.status === 'not_started' && (
@@ -1220,7 +1643,7 @@ export const EmployeeWorkManagement: React.FC = () => {
 
                   {session.status === 'completed' && session.notes && (
                     <div className="bg-muted p-3 rounded text-sm">
-                      <strong>Work Notes:</strong> {session.notes}
+                      <strong>Work Notes:</strong> {session.notes || 'No notes available'}
                     </div>
                   )}
                 </div>

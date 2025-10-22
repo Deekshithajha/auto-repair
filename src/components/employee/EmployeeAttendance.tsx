@@ -37,9 +37,6 @@ export const EmployeeAttendance: React.FC = () => {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [todayAttendance, setTodayAttendance] = useState<TodayAttendance | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showNotesDialog, setShowNotesDialog] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [notes, setNotes] = useState('');
   const [employeeId, setEmployeeId] = useState<string>('');
 
   useEffect(() => {
@@ -140,120 +137,7 @@ export const EmployeeAttendance: React.FC = () => {
     }
   };
 
-  const handleClockIn = async () => {
-    if (!employeeId) return;
-
-    try {
-      const now = new Date().toISOString();
-      const today = now.split('T')[0];
-
-      const { error } = await supabase
-        .from('attendance')
-        .upsert({
-          employee_id: employeeId,
-          date: today,
-          clock_in: now,
-          status: 'present',
-          total_hours: 0
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Clocked In",
-        description: "You have successfully clocked in"
-      });
-
-      fetchTodayAttendance();
-      fetchAttendanceRecords();
-
-    } catch (error: any) {
-      console.error('Error clocking in:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to clock in",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleClockOut = async () => {
-    if (!employeeId || !todayAttendance?.clockInTime) return;
-
-    try {
-      const now = new Date().toISOString();
-      const today = now.split('T')[0];
-      
-      // Calculate total hours
-      const clockInTime = new Date(todayAttendance.clockInTime);
-      const clockOutTime = new Date(now);
-      const totalHours = (clockOutTime.getTime() - clockInTime.getTime()) / (1000 * 60 * 60);
-
-      const { error } = await supabase
-        .from('attendance')
-        .update({
-          clock_out: now,
-          total_hours: totalHours,
-          updated_at: now
-        })
-        .eq('employee_id', employeeId)
-        .eq('date', today);
-
-      if (error) throw error;
-
-      toast({
-        title: "Clocked Out",
-        description: `You have successfully clocked out. Total hours: ${totalHours.toFixed(2)}`
-      });
-
-      fetchTodayAttendance();
-      fetchAttendanceRecords();
-
-    } catch (error: any) {
-      console.error('Error clocking out:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to clock out",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleUpdateAttendance = async (date: string, status: string, notes: string) => {
-    if (!employeeId) return;
-
-    try {
-      const { error } = await supabase
-        .from('attendance')
-        .upsert({
-          employee_id: employeeId,
-          date: date,
-          status: status,
-          notes: notes || null,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Attendance record updated successfully"
-      });
-
-      setShowNotesDialog(false);
-      setSelectedDate('');
-      setNotes('');
-      fetchAttendanceRecords();
-
-    } catch (error: any) {
-      console.error('Error updating attendance:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update attendance",
-        variant: "destructive"
-      });
-    }
-  };
+  // Attendance is now admin-controlled - employees can only view
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -339,24 +223,13 @@ export const EmployeeAttendance: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex justify-center gap-4 mt-6">
-            {!todayAttendance?.isClockedIn ? (
-              <Button 
-                onClick={handleClockIn}
-                className="bg-green-600 hover:bg-green-700"
-                size="lg"
-              >
-                🕐 Clock In
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleClockOut}
-                className="bg-red-600 hover:bg-red-700"
-                size="lg"
-              >
-                🕐 Clock Out
-              </Button>
-            )}
+          <div className="text-center mt-6 p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              ⚠️ Attendance is managed by your administrator
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Contact your admin to update attendance records
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -430,17 +303,9 @@ export const EmployeeAttendance: React.FC = () => {
                       <div className="font-medium">{record.total_hours.toFixed(1)}h</div>
                       <div className="text-sm text-muted-foreground">Total Hours</div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedDate(record.date);
-                        setNotes(record.notes || '');
-                        setShowNotesDialog(true);
-                      }}
-                    >
-                      📝
-                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      Admin Managed
+                    </span>
                   </div>
                 </div>
               ))
@@ -453,58 +318,6 @@ export const EmployeeAttendance: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Notes Dialog */}
-      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Attendance</DialogTitle>
-            <DialogDescription>
-              Add notes or update status for {selectedDate && new Date(selectedDate).toLocaleDateString()}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                className="w-full p-2 border border-input rounded-md"
-                defaultValue="present"
-              >
-                <option value="present">Present</option>
-                <option value="absent">Absent</option>
-                <option value="late">Late</option>
-                <option value="half_day">Half Day</option>
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add any notes about your attendance..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowNotesDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => {
-                  const statusSelect = document.getElementById('status') as HTMLSelectElement;
-                  handleUpdateAttendance(selectedDate, statusSelect.value, notes);
-                }}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Update
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

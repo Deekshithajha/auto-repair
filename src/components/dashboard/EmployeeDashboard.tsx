@@ -35,8 +35,6 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
         return renderAttendancePage();
       case 'profile':
         return renderProfilePage();
-      case 'settings':
-        return renderSettingsPage();
       default:
         return renderAssignmentsPage();
     }
@@ -70,18 +68,6 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
                           </div>
   );
 
-  const renderSettingsPage = () => (
-            <div className="space-y-4 sm:space-y-6">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Settings</h2>
-        <p className="text-muted-foreground text-sm sm:text-base">Manage your account settings</p>
-      </div>
-      {/* Settings content will be implemented here */}
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Settings functionality coming soon...</p>
-                  </div>
-    </div>
-  );
 
   const handleTicketCreated = (ticket: any) => {
     setShowCreateTicket(false);
