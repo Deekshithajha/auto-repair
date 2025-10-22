@@ -16,6 +16,7 @@ interface Profile {
   name: string;
   phone?: string;
   email?: string;
+  customer_id?: string;
   dob_month?: number;
   address_line1?: string;
   address_line2?: string;
@@ -64,6 +65,7 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
     name: '',
     phone: '',
     email: '',
+    customer_id: '',
     dob_month: '',
     address_line1: '',
     address_line2: '',
@@ -104,6 +106,7 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
         name: typedProfile.name,
         phone: typedProfile.phone || '',
         email: typedProfile.email || '',
+        customer_id: typedProfile.customer_id || '',
         dob_month: typedProfile.dob_month?.toString() || '',
         address_line1: typedProfile.address_line1 || '',
         address_line2: typedProfile.address_line2 || '',
@@ -150,6 +153,7 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
         name: formData.name,
         phone: formData.phone || null,
         email: formData.email || null,
+        customer_id: formData.customer_id || null,
         dob_month: formData.dob_month ? parseInt(formData.dob_month) : null,
         address_line1: formData.address_line1 || null,
         address_line2: formData.address_line2 || null,
@@ -290,6 +294,16 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   disabled={!isEditing}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Customer ID</Label>
+                <Input
+                  value={formData.customer_id}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customer_id: e.target.value }))}
+                  disabled={!isEditing}
+                  placeholder="Auto-generated or custom ID"
                 />
               </div>
 

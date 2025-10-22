@@ -13,6 +13,8 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
+  license_no?: string;
+  is_active: boolean;
 }
 
 interface CreateTicketDialogProps {
@@ -28,6 +30,8 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
 }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
+  const [vehicleSelectionType, setVehicleSelectionType] = useState<'existing' | 'new'>('existing');
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -38,7 +42,31 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   });
   const [photos, setPhotos] = useState<File[]>([]);
 
-  // Remove fetchVehicles since we're using text input now
+  // Fetch user's registered vehicles
+  const fetchVehicles = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setVehicles(data || []);
+    } catch (error: any) {
+      console.error('Error fetching vehicles:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchVehicles();
+    }
+  }, [open]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -68,13 +96,25 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.make || !formData.model || !formData.description || !formData.license_no) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields (make, model, year, license plate, description)",
-        variant: "destructive"
-      });
-      return;
+    // Validate based on selection type
+    if (vehicleSelectionType === 'existing') {
+      if (!selectedVehicleId || !formData.description) {
+        toast({
+          title: "Error",
+          description: "Please select a vehicle and provide a description",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else {
+      if (!formData.make || !formData.model || !formData.description || !formData.license_no) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields (make, model, year, license plate, description)",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setLoading(true);
@@ -84,26 +124,35 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error('User not authenticated');
 
-      // Create or find vehicle first
-      const { data: vehicle, error: vehicleError } = await supabase
-        .from('vehicles')
-        .insert([{
-          make: formData.make,
-          model: formData.model,
-          year: formData.year,
-          license_no: formData.license_no,
-          user_id: user.id
-        }])
-        .select()
-        .single();
+      let vehicleId: string;
 
-      if (vehicleError) throw vehicleError;
+      if (vehicleSelectionType === 'existing') {
+        // Use selected existing vehicle
+        vehicleId = selectedVehicleId;
+      } else {
+        // Create new vehicle
+        const { data: vehicle, error: vehicleError } = await supabase
+          .from('vehicles')
+          .insert([{
+            make: formData.make,
+            model: formData.model,
+            year: formData.year,
+            license_no: formData.license_no,
+            user_id: user.id,
+            is_active: true
+          }])
+          .select()
+          .single();
+
+        if (vehicleError) throw vehicleError;
+        vehicleId = vehicle.id;
+      }
 
       // Create the ticket
       const { data: ticket, error: ticketError } = await supabase
         .from('tickets')
         .insert([{
-          vehicle_id: vehicle.id,
+          vehicle_id: vehicleId,
           description: formData.description,
           preferred_pickup_time: formData.preferred_pickup_time || null,
           user_id: user.id
@@ -133,6 +182,8 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         preferred_pickup_time: ''
       });
       setPhotos([]);
+      setSelectedVehicleId('');
+      setVehicleSelectionType('existing');
       
       onTicketCreated();
     } catch (error: any) {
@@ -152,10 +203,13 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
       make: '',
       model: '',
       year: new Date().getFullYear(),
+      license_no: '',
       description: '',
       preferred_pickup_time: ''
     });
     setPhotos([]);
+    setSelectedVehicleId('');
+    setVehicleSelectionType('existing');
     onOpenChange(false);
   };
 
@@ -170,60 +224,109 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          {/* Vehicle Information */}
+          {/* Vehicle Selection Type */}
           <div className="space-y-3 sm:space-y-4">
-            <Label className="text-sm sm:text-base font-semibold">Vehicle Information *</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="make" className="text-sm">Make</Label>
-                <Input
-                  id="make"
-                  value={formData.make}
-                  onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                  placeholder="Toyota, Honda, etc."
-                  required
-                  className="h-10 sm:h-11 text-sm sm:text-base"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="model" className="text-sm">Model</Label>
-                <Input
-                  id="model"
-                  value={formData.model}
-                  onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                  placeholder="Camry, Civic, etc."
-                  required
-                  className="h-10 sm:h-11 text-sm sm:text-base"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="year" className="text-sm">Year</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  value={formData.year}
-                  onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-                  min="1900"
-                  max={new Date().getFullYear() + 1}
-                  required
-                  className="h-10 sm:h-11 text-sm sm:text-base"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="license" className="text-sm">License Plate</Label>
-                <Input
-                  id="license"
-                  value={formData.license_no}
-                  onChange={(e) => setFormData(prev => ({ ...prev, license_no: e.target.value.toUpperCase() }))}
-                  placeholder="ABC-1234"
-                  required
-                  className="h-10 sm:h-11 text-sm sm:text-base"
-                />
-              </div>
+            <Label className="text-sm sm:text-base font-semibold">Vehicle Selection *</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant={vehicleSelectionType === 'existing' ? 'default' : 'outline'}
+                onClick={() => setVehicleSelectionType('existing')}
+                className="h-10 sm:h-11"
+              >
+                🚗 Use Registered Vehicle
+              </Button>
+              <Button
+                type="button"
+                variant={vehicleSelectionType === 'new' ? 'default' : 'outline'}
+                onClick={() => setVehicleSelectionType('new')}
+                className="h-10 sm:h-11"
+              >
+                ➕ Add New Vehicle
+              </Button>
             </div>
           </div>
+
+          {/* Vehicle Selection */}
+          {vehicleSelectionType === 'existing' ? (
+            <div className="space-y-2">
+              <Label htmlFor="vehicle-select" className="text-sm">Select Vehicle *</Label>
+              {vehicles.length > 0 ? (
+                <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
+                  <SelectTrigger className="h-10 sm:h-11 text-sm sm:text-base">
+                    <SelectValue placeholder="Choose your vehicle..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.license_no && `(${vehicle.license_no})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="p-4 border border-dashed border-muted-foreground/25 rounded-lg text-center">
+                  <div className="text-2xl mb-2">🚗</div>
+                  <p className="text-sm text-muted-foreground mb-3">No vehicles registered yet</p>
+                  <p className="text-xs text-muted-foreground">Switch to "Add New Vehicle" to register your first vehicle</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3 sm:space-y-4">
+              <Label className="text-sm sm:text-base font-semibold">New Vehicle Information *</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="make" className="text-sm">Make</Label>
+                  <Input
+                    id="make"
+                    value={formData.make}
+                    onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
+                    placeholder="Toyota, Honda, etc."
+                    required
+                    className="h-10 sm:h-11 text-sm sm:text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="model" className="text-sm">Model</Label>
+                  <Input
+                    id="model"
+                    value={formData.model}
+                    onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                    placeholder="Camry, Civic, etc."
+                    required
+                    className="h-10 sm:h-11 text-sm sm:text-base"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="year" className="text-sm">Year</Label>
+                  <Input
+                    id="year"
+                    type="number"
+                    value={formData.year}
+                    onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    required
+                    className="h-10 sm:h-11 text-sm sm:text-base"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="license" className="text-sm">License Plate</Label>
+                  <Input
+                    id="license"
+                    value={formData.license_no}
+                    onChange={(e) => setFormData(prev => ({ ...prev, license_no: e.target.value.toUpperCase() }))}
+                    placeholder="ABC-1234"
+                    required
+                    className="h-10 sm:h-11 text-sm sm:text-base"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Problem Description */}
           <div className="space-y-2">

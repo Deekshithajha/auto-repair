@@ -60,6 +60,7 @@ export const MainLayout: React.FC = () => {
               <Routes>
                 {/* User Routes */}
                 <Route path="/user/tickets" element={profile.role === 'user' ? <UserDashboard activeTab="tickets" /> : <Navigate to="/" />} />
+                <Route path="/user/vehicle-status" element={profile.role === 'user' ? <UserDashboard activeTab="vehicle-status" /> : <Navigate to="/" />} />
                 <Route path="/user/vehicles" element={profile.role === 'user' ? <UserDashboard activeTab="vehicles" /> : <Navigate to="/" />} />
                 <Route path="/user/invoices" element={profile.role === 'user' ? <UserDashboard activeTab="invoices" /> : <Navigate to="/" />} />
                 <Route path="/user/notifications" element={profile.role === 'user' ? <UserDashboard activeTab="notifications" /> : <Navigate to="/" />} />

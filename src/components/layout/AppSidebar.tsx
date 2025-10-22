@@ -50,7 +50,8 @@ export function AppSidebar() {
       default: // user
         return [
           { title: 'My Tickets', url: '/user/tickets', icon: '🎫' },
-          { title: 'My Vehicle Status', url: '/user/vehicles', icon: '🚗' },
+          { title: 'My Vehicles', url: '/user/vehicles', icon: '🚗' },
+          { title: 'Vehicle Status', url: '/user/vehicle-status', icon: '📊' },
           { title: 'Invoices', url: '/user/invoices', icon: '🧾' },
           { title: 'Notifications', url: '/user/notifications', icon: '🔔' },
           { title: 'Profile', url: '/user/profile', icon: '👤' },

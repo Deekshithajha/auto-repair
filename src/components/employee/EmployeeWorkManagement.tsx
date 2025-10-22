@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface WorkSession {
   id: string;
@@ -17,16 +18,21 @@ interface WorkSession {
   started_at: string;
   ended_at: string;
   notes: string;
+  on_hold_reason?: string;
   ticket: {
     id: string;
     description: string;
     status: string;
     user_id: string;
     vehicle: {
+      id: string;
       make: string;
       model: string;
       year: number;
       reg_no: string;
+      license_no?: string;
+      location_status?: string;
+      expected_return_date?: string;
     };
     customer_name: string;
     customer_phone: string;
@@ -39,6 +45,17 @@ interface PartUsed {
   unit_price: number;
 }
 
+interface DamageLogEntry {
+  id: string;
+  vehicle_id: string;
+  description: string;
+  logged_at: string;
+  logged_by: string;
+  ticket_id?: string;
+  photo_ids?: string[];
+  is_new_damage?: boolean;
+}
+
 export const EmployeeWorkManagement: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -47,6 +64,19 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [workNotes, setWorkNotes] = useState<Record<string, string>>({});
   const [partsUsed, setPartsUsed] = useState<Record<string, PartUsed[]>>({});
   const [newPart, setNewPart] = useState<Record<string, PartUsed>>({});
+  const [vehicleLocationStatus, setVehicleLocationStatus] = useState<Record<string, string>>({});
+  const [vehicleLocationReason, setVehicleLocationReason] = useState<Record<string, string>>({});
+  const [expectedReturnDate, setExpectedReturnDate] = useState<Record<string, string>>({});
+  const [onHoldReason, setOnHoldReason] = useState<Record<string, string>>({});
+  const [showOnHoldDialog, setShowOnHoldDialog] = useState<Record<string, boolean>>({});
+  const [damageLogs, setDamageLogs] = useState<Record<string, DamageLogEntry[]>>({});
+  const [newDamageDescription, setNewDamageDescription] = useState<Record<string, string>>({});
+  const [damagePhotos, setDamagePhotos] = useState<Record<string, File[]>>({});
+  const [showDamageDialog, setShowDamageDialog] = useState<Record<string, boolean>>({});
+  const [editingDamageLog, setEditingDamageLog] = useState<DamageLogEntry | null>(null);
+  const [showEditDamageDialog, setShowEditDamageDialog] = useState<Record<string, boolean>>({});
+  const [editDamageDescription, setEditDamageDescription] = useState<Record<string, string>>({});
+  const [editDamagePhotos, setEditDamagePhotos] = useState<Record<string, File[]>>({});
 
   // Dummy data for demonstration
   const dummyWorkSessions: WorkSession[] = [
@@ -63,10 +93,13 @@ export const EmployeeWorkManagement: React.FC = () => {
         status: 'pending',
         user_id: 'user-1',
         vehicle: {
+          id: 'vehicle-1',
           make: 'Toyota',
           model: 'Camry',
           year: 2020,
-          reg_no: 'ABC-1234'
+          reg_no: 'ABC-1234',
+          license_no: 'ABC-1234',
+          location_status: 'in_shop'
         },
         customer_name: 'John Smith',
         customer_phone: '(555) 123-4567'
@@ -85,10 +118,13 @@ export const EmployeeWorkManagement: React.FC = () => {
         status: 'in_progress',
         user_id: 'user-2',
         vehicle: {
+          id: 'vehicle-2',
           make: 'Honda',
           model: 'Civic',
           year: 2019,
-          reg_no: 'XYZ-5678'
+          reg_no: 'XYZ-5678',
+          license_no: 'XYZ-5678',
+          location_status: 'in_shop'
         },
         customer_name: 'Sarah Johnson',
         customer_phone: '(555) 234-5678'
@@ -213,10 +249,400 @@ export const EmployeeWorkManagement: React.FC = () => {
         : session
     ));
 
+    // Sync updates to database and profiles
+    const session = workSessions.find(s => s.id === sessionId);
+    if (session) {
+      await syncUpdatesToProfiles(sessionId, session.ticket.vehicle.id, ticketId);
+    }
+
       toast({
         title: "Success",
         description: "Work completed! Customer has been notified.",
       });
+  };
+
+  const handleOnHold = async (sessionId: string, reason?: string) => {
+    // Update dummy data instead of database
+    setWorkSessions(prev => prev.map(session => 
+      session.id === sessionId 
+        ? { 
+            ...session, 
+            status: 'on_hold',
+            on_hold_reason: reason || null
+          }
+        : session
+    ));
+
+    // Sync updates to database and profiles
+    const session = workSessions.find(s => s.id === sessionId);
+    if (session) {
+      await syncUpdatesToProfiles(sessionId, session.ticket.vehicle.id, session.ticket_id);
+    }
+
+    toast({
+      title: "Work Put On Hold",
+      description: reason ? `Work put on hold: ${reason}` : "Work has been put on hold",
+    });
+
+    // Close dialog
+    setShowOnHoldDialog(prev => ({ ...prev, [sessionId]: false }));
+  };
+
+  const handleVehicleLocationUpdate = async (vehicleId: string, sessionId: string) => {
+    const locationStatus = vehicleLocationStatus[sessionId];
+    const reason = vehicleLocationReason[sessionId];
+    const returnDate = expectedReturnDate[sessionId];
+
+    // Update dummy data instead of database
+    setWorkSessions(prev => prev.map(session => 
+      session.id === sessionId 
+        ? { 
+            ...session,
+            ticket: {
+              ...session.ticket,
+              vehicle: {
+                ...session.ticket.vehicle,
+                location_status: locationStatus,
+                expected_return_date: returnDate || null
+              }
+            }
+          }
+        : session
+    ));
+
+    // Sync updates to database and profiles
+    const session = workSessions.find(s => s.id === sessionId);
+    if (session) {
+      await syncUpdatesToProfiles(sessionId, vehicleId, session.ticket_id);
+    }
+
+    toast({
+      title: "Vehicle Location Updated",
+      description: `Vehicle location updated to ${locationStatus === 'in_shop' ? 'In Shop' : 'Not In Shop'}`,
+    });
+  };
+
+  const handleDamagePhotoUpload = (sessionId: string, files: FileList | null) => {
+    if (!files) return;
+    const fileArray = Array.from(files);
+    setDamagePhotos(prev => ({
+      ...prev,
+      [sessionId]: [...(prev[sessionId] || []), ...fileArray].slice(0, 5) // Limit to 5 photos
+    }));
+  };
+
+  const removeDamagePhoto = (sessionId: string, index: number) => {
+    setDamagePhotos(prev => ({
+      ...prev,
+      [sessionId]: prev[sessionId]?.filter((_, i) => i !== index) || []
+    }));
+  };
+
+  const handleAddDamageLog = async (sessionId: string, vehicleId: string, ticketId: string) => {
+    const description = newDamageDescription[sessionId];
+    if (!description?.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a damage description",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Upload photos first if any
+      let photoIds: string[] = [];
+      if (damagePhotos[sessionId]?.length > 0) {
+        const uploadPromises = damagePhotos[sessionId].map(async (photo, index) => {
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `damage-${Date.now()}-${index}.${fileExt}`;
+          
+          const { error } = await supabase.storage
+            .from('vehicle-photos')
+            .upload(fileName, photo);
+          
+          if (error) throw error;
+          return fileName;
+        });
+
+        photoIds = await Promise.all(uploadPromises);
+      }
+
+      // Create damage log entry
+      const newDamageEntry: DamageLogEntry = {
+        id: `damage-${Date.now()}`,
+        vehicle_id: vehicleId,
+        description: description.trim(),
+        logged_at: new Date().toISOString(),
+        logged_by: user?.id || '',
+        ticket_id: ticketId,
+        photo_ids: photoIds,
+        is_new_damage: true
+      };
+
+      // Update local state
+      setDamageLogs(prev => ({
+        ...prev,
+        [sessionId]: [newDamageEntry, ...(prev[sessionId] || [])]
+      }));
+
+      // Clear form
+      setNewDamageDescription(prev => ({ ...prev, [sessionId]: '' }));
+      setDamagePhotos(prev => ({ ...prev, [sessionId]: [] }));
+      setShowDamageDialog(prev => ({ ...prev, [sessionId]: false }));
+
+      toast({
+        title: "Damage Log Added",
+        description: "Damage entry has been recorded successfully",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add damage log",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchDamageLogs = async (vehicleId: string, sessionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('damage_log')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .order('logged_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Mark old vs new damage (new = from current ticket, old = from previous tickets)
+      const currentTicketId = workSessions.find(s => s.id === sessionId)?.ticket_id;
+      const processedLogs = (data || []).map(log => ({
+        ...log,
+        is_new_damage: log.ticket_id === currentTicketId
+      }));
+
+      setDamageLogs(prev => ({
+        ...prev,
+        [sessionId]: processedLogs
+      }));
+    } catch (error: any) {
+      console.error('Error fetching damage logs:', error);
+    }
+  };
+
+  const handleEditDamageLog = (damageLog: DamageLogEntry, sessionId: string) => {
+    setEditingDamageLog(damageLog);
+    setEditDamageDescription(prev => ({ ...prev, [damageLog.id]: damageLog.description }));
+    setEditDamagePhotos(prev => ({ ...prev, [damageLog.id]: [] }));
+    setShowEditDamageDialog(prev => ({ ...prev, [damageLog.id]: true }));
+  };
+
+  const handleUpdateDamageLog = async (damageLogId: string, sessionId: string) => {
+    const description = editDamageDescription[damageLogId];
+    if (!description?.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a damage description",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Upload new photos if any
+      let photoIds: string[] = [];
+      if (editDamagePhotos[damageLogId]?.length > 0) {
+        const uploadPromises = editDamagePhotos[damageLogId].map(async (photo, index) => {
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `damage-${Date.now()}-${index}.${fileExt}`;
+          
+          const { error } = await supabase.storage
+            .from('vehicle-photos')
+            .upload(fileName, photo);
+          
+          if (error) throw error;
+          return fileName;
+        });
+
+        photoIds = await Promise.all(uploadPromises);
+      }
+
+      // Update damage log entry in database
+      const { error } = await supabase
+        .from('damage_log')
+        .update({
+          description: description.trim(),
+          photo_ids: photoIds.length > 0 ? photoIds : undefined,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', damageLogId);
+
+      if (error) throw error;
+
+      // Update local state
+      setDamageLogs(prev => ({
+        ...prev,
+        [sessionId]: prev[sessionId]?.map(log => 
+          log.id === damageLogId 
+            ? { ...log, description: description.trim(), photo_ids: photoIds.length > 0 ? photoIds : log.photo_ids }
+            : log
+        ) || []
+      }));
+
+      // Clear form
+      setEditDamageDescription(prev => ({ ...prev, [damageLogId]: '' }));
+      setEditDamagePhotos(prev => ({ ...prev, [damageLogId]: [] }));
+      setShowEditDamageDialog(prev => ({ ...prev, [damageLogId]: false }));
+      setEditingDamageLog(null);
+
+      toast({
+        title: "Damage Log Updated",
+        description: "Damage entry has been updated successfully",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update damage log",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteDamageLog = async (damageLogId: string, sessionId: string) => {
+    if (!confirm('Are you sure you want to delete this damage log entry?')) return;
+
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('damage_log')
+        .delete()
+        .eq('id', damageLogId);
+
+      if (error) throw error;
+
+      // Update local state
+      setDamageLogs(prev => ({
+        ...prev,
+        [sessionId]: prev[sessionId]?.filter(log => log.id !== damageLogId) || []
+      }));
+
+      toast({
+        title: "Damage Log Deleted",
+        description: "Damage entry has been deleted successfully",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete damage log",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditDamagePhotoUpload = (damageLogId: string, files: FileList | null) => {
+    if (!files) return;
+    const fileArray = Array.from(files);
+    setEditDamagePhotos(prev => ({
+      ...prev,
+      [damageLogId]: [...(prev[damageLogId] || []), ...fileArray].slice(0, 5) // Limit to 5 photos
+    }));
+  };
+
+  const removeEditDamagePhoto = (damageLogId: string, index: number) => {
+    setEditDamagePhotos(prev => ({
+      ...prev,
+      [damageLogId]: prev[damageLogId]?.filter((_, i) => i !== index) || []
+    }));
+  };
+
+  const syncUpdatesToProfiles = async (sessionId: string, vehicleId: string, ticketId: string) => {
+    try {
+      // Get current session data
+      const session = workSessions.find(s => s.id === sessionId);
+      if (!session) return;
+
+      // Update vehicle location status in database
+      const locationStatus = vehicleLocationStatus[sessionId];
+      const reason = vehicleLocationReason[sessionId];
+      const returnDate = expectedReturnDate[sessionId];
+
+      if (locationStatus) {
+        const updateData: any = {
+          location_status: locationStatus,
+          updated_at: new Date().toISOString()
+        };
+
+        if (locationStatus === 'not_in_shop') {
+          if (reason) updateData.location_reason = reason;
+          if (returnDate) updateData.expected_return_date = returnDate;
+        } else {
+          updateData.expected_return_date = null;
+          updateData.location_reason = null;
+        }
+
+        const { error: vehicleError } = await supabase
+          .from('vehicles')
+          .update(updateData)
+          .eq('id', vehicleId);
+
+        if (vehicleError) throw vehicleError;
+      }
+
+      // Update work session status in database
+      const sessionStatus = session.status;
+      const sessionUpdateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (sessionStatus === 'on_hold' && session.on_hold_reason) {
+        sessionUpdateData.on_hold_reason = session.on_hold_reason;
+      }
+
+      if (sessionStatus === 'completed') {
+        sessionUpdateData.ended_at = new Date().toISOString();
+        sessionUpdateData.notes = workNotes[sessionId] || '';
+      }
+
+      if (sessionStatus === 'in_progress') {
+        sessionUpdateData.started_at = new Date().toISOString();
+      }
+
+      const { error: sessionError } = await supabase
+        .from('work_sessions')
+        .update(sessionUpdateData)
+        .eq('id', sessionId);
+
+      if (sessionError) throw sessionError;
+
+      // Update ticket status if work is completed
+      if (sessionStatus === 'completed') {
+        const { error: ticketError } = await supabase
+          .from('tickets')
+          .update({ 
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', ticketId);
+
+        if (ticketError) throw ticketError;
+      }
+
+      toast({
+        title: "Updates Synced",
+        description: "All updates have been synchronized across profiles",
+      });
+
+    } catch (error: any) {
+      console.error('Error syncing updates:', error);
+      toast({
+        title: "Sync Error",
+        description: "Failed to sync updates across profiles",
+        variant: "destructive"
+      });
+    }
   };
 
 
@@ -224,6 +650,7 @@ export const EmployeeWorkManagement: React.FC = () => {
     switch (status) {
       case 'not_started': return 'bg-gray-500';
       case 'in_progress': return 'bg-blue-500';
+      case 'on_hold': return 'bg-yellow-500';
       case 'completed': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
@@ -390,6 +817,322 @@ export const EmployeeWorkManagement: React.FC = () => {
                   </div>
                 )}
 
+                {/* Vehicle Location Status */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Vehicle Location Status</Label>
+                    <Badge variant={session.ticket.vehicle.location_status === 'in_shop' ? 'default' : 'secondary'}>
+                      {session.ticket.vehicle.location_status === 'in_shop' ? 'In Shop' : 'Not In Shop'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select 
+                      value={vehicleLocationStatus[session.id] || session.ticket.vehicle.location_status || 'in_shop'} 
+                      onValueChange={(value) => setVehicleLocationStatus(prev => ({ ...prev, [session.id]: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in_shop">In Shop</SelectItem>
+                        <SelectItem value="not_in_shop">Not In Shop</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Button 
+                      onClick={() => handleVehicleLocationUpdate(session.ticket.vehicle.id, session.id)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      Update
+                    </Button>
+                  </div>
+
+                  {vehicleLocationStatus[session.id] === 'not_in_shop' && (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Reason for not being in shop (optional)"
+                        value={vehicleLocationReason[session.id] || ''}
+                        onChange={(e) => setVehicleLocationReason(prev => ({ ...prev, [session.id]: e.target.value }))}
+                      />
+                      <Input
+                        type="datetime-local"
+                        placeholder="Expected return date"
+                        value={expectedReturnDate[session.id] || ''}
+                        onChange={(e) => setExpectedReturnDate(prev => ({ ...prev, [session.id]: e.target.value }))}
+                      />
+                    </div>
+                  )}
+
+                  {session.ticket.vehicle.expected_return_date && (
+                    <div className="text-sm text-muted-foreground">
+                      Expected return: {new Date(session.ticket.vehicle.expected_return_date).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Damage Log Section */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Damage Log</Label>
+                    <Dialog open={showDamageDialog[session.id] || false} onOpenChange={(open) => setShowDamageDialog(prev => ({ ...prev, [session.id]: open }))}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => fetchDamageLogs(session.ticket.vehicle.id, session.id)}
+                        >
+                          📝 Add Damage Entry
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Add Damage Log Entry</DialogTitle>
+                          <DialogDescription>
+                            Document vehicle damage found during check-in
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="damage-description">Damage Description *</Label>
+                            <Textarea
+                              id="damage-description"
+                              placeholder="Describe the damage in detail..."
+                              value={newDamageDescription[session.id] || ''}
+                              onChange={(e) => setNewDamageDescription(prev => ({ ...prev, [session.id]: e.target.value }))}
+                              rows={4}
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Damage Photos (Optional)</Label>
+                            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
+                              <div className="text-center">
+                                <div className="text-2xl mb-2">📸</div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  Upload photos of the damage (max 5 photos)
+                                </p>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={(e) => handleDamagePhotoUpload(session.id, e.target.files)}
+                                  className="hidden"
+                                  id={`damage-photo-upload-${session.id}`}
+                                />
+                                <Label
+                                  htmlFor={`damage-photo-upload-${session.id}`}
+                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 cursor-pointer"
+                                >
+                                  Choose Photos
+                                </Label>
+                              </div>
+                              
+                              {/* Photo Previews */}
+                              {damagePhotos[session.id]?.length > 0 && (
+                                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {damagePhotos[session.id].map((photo, index) => (
+                                    <div key={index} className="relative">
+                                      <img
+                                        src={URL.createObjectURL(photo)}
+                                        alt={`Damage ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded-md"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
+                                        onClick={() => removeDamagePhoto(session.id, index)}
+                                      >
+                                        <span className="text-xs">✕</span>
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => handleAddDamageLog(session.id, session.ticket.vehicle.id, session.ticket_id)}
+                              disabled={!newDamageDescription[session.id]?.trim()}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Add Damage Entry
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setShowDamageDialog(prev => ({ ...prev, [session.id]: false }))}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    {/* Edit Damage Log Dialog */}
+                    <Dialog open={showEditDamageDialog[editingDamageLog?.id || ''] || false} onOpenChange={(open) => {
+                      if (!open) {
+                        setShowEditDamageDialog(prev => ({ ...prev, [editingDamageLog?.id || '']: false }));
+                        setEditingDamageLog(null);
+                      }
+                    }}>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Edit Damage Log Entry</DialogTitle>
+                          <DialogDescription>
+                            Update the damage description and photos
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-damage-description">Damage Description *</Label>
+                            <Textarea
+                              id="edit-damage-description"
+                              placeholder="Describe the damage in detail..."
+                              value={editDamageDescription[editingDamageLog?.id || ''] || ''}
+                              onChange={(e) => setEditDamageDescription(prev => ({ ...prev, [editingDamageLog?.id || '']: e.target.value }))}
+                              rows={4}
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Additional Photos (Optional)</Label>
+                            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
+                              <div className="text-center">
+                                <div className="text-2xl mb-2">📸</div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  Upload additional photos of the damage (max 5 photos)
+                                </p>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={(e) => handleEditDamagePhotoUpload(editingDamageLog?.id || '', e.target.files)}
+                                  className="hidden"
+                                  id={`edit-damage-photo-upload-${editingDamageLog?.id || ''}`}
+                                />
+                                <Label
+                                  htmlFor={`edit-damage-photo-upload-${editingDamageLog?.id || ''}`}
+                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 cursor-pointer"
+                                >
+                                  Choose Photos
+                                </Label>
+                              </div>
+                              
+                              {/* Photo Previews */}
+                              {editDamagePhotos[editingDamageLog?.id || '']?.length > 0 && (
+                                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {editDamagePhotos[editingDamageLog?.id || ''].map((photo, index) => (
+                                    <div key={index} className="relative">
+                                      <img
+                                        src={URL.createObjectURL(photo)}
+                                        alt={`Damage ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded-md"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
+                                        onClick={() => removeEditDamagePhoto(editingDamageLog?.id || '', index)}
+                                      >
+                                        <span className="text-xs">✕</span>
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => handleUpdateDamageLog(editingDamageLog?.id || '', session.id)}
+                              disabled={!editDamageDescription[editingDamageLog?.id || '']?.trim()}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              Update Damage Entry
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => {
+                                setShowEditDamageDialog(prev => ({ ...prev, [editingDamageLog?.id || '']: false }));
+                                setEditingDamageLog(null);
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  {/* Damage History */}
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {damageLogs[session.id]?.length > 0 ? (
+                      damageLogs[session.id].map((log) => (
+                        <div 
+                          key={log.id} 
+                          className={`p-3 rounded-lg border-l-4 ${
+                            log.is_new_damage 
+                              ? 'bg-red-50 border-red-400' 
+                              : 'bg-gray-50 border-gray-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                log.is_new_damage 
+                                  ? 'bg-red-200 text-red-800' 
+                                  : 'bg-gray-200 text-gray-600'
+                              }`}>
+                                {log.is_new_damage ? 'NEW DAMAGE' : 'PREVIOUS DAMAGE'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(log.logged_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditDamageLog(log, session.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                ✏️
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteDamageLog(log.id, session.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                🗑️
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm">{log.description}</p>
+                          {log.photo_ids && log.photo_ids.length > 0 && (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              📷 {log.photo_ids.length} photo(s) attached
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No damage logs recorded for this vehicle
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex flex-col space-y-3 pt-4 border-t">
                   {session.status === 'not_started' && (
@@ -411,13 +1154,68 @@ export const EmployeeWorkManagement: React.FC = () => {
                         }
                         className="text-sm"
                       />
-                      <Button 
-                        onClick={() => handleFinishWork(session.id, session.ticket_id)}
-                        className="bg-green-600 hover:bg-green-700 text-white w-full"
-                      >
-                        ✅ Finish Work & Notify Customer
-                      </Button>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          onClick={() => handleFinishWork(session.id, session.ticket_id)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          ✅ Finish Work
+                        </Button>
+                        
+                        <Dialog open={showOnHoldDialog[session.id] || false} onOpenChange={(open) => setShowOnHoldDialog(prev => ({ ...prev, [session.id]: open }))}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800">
+                              ⏸️ On Hold
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Put Work On Hold</DialogTitle>
+                              <DialogDescription>
+                                Add a reason for putting this work on hold (optional)
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <Textarea
+                                placeholder="Reason for putting work on hold (optional)"
+                                value={onHoldReason[session.id] || ''}
+                                onChange={(e) => setOnHoldReason(prev => ({ ...prev, [session.id]: e.target.value }))}
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  onClick={() => handleOnHold(session.id, onHoldReason[session.id])}
+                                  className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                                >
+                                  Put On Hold
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setShowOnHoldDialog(prev => ({ ...prev, [session.id]: false }))}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </>
+                  )}
+
+                  {session.status === 'on_hold' && (
+                    <div className="space-y-3">
+                      <div className="bg-yellow-50 p-3 rounded text-sm">
+                        <strong>Work On Hold</strong>
+                        {session.on_hold_reason && <p className="mt-1">Reason: {session.on_hold_reason}</p>}
+                      </div>
+                      <Button 
+                        onClick={() => handleStartWork(session.id, session.ticket_id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                      >
+                        🔄 Resume Work
+                      </Button>
+                    </div>
                   )}
 
                   {session.status === 'completed' && session.notes && (
