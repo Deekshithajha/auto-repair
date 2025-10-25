@@ -1458,9 +1458,10 @@ export const EmployeeWorkManagement: React.FC = () => {
                       </DialogContent>
                     </Dialog>
                   </div>
+                </div>
 
-                  {/* Damage History */}
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                {/* Damage History */}
+                <div className="space-y-2 max-h-40 overflow-y-auto">
                     {damageLogs[session.id]?.length > 0 ? (
                       damageLogs[session.id].map((log) => (
                         <div 
