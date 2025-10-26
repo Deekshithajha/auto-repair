@@ -9,6 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 import { AdminTicketManagement } from '@/components/admin/AdminTicketManagement';
 import { CustomerList } from '@/components/admin/CustomerList';
+import { EmployeeManagement } from '@/components/admin/EmployeeManagement';
+import { LiveMonitor } from '@/components/admin/LiveMonitor';
+import { ReportsAnalytics } from '@/components/admin/ReportsAnalytics';
+import { AuditLogs } from '@/components/admin/AuditLogs';
 import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
@@ -246,61 +250,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
 
           {/* Employees Tab */}
           <TabsContent value="employees">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Employee Management</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Manage employees, attendance, and assignments</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {dummyEmployees.map((employee) => (
-                <Card key={employee.id} className="hover:shadow-elegant transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{employee.name}</CardTitle>
-                      <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
-                        {employee.status}
-                      </Badge>
-                    </div>
-                    <CardDescription className="flex items-center text-xs">
-                      <span className="mr-1">🆔</span>
-                      {employee.employee_id}
-                    </CardDescription>
-              </CardHeader>
-              <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Role:</span>
-                        <span className="text-sm text-muted-foreground">{employee.role}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Department:</span>
-                        <span className="text-sm text-muted-foreground">{employee.department}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Phone:</span>
-                        <span className="text-sm text-muted-foreground">{employee.phone}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Hired:</span>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(employee.hire_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="pt-2 flex space-x-2">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          View Details
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-              </CardContent>
-            </Card>
-              ))}
-            </div>
+            <EmployeeManagement />
           </TabsContent>
 
           {/* Register Tab */}
@@ -325,156 +275,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
 
           {/* Live Monitor Tab */}
           <TabsContent value="monitor">
-            <div>
-              <h2 className="text-2xl font-bold">Real-time Monitor</h2>
-              <p className="text-muted-foreground">See who's working on what in real-time</p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {dummyActiveWork.map((work) => (
-                <Card key={work.id} className="hover:shadow-elegant transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{work.employee}</CardTitle>
-                      <Badge variant={work.status === 'completed' ? 'default' : work.status === 'in_progress' ? 'secondary' : 'outline'}>
-                        {work.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    <CardDescription className="flex items-center text-xs">
-                      <span className="mr-1">🚗</span>
-                      {work.vehicle}
-                    </CardDescription>
-              </CardHeader>
-              <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Task:</span>
-                        <span className="text-sm text-muted-foreground">{work.task}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Started:</span>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(work.start_time).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">ETA:</span>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(work.estimated_completion).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <div className="pt-2">
-                        <Button variant="outline" size="sm" className="w-full">
-                          View Progress
-                        </Button>
-                      </div>
-                </div>
-              </CardContent>
-            </Card>
-              ))}
-            </div>
+            <LiveMonitor />
           </TabsContent>
 
           {/* Reports Tab */}
           <TabsContent value="reports">
-            <div className="space-y-4 sm:space-y-6">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Reports & Analytics</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Business insights and performance metrics</p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {dummyReports.map((report) => (
-                  <Card key={report.id} className="hover:shadow-elegant transition-shadow">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{report.title}</CardTitle>
-                      <CardDescription className="flex items-center text-xs">
-                        <span className="mr-1">📅</span>
-                        {report.period}
-                      </CardDescription>
-              </CardHeader>
-              <CardContent>
-                      <div className="space-y-3">
-                        {report.revenue > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">Revenue:</span>
-                            <span className="text-lg font-bold text-green-600">
-                              ${report.revenue.toFixed(2)}
-                            </span>
-                          </div>
-                        )}
-                        {report.tickets_completed > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Tickets Completed:</span>
-                            <span className="text-sm text-muted-foreground">{report.tickets_completed}</span>
-                          </div>
-                        )}
-                        {report.average_repair_time !== '0 hours' && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Avg Repair Time:</span>
-                            <span className="text-sm text-muted-foreground">{report.average_repair_time}</span>
-                          </div>
-                        )}
-                        {report.top_service !== 'N/A' && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Top Service:</span>
-                            <span className="text-sm text-muted-foreground">{report.top_service}</span>
-                          </div>
-                        )}
-                        <div className="pt-2">
-                          <Button variant="outline" size="sm" className="w-full">
-                            View Full Report
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+            <ReportsAnalytics />
           </TabsContent>
 
           {/* Audit Logs Tab */}
           <TabsContent value="audit">
-            <div className="space-y-4 sm:space-y-6">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Audit Logs</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">System activity and security logs</p>
-              </div>
-              <div className="space-y-4">
-                {dummyAuditLogs.map((log) => (
-                  <Card key={log.id} className="hover:shadow-elegant transition-shadow">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">📝</div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <h3 className="text-sm font-medium text-foreground">
-                              {log.action}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(log.timestamp).toLocaleString()}
-                            </p>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {log.details}
-                          </p>
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="text-xs text-muted-foreground">
-                              User: {log.user}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              IP: {log.ip_address}
-                            </span>
-                          </div>
-                        </div>
-                </div>
-              </CardContent>
-            </Card>
-                ))}
-              </div>
-            </div>
+            <AuditLogs />
           </TabsContent>
 
           {/* Settings Tab */}

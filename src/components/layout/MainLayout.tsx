@@ -48,15 +48,7 @@ export const MainLayout: React.FC = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
-          <main className="flex-1 flex flex-col">
-            <header className="h-12 flex items-center justify-between border-b border-border bg-background px-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <h1 className="font-semibold text-foreground">AUTO REPAIR INC</h1>
-              </div>
-              <NotificationCenter />
-            </header>
-            <div className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto">
               <Routes>
                 {/* User Routes */}
                 <Route path="/user/tickets" element={profile.role === 'user' ? <UserDashboard activeTab="tickets" /> : <Navigate to="/" />} />
@@ -92,7 +84,6 @@ export const MainLayout: React.FC = () => {
                   } replace />
                 } />
               </Routes>
-            </div>
           </main>
         </div>
       </SidebarProvider>
