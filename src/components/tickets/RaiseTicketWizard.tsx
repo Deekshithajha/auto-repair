@@ -70,7 +70,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
         setNewCustomer({ name: '', email: '', password: '' });
         setVehicles([]);
         setSelectedVehicleId('');
-        setNewVehicle({ make: '', model: '', year: new Date().getFullYear() });
+        setNewVehicle({ make: '', model: '', year: new Date().getFullYear(), license_no: '' });
         setTicketDetails({ description: '', preferred_pickup_time: '' });
       }, 200);
     }

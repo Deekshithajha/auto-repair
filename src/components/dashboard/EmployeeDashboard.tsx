@@ -69,7 +69,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
   );
 
 
-  const handleTicketCreated = (ticket: any) => {
+  const handleTicketCreated = () => {
     setShowCreateTicket(false);
     // Handle ticket creation success
   };

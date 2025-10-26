@@ -152,6 +152,7 @@ export const EmployeeWorkManagement: React.FC = () => {
         status: 'completed',
         user_id: 'user-3',
         vehicle: {
+          id: 'vehicle-3',
           make: 'Ford',
           model: 'Focus',
           year: 2021,

@@ -96,10 +96,6 @@ export const EmployeeProfileEditor: React.FC = () => {
       };
 
       setFormData(mergedData);
-      
-      if (mergedData.profile_picture) {
-        setProfilePicturePreview(mergedData.profile_picture);
-      }
 
     } catch (error: any) {
       console.error('Error fetching profile:', error);
@@ -179,21 +175,13 @@ export const EmployeeProfileEditor: React.FC = () => {
 
       if (profileError) throw profileError;
 
-      // Update or create employee data
-      const employeeUpdateData = {
-        emergency_contact_name: formData.emergency_contact_name || null,
-        emergency_contact_phone: formData.emergency_contact_phone || null,
-        skills: formData.skills || null,
-        notes: formData.notes || null,
-        updated_at: new Date().toISOString()
-      };
-
+      // Update or create employee data - only include fields that exist in employees table
       const { error: employeeError } = await supabase
         .from('employees')
-        .upsert({
-          user_id: user.id,
-          ...employeeUpdateData
-        });
+        .update({
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
 
       if (employeeError) throw employeeError;
 

@@ -18,7 +18,6 @@ interface AttendanceRecord {
   clock_out: string | null;
   status: 'present' | 'absent' | 'late' | 'half_day';
   notes: string | null;
-  total_hours: number;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +29,14 @@ interface TodayAttendance {
   totalHours: number;
   status: string;
 }
+
+// Helper function to calculate hours between two timestamps
+const calculateHours = (clockIn: string | null, clockOut: string | null): number => {
+  if (!clockIn || !clockOut) return 0;
+  const start = new Date(clockIn).getTime();
+  const end = new Date(clockOut).getTime();
+  return Math.round((end - start) / (1000 * 60 * 60) * 10) / 10; // Round to 1 decimal
+};
 
 export const EmployeeAttendance: React.FC = () => {
   const { user } = useAuth();
@@ -115,11 +122,12 @@ export const EmployeeAttendance: React.FC = () => {
       }
 
       if (data) {
+        const totalHours = calculateHours(data.clock_in, data.clock_out);
         setTodayAttendance({
           isClockedIn: !!data.clock_in && !data.clock_out,
           clockInTime: data.clock_in,
           clockOutTime: data.clock_out,
-          totalHours: data.total_hours || 0,
+          totalHours: totalHours,
           status: data.status
         });
       } else {
@@ -159,7 +167,9 @@ export const EmployeeAttendance: React.FC = () => {
 
   const getWeekSummary = () => {
     const weekRecords = attendanceRecords.slice(0, 7);
-    const totalHours = weekRecords.reduce((sum, record) => sum + (record.total_hours || 0), 0);
+    const totalHours = weekRecords.reduce((sum, record) => 
+      sum + calculateHours(record.clock_in, record.clock_out), 0
+    );
     const presentDays = weekRecords.filter(record => record.status === 'present').length;
     
     return {
@@ -300,7 +310,9 @@ export const EmployeeAttendance: React.FC = () => {
                   
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <div className="font-medium">{record.total_hours.toFixed(1)}h</div>
+                      <div className="font-medium">
+                        {calculateHours(record.clock_in, record.clock_out).toFixed(1)}h
+                      </div>
                       <div className="text-sm text-muted-foreground">Total Hours</div>
                     </div>
                     <span className="text-xs text-muted-foreground">
