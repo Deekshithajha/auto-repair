@@ -15,6 +15,7 @@ interface WorkorderRequest {
   primary_mechanic_id?: string;
   secondary_mechanic_id?: string;
   status?: string;
+  estimated_completion_date?: string;
   parts?: Array<{
     name: string;
     part_code?: string;
