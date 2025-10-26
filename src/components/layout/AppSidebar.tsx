@@ -33,6 +33,8 @@ export function AppSidebar() {
       case 'admin':
         return [
           { title: 'Ticket Inbox', url: '/admin/tickets', icon: '📧' },
+          { title: 'Customers', url: '/admin/customers', icon: '👤' },
+          { title: 'Register Customer', url: '/admin/register', icon: '➕' },
           { title: 'Employee Management', url: '/admin/employees', icon: '👥' },
           { title: 'Live Monitor', url: '/admin/monitor', icon: '📊' },
           { title: 'Reports', url: '/admin/reports', icon: '📈' },
@@ -42,6 +44,7 @@ export function AppSidebar() {
       case 'employee':
         return [
           { title: 'My Assignments', url: '/employee/assignments', icon: '📋' },
+          { title: 'Register Customer', url: '/employee/register', icon: '➕' },
           { title: 'Work Log', url: '/employee/worklog', icon: '📄' },
           { title: 'Attendance', url: '/employee/attendance', icon: '⏰' },
           { title: 'Profile', url: '/employee/profile', icon: '👤' },

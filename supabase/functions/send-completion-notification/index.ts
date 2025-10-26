@@ -43,14 +43,18 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Handle joined data (may be array or object)
+    const profile = Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles;
+    const vehicle = Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles;
+    
     // Check if customer has phone number for SMS
-    if (ticket.profiles.phone) {
+    if (profile?.phone) {
       // In a real implementation, you would integrate with SMS service like Twilio
       // For now, we'll log the SMS that would be sent
-      const smsMessage = `Hi ${ticket.profiles.name}, your vehicle repair is complete! Your ${ticket.vehicles.year} ${ticket.vehicles.make} ${ticket.vehicles.model} (${ticket.vehicles.reg_no}) is ready for pickup. Contact 76 Auto Repairs for pickup details.`;
+      const smsMessage = `Hi ${profile.name}, your vehicle repair is complete! Your ${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.reg_no}) is ready for pickup. Contact 76 Auto Repairs for pickup details.`;
       
       console.log("SMS would be sent:", {
-        to: ticket.profiles.phone,
+        to: profile.phone,
         message: smsMessage
       });
     }
@@ -59,14 +63,14 @@ const handler = async (req: Request): Promise<Response> => {
     const { error: notificationError } = await supabase
       .from("notifications")
       .insert({
-        user_id: ticket.profiles.id, // Assuming profiles has id field
+        user_id: profile.id, // Assuming profiles has id field
         type: "repair_completed",
         title: "Vehicle Repair Completed",
-        message: `Your ${ticket.vehicles.year} ${ticket.vehicles.make} ${ticket.vehicles.model} repair is complete and ready for pickup!`,
+        message: `Your ${vehicle.year} ${vehicle.make} ${vehicle.model} repair is complete and ready for pickup!`,
         metadata: {
           ticket_id: ticket.id,
-          vehicle: `${ticket.vehicles.year} ${ticket.vehicles.make} ${ticket.vehicles.model}`,
-          reg_no: ticket.vehicles.reg_no
+          vehicle: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+          reg_no: vehicle.reg_no
         }
       });
 
@@ -78,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         message: "Customer notification sent successfully",
-        sms_sent: !!ticket.profiles.phone,
+        sms_sent: !!profile?.phone,
         notification_created: !notificationError
       }),
       {

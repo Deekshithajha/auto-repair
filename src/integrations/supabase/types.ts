@@ -241,31 +241,78 @@ export type Database = {
           },
         ]
       }
+      employee_details: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          employment_type: string
+          hourly_rate: number
+          id: string
+          overtime_rate: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          employment_type: string
+          hourly_rate: number
+          id?: string
+          overtime_rate?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          employment_type?: string
+          hourly_rate?: number
+          id?: string
+          overtime_rate?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_details_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           created_at: string
           employee_id: string
+          employment_status: string | null
           hire_date: string
           id: string
           is_active: boolean
+          termination_date: string | null
+          termination_reason: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           employee_id: string
+          employment_status?: string | null
           hire_date?: string
           id?: string
           is_active?: boolean
+          termination_date?: string | null
+          termination_reason?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           employee_id?: string
+          employment_status?: string | null
           hire_date?: string
           id?: string
           is_active?: boolean
+          termination_date?: string | null
+          termination_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -485,6 +532,45 @@ export type Database = {
           system_id?: string | null
           updated_at?: string
           zip_code?: string | null
+        }
+        Relationships: []
+      }
+      standard_services: {
+        Row: {
+          category: string
+          created_at: string | null
+          default_price: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          labor_hours: number | null
+          service_name: string
+          taxable: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          default_price?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          labor_hours?: number | null
+          service_name: string
+          taxable?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          default_price?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          labor_hours?: number | null
+          service_name?: string
+          taxable?: boolean | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -859,6 +945,60 @@ export type Database = {
           },
         ]
       }
+      workorder_services: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_taxable: boolean | null
+          labor_hours: number | null
+          notes: string | null
+          quantity: number | null
+          service_id: string | null
+          service_name: string
+          ticket_id: string | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_taxable?: boolean | null
+          labor_hours?: number | null
+          notes?: string | null
+          quantity?: number | null
+          service_id?: string | null
+          service_name: string
+          ticket_id?: string | null
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_taxable?: boolean | null
+          labor_hours?: number | null
+          notes?: string | null
+          quantity?: number | null
+          service_id?: string | null
+          service_name?: string
+          ticket_id?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workorder_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "standard_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workorder_services_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -880,10 +1020,7 @@ export type Database = {
         }
         Returns: string
       }
-      generate_invoice_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_invoice_number: { Args: never; Returns: string }
       get_user_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
