@@ -3,31 +3,45 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
 interface Ticket {
   id: string;
+  ticket_number: string;
   description: string;
-  status: string;
+  status: 'pending' | 'approved' | 'declined' | 'assigned' | 'in_progress' | 'ready_for_pickup' | 'completed';
   created_at: string;
   preferred_pickup_time: string;
   user_id: string;
-  vehicle: {
+  vehicle_id: string;
+  primary_mechanic_id?: string;
+  secondary_mechanic_id?: string;
+  vehicles: {
     make: string;
     model: string;
     year: number;
     reg_no: string;
   };
-  customer_name: string;
-  customer_phone: string;
+  profiles: {
+    name: string;
+    phone: string;
+  };
+  primary_mechanic?: {
+    name: string;
+  };
+  secondary_mechanic?: {
+    name: string;
+  };
 }
 
 interface Employee {
   user_id: string;
   name: string;
+  employee_id: string;
 }
 
 export const AdminTicketManagement: React.FC = () => {
@@ -36,142 +50,146 @@ export const AdminTicketManagement: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEmployee, setSelectedEmployee] = useState<Record<string, string>>({});
+  const [primaryMechanic, setPrimaryMechanic] = useState<Record<string, string>>({});
+  const [secondaryMechanic, setSecondaryMechanic] = useState<Record<string, string>>({});
   const [declineReason, setDeclineReason] = useState<Record<string, string>>({});
 
-  // Dummy data for demonstration
-  const dummyTickets: Ticket[] = [
-    {
-      id: 'TICKET-001',
-      description: 'Engine making strange noise, needs diagnostic check. Car has been running rough for the past week.',
-      status: 'pending',
-      created_at: '2024-01-16T10:30:00Z',
-      preferred_pickup_time: '2024-01-17T16:00:00Z',
-      user_id: 'user-1',
-      vehicle: {
-        make: 'Toyota',
-        model: 'Camry',
-        year: 2020,
-        reg_no: 'ABC-1234'
-      },
-      customer_name: 'John Smith',
-      customer_phone: '(555) 123-4567'
-    },
-    {
-      id: 'TICKET-002',
-      description: 'Air conditioning not working properly. Blowing warm air instead of cold.',
-      status: 'approved',
-      created_at: '2024-01-16T09:15:00Z',
-      preferred_pickup_time: '2024-01-18T14:00:00Z',
-      user_id: 'user-2',
-      vehicle: {
-        make: 'Honda',
-        model: 'Civic',
-        year: 2019,
-        reg_no: 'XYZ-5678'
-      },
-      customer_name: 'Sarah Johnson',
-      customer_phone: '(555) 234-5678'
-    },
-    {
-      id: 'TICKET-003',
-      description: 'Oil change and brake pad replacement. Regular maintenance service.',
-      status: 'assigned',
-      created_at: '2024-01-15T14:20:00Z',
-      preferred_pickup_time: '2024-01-16T17:00:00Z',
-      user_id: 'user-3',
-      vehicle: {
-        make: 'Ford',
-        model: 'Focus',
-        year: 2021,
-        reg_no: 'DEF-9012'
-      },
-      customer_name: 'Mike Davis',
-      customer_phone: '(555) 345-6789'
-    },
-    {
-      id: 'TICKET-004',
-      description: 'Transmission slipping, especially when shifting gears. Needs immediate attention.',
-      status: 'in_progress',
-      created_at: '2024-01-15T11:45:00Z',
-      preferred_pickup_time: '2024-01-17T12:00:00Z',
-      user_id: 'user-4',
-      vehicle: {
-        make: 'Chevrolet',
-        model: 'Malibu',
-        year: 2018,
-        reg_no: 'GHI-3456'
-      },
-      customer_name: 'Emily Wilson',
-      customer_phone: '(555) 456-7890'
-    },
-    {
-      id: 'TICKET-005',
-      description: 'Brake pads worn out, squeaking noise when braking. Safety concern.',
-      status: 'pending',
-      created_at: '2024-01-16T08:00:00Z',
-      preferred_pickup_time: '2024-01-18T10:00:00Z',
-      user_id: 'user-5',
-      vehicle: {
-        make: 'Nissan',
-        model: 'Altima',
-        year: 2022,
-        reg_no: 'JKL-7890'
-      },
-      customer_name: 'David Brown',
-      customer_phone: '(555) 567-8901'
-    }
-  ];
-
-  const dummyEmployees: Employee[] = [
-    {
-      user_id: 'emp-1',
-      name: 'John Smith'
-    },
-    {
-      user_id: 'emp-2',
-      name: 'Sarah Johnson'
-    },
-    {
-      user_id: 'emp-3',
-      name: 'Mike Davis'
-    },
-    {
-      user_id: 'emp-4',
-      name: 'Lisa Anderson'
-    }
-  ];
-
   useEffect(() => {
-    // Use dummy data instead of fetching from database
-    setTickets(dummyTickets);
-    setEmployees(dummyEmployees);
-    setLoading(false);
+    fetchTickets();
+    fetchEmployees();
   }, []);
 
   const fetchTickets = async () => {
-    // Use dummy data instead of fetching from database
-    setTickets(dummyTickets);
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          vehicles!inner (
+            make,
+            model,
+            year,
+            reg_no
+          )
+        `)
+        .in('status', ['pending', 'approved'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch related data manually
+      const ticketsWithData = await Promise.all(
+        (data || []).map(async (ticket) => {
+          // Get customer profile
+          const { data: customerProfile } = await supabase
+            .from('profiles')
+            .select('name, phone')
+            .eq('id', ticket.user_id)
+            .single();
+
+          // Get primary mechanic if exists
+          let primaryMechanic = null;
+          if (ticket.primary_mechanic_id) {
+            const { data: primProf } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', ticket.primary_mechanic_id)
+              .single();
+            primaryMechanic = primProf;
+          }
+
+          // Get secondary mechanic if exists
+          let secondaryMechanic = null;
+          if (ticket.secondary_mechanic_id) {
+            const { data: secProf } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', ticket.secondary_mechanic_id)
+              .single();
+            secondaryMechanic = secProf;
+          }
+
+          return {
+            ...ticket,
+            profiles: customerProfile || { name: 'Unknown', phone: 'N/A' },
+            primary_mechanic: primaryMechanic,
+            secondary_mechanic: secondaryMechanic
+          };
+        })
+      );
+
+      setTickets(ticketsWithData as any);
+    } catch (error: any) {
+      console.error('Error fetching tickets:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load tickets",
+        variant: "destructive"
+      });
+    } finally {
       setLoading(false);
+    }
   };
 
   const fetchEmployees = async () => {
-    // Use dummy data instead of fetching from database
-    setEmployees(dummyEmployees);
+    try {
+      const { data: employeeData, error } = await supabase
+        .from('employees')
+        .select('user_id, employee_id')
+        .eq('is_active', true)
+        .eq('employment_status', 'active');
+
+      if (error) throw error;
+
+      // Fetch profiles for employees
+      const employeesWithNames = await Promise.all(
+        (employeeData || []).map(async (emp) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', emp.user_id)
+            .single();
+
+          return {
+            user_id: emp.user_id,
+            employee_id: emp.employee_id,
+            name: profile?.name || 'Unknown'
+          };
+        })
+      );
+
+      setEmployees(employeesWithNames);
+    } catch (error: any) {
+      console.error('Error fetching employees:', error);
+    }
   };
 
   const handleApprove = async (ticketId: string) => {
-    // Update dummy data instead of database
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'approved' }
-        : ticket
-    ));
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({
+          status: 'approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Ticket approved successfully",
+        description: "Ticket approved successfully"
       });
+
+      fetchTickets();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve ticket",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDecline = async (ticketId: string) => {
@@ -179,79 +197,138 @@ export const AdminTicketManagement: React.FC = () => {
       toast({
         title: "Error",
         description: "Please provide a reason for declining",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
-    // Update dummy data instead of database
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'declined' }
-        : ticket
-    ));
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({
+          status: 'declined',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+
+      // Create notification for customer
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (ticket?.user_id) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: ticket.user_id,
+            type: 'ticket_declined' as any,
+            title: 'Ticket Declined',
+            message: `Your ticket has been declined. Reason: ${declineReason[ticketId]}`,
+            metadata: { ticket_id: ticketId, reason: declineReason[ticketId] }
+          });
+      }
 
       toast({
         title: "Success",
-        description: "Ticket declined",
+        description: "Ticket declined"
       });
+
+      fetchTickets();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to decline ticket",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAssign = async (ticketId: string) => {
-    const employeeId = selectedEmployee[ticketId];
-    if (!employeeId) {
+    const primaryId = primaryMechanic[ticketId];
+    if (!primaryId) {
       toast({
         title: "Error",
-        description: "Please select an employee",
-        variant: "destructive",
+        description: "Please select a primary mechanic",
+        variant: "destructive"
       });
       return;
     }
 
-    // Update dummy data instead of database
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'assigned' }
-        : ticket
-    ));
+    try {
+      const secondaryId = secondaryMechanic[ticketId] || null;
+
+      // Update ticket with mechanics
+      const { error: ticketError } = await supabase
+        .from('tickets')
+        .update({
+          primary_mechanic_id: primaryId,
+          secondary_mechanic_id: secondaryId,
+          status: 'assigned',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (ticketError) throw ticketError;
+
+      // Create ticket assignment records
+      const assignments = [
+        {
+          ticket_id: ticketId,
+          employee_id: primaryId,
+          admin_id: user?.id,
+          is_auto_assigned: false
+        }
+      ];
+
+      if (secondaryId) {
+        assignments.push({
+          ticket_id: ticketId,
+          employee_id: secondaryId,
+          admin_id: user?.id,
+          is_auto_assigned: false
+        });
+      }
+
+      const { error: assignError } = await supabase
+        .from('ticket_assignments')
+        .insert(assignments);
+
+      if (assignError) throw assignError;
+
+      // Create notifications for mechanics
+      const notifications: any[] = [
+        {
+          user_id: primaryId,
+          type: 'ticket_assigned' as any,
+          title: 'New Ticket Assigned',
+          message: 'You have been assigned as the primary mechanic for a new ticket.',
+          metadata: { ticket_id: ticketId, role: 'primary' }
+        }
+      ];
+
+      if (secondaryId) {
+        notifications.push({
+          user_id: secondaryId,
+          type: 'ticket_assigned' as any,
+          title: 'New Ticket Assigned',
+          message: 'You have been assigned as the secondary mechanic for a new ticket.',
+          metadata: { ticket_id: ticketId, role: 'secondary' }
+        });
+      }
+
+      await supabase.from('notifications').insert(notifications);
 
       toast({
         title: "Success",
-        description: "Ticket assigned successfully",
+        description: "Ticket assigned successfully"
       });
-  };
 
-  const handleAutoAssign = async (ticketId: string) => {
-    // Simulate auto-assignment with dummy data
-    const availableEmployees = dummyEmployees;
-    if (availableEmployees.length > 0) {
-      // Update dummy data instead of database
-      setTickets(prev => prev.map(ticket => 
-        ticket.id === ticketId 
-          ? { ...ticket, status: 'assigned' }
-          : ticket
-      ));
-
-        toast({
-          title: "Success",
-          description: "Ticket auto-assigned successfully",
-        });
-      } else {
-        toast({
-          title: "Warning",
-          description: "No available employees for auto-assignment",
-        variant: "destructive",
+      fetchTickets();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign ticket",
+        variant: "destructive"
       });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-500';
-      case 'approved': return 'bg-green-500';
-      case 'assigned': return 'bg-blue-500';
-      case 'in_progress': return 'bg-purple-500';
-      default: return 'bg-gray-500';
     }
   };
 
@@ -279,15 +356,13 @@ export const AdminTicketManagement: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="space-y-1">
                     <CardTitle className="text-base sm:text-lg">
-                      {ticket.vehicle.year} {ticket.vehicle.make} {ticket.vehicle.model}
+                      {ticket.vehicles.year} {ticket.vehicles.make} {ticket.vehicles.model}
                     </CardTitle>
                     <CardDescription className="text-sm">
-                      Reg: {ticket.vehicle.reg_no} • Customer: {ticket.customer_name}
+                      {ticket.ticket_number} • Reg: {ticket.vehicles.reg_no} • Customer: {ticket.profiles.name}
                     </CardDescription>
                   </div>
-                  <Badge className={`${getStatusColor(ticket.status)} text-white text-xs px-2 py-1`}>
-                    {ticket.status.toUpperCase()}
-                  </Badge>
+                  <StatusBadge status={ticket.status} />
                 </div>
               </CardHeader>
               
@@ -303,7 +378,7 @@ export const AdminTicketManagement: React.FC = () => {
                       : 'Not specified'}
                   </div>
                   <div>
-                    <strong>Customer Phone:</strong> {ticket.customer_phone}
+                    <strong>Customer Phone:</strong> {ticket.profiles.phone}
                   </div>
                   <div>
                     <strong>Created:</strong> {new Date(ticket.created_at).toLocaleString()}
@@ -315,7 +390,7 @@ export const AdminTicketManagement: React.FC = () => {
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
                         onClick={() => handleApprove(ticket.id)}
-                        className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                        className="flex-1"
                         size="sm"
                       >
                         ✅ Approve
@@ -343,41 +418,59 @@ export const AdminTicketManagement: React.FC = () => {
 
                 {ticket.status === 'approved' && (
                   <div className="flex flex-col space-y-3 pt-4 border-t">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Select
-                        value={selectedEmployee[ticket.id] || ''}
-                        onValueChange={(value) => 
-                          setSelectedEmployee(prev => ({ ...prev, [ticket.id]: value }))
-                        }
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select Employee" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {employees.map((employee) => (
-                            <SelectItem key={employee.user_id} value={employee.user_id}>
-                              {employee.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      
-                      <Button 
-                        onClick={() => handleAssign(ticket.id)}
-                        className="bg-blue-600 hover:blue-700 text-white sm:w-auto w-full"
-                        size="sm"
-                      >
-                        👤 Assign
-                      </Button>
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-sm">Primary Mechanic (Required)</Label>
+                        <Select
+                          value={primaryMechanic[ticket.id] || ''}
+                          onValueChange={(value) => 
+                            setPrimaryMechanic(prev => ({ ...prev, [ticket.id]: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Primary Mechanic" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {employees.map((employee) => (
+                              <SelectItem key={employee.user_id} value={employee.user_id}>
+                                {employee.name} ({employee.employee_id})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-sm">Secondary Mechanic (Optional)</Label>
+                        <Select
+                          value={secondaryMechanic[ticket.id] || ''}
+                          onValueChange={(value) => 
+                            setSecondaryMechanic(prev => ({ ...prev, [ticket.id]: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Secondary Mechanic (Optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            {employees
+                              .filter(emp => emp.user_id !== primaryMechanic[ticket.id])
+                              .map((employee) => (
+                                <SelectItem key={employee.user_id} value={employee.user_id}>
+                                  {employee.name} ({employee.employee_id})
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     
                     <Button 
-                      onClick={() => handleAutoAssign(ticket.id)}
-                      variant="outline"
+                      onClick={() => handleAssign(ticket.id)}
                       className="w-full"
                       size="sm"
                     >
-                      🤖 Auto-Assign
+                      👤 Assign Mechanics
                     </Button>
                   </div>
                 )}

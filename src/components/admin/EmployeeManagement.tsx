@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 interface Employee {
@@ -41,6 +42,12 @@ export const EmployeeManagement: React.FC = () => {
     hourly_rate: 0,
     overtime_rate: 0,
     employment_status: 'active' as 'active' | 'on_leave' | 'terminated'
+  });
+
+  const [terminateOpen, setTerminateOpen] = useState(false);
+  const [terminateForm, setTerminateForm] = useState({
+    termination_date: '',
+    termination_reason: ''
   });
 
   useEffect(() => {
@@ -236,6 +243,19 @@ export const EmployeeManagement: React.FC = () => {
                       Edit
                     </Button>
                   </div>
+                  {employee.employment_status === 'active' && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="w-full mt-2"
+                      onClick={() => {
+                        setSelectedEmployee(employee);
+                        setTerminateOpen(true);
+                      }}
+                    >
+                      Terminate Employee
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -368,6 +388,116 @@ export const EmployeeManagement: React.FC = () => {
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
               <Button onClick={handleSaveEdit}>Save Changes</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Terminate Employee Dialog */}
+      <Dialog open={terminateOpen} onOpenChange={setTerminateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Terminate Employee</DialogTitle>
+            <DialogDescription>
+              This will permanently terminate {selectedEmployee?.profiles.name}'s employment. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Termination Date</Label>
+              <Input
+                type="date"
+                value={terminateForm.termination_date}
+                onChange={(e) => setTerminateForm({...terminateForm, termination_date: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Reason for Termination (Minimum 200 characters)</Label>
+              <Textarea
+                value={terminateForm.termination_reason}
+                onChange={(e) => setTerminateForm({...terminateForm, termination_reason: e.target.value})}
+                placeholder="Provide detailed reason for termination..."
+                rows={5}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {terminateForm.termination_reason.length}/200 characters
+              </p>
+            </div>
+            <div className="bg-destructive/10 border border-destructive/50 rounded p-3">
+              <p className="text-sm text-destructive font-semibold">⚠️ Warning</p>
+              <p className="text-sm text-muted-foreground">
+                This will set the employee status to "terminated" and mark them as inactive.
+                All open tickets will need to be reassigned manually.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => {
+                setTerminateOpen(false);
+                setTerminateForm({ termination_date: '', termination_reason: '' });
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={async () => {
+                  if (!selectedEmployee) return;
+                  
+                  if (!terminateForm.termination_date) {
+                    toast({
+                      title: "Error",
+                      description: "Please select a termination date",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
+                  if (terminateForm.termination_reason.length < 200) {
+                    toast({
+                      title: "Error",
+                      description: "Termination reason must be at least 200 characters",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+
+                  if (!confirm(`Are you sure you want to terminate ${selectedEmployee.profiles.name}? This action cannot be undone.`)) {
+                    return;
+                  }
+
+                  try {
+                    const { error } = await supabase
+                      .from('employees')
+                      .update({
+                        employment_status: 'terminated',
+                        termination_date: terminateForm.termination_date,
+                        termination_reason: terminateForm.termination_reason,
+                        is_active: false,
+                        updated_at: new Date().toISOString()
+                      })
+                      .eq('id', selectedEmployee.id);
+
+                    if (error) throw error;
+
+                    toast({
+                      title: "Employee Terminated",
+                      description: `${selectedEmployee.profiles.name} has been terminated. Please reassign any open tickets.`
+                    });
+
+                    setTerminateOpen(false);
+                    setTerminateForm({ termination_date: '', termination_reason: '' });
+                    fetchEmployees();
+                  } catch (error: any) {
+                    toast({
+                      title: "Error",
+                      description: error.message || "Failed to terminate employee",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                Confirm Termination
+              </Button>
             </div>
           </div>
         </DialogContent>

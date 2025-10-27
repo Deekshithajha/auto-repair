@@ -35,6 +35,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
         return renderAttendancePage();
       case 'profile':
         return renderProfilePage();
+      case 'register':
+        return renderRegisterCustomerPage();
       default:
         return renderAssignmentsPage();
     }
@@ -63,9 +65,19 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
   );
 
   const renderProfilePage = () => (
-            <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <EmployeeProfileEditor />
-                          </div>
+    </div>
+  );
+
+  const renderRegisterCustomerPage = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold">Register New Customer</h2>
+        <p className="text-muted-foreground text-sm sm:text-base">Create a new customer account and vehicle profile</p>
+      </div>
+      <CustomerRegistration />
+    </div>
   );
 
 

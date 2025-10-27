@@ -86,6 +86,8 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [rescheduleReason, setRescheduleReason] = useState<Record<string, string>>({});
   const [rescheduleDate, setRescheduleDate] = useState<Record<string, string>>({});
   const [upcomingReturns, setUpcomingReturns] = useState<any[]>([]);
+  const [assignmentFilter, setAssignmentFilter] = useState<'all' | 'primary'>('all');
+  const [ticketRoles, setTicketRoles] = useState<Record<string, 'primary' | 'secondary'>>({});
 
   // Dummy data for demonstration
   const dummyWorkSessions: WorkSession[] = [
@@ -178,26 +180,137 @@ export const EmployeeWorkManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    // Use dummy data instead of fetching from database
-    setWorkSessions(dummyWorkSessions);
-    setPartsUsed(dummyPartsUsed);
-    setLoading(false);
-    fetchUpcomingReturns();
+    if (user?.id) {
+      fetchWorkSessions();
+      fetchUpcomingReturns();
+    }
   }, [user?.id]);
 
   const fetchWorkSessions = async () => {
-    // Use dummy data instead of fetching from database
-    setWorkSessions(dummyWorkSessions);
-    setPartsUsed(dummyPartsUsed);
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch tickets where user is primary OR secondary mechanic
+      const { data: ticketsData, error } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          vehicles!inner (
+            id,
+            make,
+            model,
+            year,
+            reg_no,
+            license_no,
+            location_status,
+            expected_return_date
+          )
+        `)
+        .or(`primary_mechanic_id.eq.${user.id},secondary_mechanic_id.eq.${user.id}`)
+        .in('status', ['assigned', 'in_progress'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch customer profiles and determine roles
+      const sessions: WorkSession[] = [];
+      const roles: Record<string, 'primary' | 'secondary'> = {};
+
+      for (const ticket of ticketsData || []) {
+        const { data: customerProfile } = await supabase
+          .from('profiles')
+          .select('name, phone')
+          .eq('id', ticket.user_id)
+          .single();
+
+        // Determine role
+        const role = ticket.primary_mechanic_id === user.id ? 'primary' : 'secondary';
+        roles[ticket.id] = role;
+
+        // Create or fetch work session
+        let { data: workSession } = await supabase
+          .from('work_sessions')
+          .select('*')
+          .eq('ticket_id', ticket.id)
+          .eq('employee_id', user.id)
+          .maybeSingle();
+
+        if (!workSession) {
+          // Create work session if it doesn't exist
+          const { data: newSession, error: sessionError } = await supabase
+            .from('work_sessions')
+            .insert({
+              ticket_id: ticket.id,
+              employee_id: user.id,
+              status: 'not_started'
+            })
+            .select()
+            .single();
+
+          if (sessionError) throw sessionError;
+          workSession = newSession;
+        }
+
+        sessions.push({
+          id: workSession.id,
+          ticket_id: ticket.id,
+          status: workSession.status,
+          started_at: workSession.started_at,
+          ended_at: workSession.ended_at,
+          notes: workSession.notes,
+          ticket: {
+            id: ticket.id,
+            description: ticket.description,
+            status: ticket.status,
+            user_id: ticket.user_id,
+            vehicle: ticket.vehicles,
+            customer_name: customerProfile?.name || 'Unknown',
+            customer_phone: customerProfile?.phone || 'N/A'
+          }
+        });
+
+        // Fetch parts for this ticket
+        fetchPartsForTicket(ticket.id);
+      }
+
+      setWorkSessions(sessions);
+      setTicketRoles(roles);
+    } catch (error: any) {
+      console.error('Error fetching work sessions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load work assignments",
+        variant: "destructive"
+      });
+    } finally {
       setLoading(false);
+    }
   };
 
   const fetchPartsForTicket = async (ticketId: string) => {
-    // Use dummy data instead of fetching from database
+    try {
+      const { data, error } = await supabase
+        .from('parts')
+        .select('*')
+        .eq('ticket_id', ticketId);
+
+      if (error) throw error;
+
+      const parts: PartUsed[] = (data || []).map(part => ({
+        name: part.name,
+        quantity: part.quantity,
+        unit_price: part.unit_price
+      }));
+
       setPartsUsed(prev => ({
         ...prev,
-      [ticketId]: dummyPartsUsed[ticketId] || []
+        [ticketId]: parts
       }));
+    } catch (error: any) {
+      console.error('Error fetching parts:', error);
+    }
   };
 
   const handleStartWork = async (sessionId: string, ticketId: string) => {
@@ -972,6 +1085,24 @@ export const EmployeeWorkManagement: React.FC = () => {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
+      {/* Filter Options */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant={assignmentFilter === 'all' ? 'default' : 'outline'}
+          onClick={() => setAssignmentFilter('all')}
+          size="sm"
+        >
+          All Assignments
+        </Button>
+        <Button
+          variant={assignmentFilter === 'primary' ? 'default' : 'outline'}
+          onClick={() => setAssignmentFilter('primary')}
+          size="sm"
+        >
+          Primary Only
+        </Button>
+      </div>
+
       {/* Upcoming Returns */}
       {upcomingReturns.length > 0 && (
         <Card>
@@ -1014,14 +1145,23 @@ export const EmployeeWorkManagement: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          workSessions.map((session) => (
+          workSessions
+            .filter(session => assignmentFilter === 'all' || ticketRoles[session.ticket_id] === 'primary')
+            .map((session) => {
+              const role = ticketRoles[session.ticket_id];
+              return (
             <Card key={session.id} className="w-full">
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="space-y-1">
-                    <CardTitle className="text-base sm:text-lg">
-                      {session.ticket.vehicle.year} {session.ticket.vehicle.make} {session.ticket.vehicle.model}
-                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base sm:text-lg">
+                        {session.ticket.vehicle.year} {session.ticket.vehicle.make} {session.ticket.vehicle.model}
+                      </CardTitle>
+                      <Badge variant={role === 'primary' ? 'default' : 'secondary'} className="font-bold">
+                        {role?.toUpperCase()}
+                      </Badge>
+                    </div>
                     <CardDescription className="text-sm">
                       Reg: {session.ticket.vehicle.reg_no} • Customer: {session.ticket.customer_name}
                     </CardDescription>
@@ -1651,7 +1791,8 @@ export const EmployeeWorkManagement: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          ))
+          );
+        })
         )}
       </div>
     </div>
