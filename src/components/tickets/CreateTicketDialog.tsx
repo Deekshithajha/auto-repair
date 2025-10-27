@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
 
 interface Vehicle {
   id: string;
@@ -68,8 +69,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
     }
   }, [open]);
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const handlePhotoUpload = (files: File[]) => {
     setPhotos(prev => [...prev, ...files].slice(0, 5)); // Limit to 5 photos
   };
 
@@ -358,52 +358,39 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
           {/* Photo Upload */}
           <div className="space-y-2">
             <Label className="text-sm">Damage Photos (Optional)</Label>
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-3 sm:p-6">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl mb-2">📸</div>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-3">
-                  Upload photos of the damage (max 5 photos)
-                </p>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                  id="photo-upload"
-                />
-                <Label
-                  htmlFor="photo-upload"
-                  className="inline-flex items-center justify-center rounded-md text-xs sm:text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-8 sm:h-10 py-2 px-3 sm:px-4 cursor-pointer"
-                >
-                  Choose Photos
-                </Label>
+            <EnhancedFileUpload
+              onFilesSelected={handlePhotoUpload}
+              accept="image/*"
+              multiple={true}
+              maxFiles={5}
+              maxFileSize={10}
+              placeholder="Upload photos of the damage"
+              id="photo-upload"
+            />
+            
+            {/* Photo Previews */}
+            {photos.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                {photos.map((photo, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={URL.createObjectURL(photo)}
+                      alt={`Upload ${index + 1}`}
+                      className="w-full h-16 sm:h-20 object-cover rounded-md"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-full p-0"
+                      onClick={() => removePhoto(index)}
+                    >
+                      <span className="text-xs">✕</span>
+                    </Button>
+                  </div>
+                ))}
               </div>
-              
-              {/* Photo Previews */}
-              {photos.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {photos.map((photo, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={URL.createObjectURL(photo)}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-16 sm:h-20 object-cover rounded-md"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-full p-0"
-                        onClick={() => removePhoto(index)}
-                      >
-                        <span className="text-xs">✕</span>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 pt-4">

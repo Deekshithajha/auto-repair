@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
 
 interface EmployeeProfile {
   id: string;
@@ -109,8 +110,7 @@ export const EmployeeProfileEditor: React.FC = () => {
     }
   };
 
-  const handleProfilePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleProfilePictureUpload = (file: File) => {
     if (file) {
       setProfilePicture(file);
       setProfilePicturePreview(URL.createObjectURL(file));
@@ -243,17 +243,14 @@ export const EmployeeProfileEditor: React.FC = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">
-                <Label htmlFor="profile-picture" className="cursor-pointer">
-                  <Button type="button" variant="outline" asChild>
-                    <span>📷 Upload Photo</span>
-                  </Button>
-                </Label>
-                <Input
-                  id="profile-picture"
-                  type="file"
+                <EnhancedFileUpload
+                  onFilesSelected={(files) => handleProfilePictureUpload(files[0])}
                   accept="image/*"
-                  onChange={handleProfilePictureUpload}
-                  className="hidden"
+                  multiple={false}
+                  maxFiles={1}
+                  maxFileSize={5}
+                  placeholder="Upload profile picture"
+                  id="profile-picture"
                 />
                 <p className="text-xs text-muted-foreground">
                   Click to upload a new profile picture

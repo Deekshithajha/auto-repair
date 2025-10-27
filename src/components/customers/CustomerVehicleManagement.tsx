@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
 
 interface Vehicle {
   id: string;
@@ -78,12 +79,10 @@ export const CustomerVehicleManagement: React.FC = () => {
     }
   };
 
-  const handlePhotoUpload = (vehicleId: string, files: FileList | null) => {
-    if (!files) return;
-    const fileArray = Array.from(files);
+  const handlePhotoUpload = (vehicleId: string, files: File[]) => {
     setVehiclePhotos(prev => ({
       ...prev,
-      [vehicleId]: [...(prev[vehicleId] || []), ...fileArray].slice(0, 5) // Limit to 5 photos
+      [vehicleId]: [...(prev[vehicleId] || []), ...files].slice(0, 5) // Limit to 5 photos
     }));
   };
 
@@ -341,27 +340,15 @@ export const CustomerVehicleManagement: React.FC = () => {
 
               <div className="space-y-2">
                 <Label>Vehicle Photos</Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-                  <div className="text-center">
-                    <div className="text-2xl mb-2">📸</div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Upload photos of your vehicle (max 5 photos)
-                    </p>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(editingVehicle?.id || 'new', e.target.files)}
-                      className="hidden"
-                      id="vehicle-photo-upload"
-                    />
-                    <Label
-                      htmlFor="vehicle-photo-upload"
-                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 cursor-pointer"
-                    >
-                      Choose Photos
-                    </Label>
-                  </div>
+                <EnhancedFileUpload
+                  onFilesSelected={(files) => handlePhotoUpload(editingVehicle?.id || 'new', files)}
+                  accept="image/*"
+                  multiple={true}
+                  maxFiles={5}
+                  maxFileSize={10}
+                  placeholder="Upload photos of your vehicle"
+                  id="vehicle-photo-upload"
+                />
                   
                   {/* Photo Previews */}
                   {vehiclePhotos[editingVehicle?.id || 'new']?.length > 0 && (
@@ -387,7 +374,6 @@ export const CustomerVehicleManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button type="submit" className="flex-1">

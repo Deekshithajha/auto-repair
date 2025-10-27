@@ -70,15 +70,31 @@ src/
 └── main.tsx           # Application entry point
 ```
 
-## Demo Accounts
+## 🎯 Demo Accounts & Dummy Data
 
-The application includes demo accounts for testing:
+The application includes comprehensive dummy data and demo accounts for testing:
 
-- **Customer**: demo-customer@autorepair.com
-- **Employee**: demo-employee@autorepair.com  
-- **Admin**: demo-admin@autorepair.com
+### **Demo Accounts**
+- **Customer**: john.smith@autorepair.com (Password: customer123)
+- **Employee**: alex.rodriguez@autorepair.com (Password: employee123)  
+- **Admin**: admin@autorepair.com (Password: admin123)
 
-Password for all demo accounts: `demo123`
+### **Dummy Data Included**
+- **5 Customer Profiles** with vehicles and repair history
+- **4 Employee Profiles** with different roles and rates
+- **5 Work Orders** in various stages (pending, in-progress, completed)
+- **Standard & Non-Standard Services** with realistic pricing
+- **Complete Financial Data** including invoices and parts costs
+- **Work Logs & Attendance** records for employees
+- **Notifications & Audit Logs** for system tracking
+
+### **Quick Start with Dummy Data**
+```bash
+# Start the development server (dummy data is built-in)
+npm run dev
+```
+
+📖 **For detailed dummy data guide, see [DUMMY_DATA_GUIDE.md](./DUMMY_DATA_GUIDE.md)**
 
 ## Contributing
 

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
+import { EnhancedVehicleRegistration } from '@/components/customers/EnhancedVehicleRegistration';
 import { EmployeeWorkManagement } from '@/components/employee/EmployeeWorkManagement';
 import { EmployeeProfileEditor } from '@/components/employee/EmployeeProfileEditor';
 import { EmployeeWorkLog } from '@/components/employee/EmployeeWorkLog';
@@ -72,11 +73,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
 
   const renderRegisterCustomerPage = () => (
     <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold">Register New Customer</h2>
-        <p className="text-muted-foreground text-sm sm:text-base">Create a new customer account and vehicle profile</p>
-      </div>
-      <CustomerRegistration />
+      <EnhancedVehicleRegistration />
     </div>
   );
 

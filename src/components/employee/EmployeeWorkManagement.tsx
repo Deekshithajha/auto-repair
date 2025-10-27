@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -93,15 +94,15 @@ export const EmployeeWorkManagement: React.FC = () => {
   const dummyWorkSessions: WorkSession[] = [
     {
       id: '1',
-      ticket_id: 'TICKET-001',
-      status: 'not_started',
-      started_at: '',
+      ticket_id: 'WO-001',
+      status: 'in_progress',
+      started_at: '2024-01-16T08:00:00Z',
       ended_at: '',
-      notes: '',
+      notes: 'Engine diagnostic completed. Found spark plug issue. Parts ordered.',
       ticket: {
-        id: 'TICKET-001',
+        id: 'WO-001',
         description: 'Engine making strange noise, needs diagnostic check. Car has been running rough for the past week.',
-        status: 'pending',
+        status: 'in_progress',
         user_id: 'user-1',
         vehicle: {
           id: 'vehicle-1',
@@ -118,15 +119,15 @@ export const EmployeeWorkManagement: React.FC = () => {
     },
     {
       id: '2',
-      ticket_id: 'TICKET-002',
-      status: 'in_progress',
-      started_at: '2024-01-16T08:30:00Z',
-      ended_at: '',
-      notes: '',
+      ticket_id: 'WO-002',
+      status: 'completed',
+      started_at: '2024-01-15T09:00:00Z',
+      ended_at: '2024-01-15T15:30:00Z',
+      notes: 'AC system repair completed. Replaced compressor and recharged system. Customer satisfied.',
       ticket: {
-        id: 'TICKET-002',
-        description: 'Air conditioning not working properly. Blowing warm air instead of cold.',
-        status: 'in_progress',
+        id: 'WO-002',
+        description: 'AC not blowing cold air properly. System needs inspection and repair.',
+        status: 'completed',
         user_id: 'user-2',
         vehicle: {
           id: 'vehicle-2',
@@ -135,7 +136,8 @@ export const EmployeeWorkManagement: React.FC = () => {
           year: 2019,
           reg_no: 'XYZ-5678',
           license_no: 'XYZ-5678',
-          location_status: 'in_shop'
+          location_status: 'ready_for_pickup',
+          expected_return_date: '2024-01-15T17:30:00Z'
         },
         customer_name: 'Sarah Johnson',
         customer_phone: '(555) 234-5678'
@@ -143,174 +145,131 @@ export const EmployeeWorkManagement: React.FC = () => {
     },
     {
       id: '3',
-      ticket_id: 'TICKET-003',
-      status: 'completed',
-      started_at: '2024-01-15T09:00:00Z',
-      ended_at: '2024-01-15T14:30:00Z',
-      notes: 'Oil change completed successfully. Replaced oil filter and topped up fluids. Customer notified.',
+      ticket_id: 'WO-003',
+      status: 'not_started',
+      started_at: '',
+      ended_at: '',
+      notes: '',
       ticket: {
-        id: 'TICKET-003',
-        description: 'Oil change and brake pad replacement. Regular maintenance service.',
-        status: 'completed',
+        id: 'WO-003',
+        description: 'Brake squeaking and oil change needed. Regular maintenance service.',
+        status: 'assigned',
         user_id: 'user-3',
         vehicle: {
           id: 'vehicle-3',
           make: 'Ford',
           model: 'Focus',
           year: 2021,
-          reg_no: 'DEF-9012'
+          reg_no: 'DEF-9012',
+          license_no: 'DEF-9012',
+          location_status: 'waiting_for_parts'
         },
         customer_name: 'Mike Davis',
         customer_phone: '(555) 345-6789'
+      }
+    },
+    {
+      id: '4',
+      ticket_id: 'WO-004',
+      status: 'not_started',
+      started_at: '',
+      ended_at: '',
+      notes: '',
+      ticket: {
+        id: 'WO-004',
+        description: 'Transmission issues - car jerks when shifting gears. Needs diagnostic.',
+        status: 'assigned',
+        user_id: 'user-4',
+        vehicle: {
+          id: 'vehicle-4',
+          make: 'BMW',
+          model: 'X5',
+          year: 2022,
+          reg_no: 'GHI-3456',
+          license_no: 'GHI-3456',
+          location_status: 'in_shop'
+        },
+        customer_name: 'Emily Wilson',
+        customer_phone: '(555) 456-7890'
       }
     }
   ];
 
   const dummyPartsUsed: Record<string, PartUsed[]> = {
-    'TICKET-002': [
-      { name: 'AC Compressor', quantity: 1, unit_price: 450.00 },
+    'WO-001': [
+      { name: 'Spark Plugs (Set of 4)', quantity: 1, unit_price: 45.00 },
+      { name: 'Air Filter', quantity: 1, unit_price: 25.00 },
+      { name: 'Oil Filter', quantity: 1, unit_price: 15.00 }
+    ],
+    'WO-002': [
+      { name: 'AC Compressor', quantity: 1, unit_price: 180.00 },
       { name: 'Refrigerant R134a', quantity: 2, unit_price: 25.00 },
       { name: 'AC Filter', quantity: 1, unit_price: 35.00 }
     ],
-    'TICKET-003': [
+    'WO-003': [
+      { name: 'Brake Pads (Front)', quantity: 1, unit_price: 85.00 },
       { name: 'Motor Oil 5W-30', quantity: 5, unit_price: 8.50 },
-      { name: 'Oil Filter', quantity: 1, unit_price: 12.00 },
-      { name: 'Brake Pads (Front)', quantity: 1, unit_price: 85.00 }
+      { name: 'Oil Filter', quantity: 1, unit_price: 12.00 }
+    ],
+    'WO-004': [
+      { name: 'Transmission Fluid', quantity: 4, unit_price: 18.00 },
+      { name: 'Transmission Filter', quantity: 1, unit_price: 45.00 }
     ]
   };
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchWorkSessions();
-      fetchUpcomingReturns();
+  const dummyUpcomingReturns = [
+    {
+      id: '1',
+      vehicle_id: 'vehicle-1',
+      customer_name: 'John Smith',
+      vehicle_info: '2020 Toyota Camry',
+      expected_return_date: '2024-01-18T16:00:00Z',
+      service_description: 'Engine diagnostic and spark plug replacement',
+      status: 'in_progress'
+    },
+    {
+      id: '2',
+      vehicle_id: 'vehicle-2',
+      customer_name: 'Sarah Johnson',
+      vehicle_info: '2019 Honda Civic',
+      expected_return_date: '2024-01-15T15:30:00Z',
+      service_description: 'AC system repair completed',
+      status: 'ready_for_pickup'
     }
-  }, [user?.id]);
+  ];
+
+  useEffect(() => {
+    // Use dummy data instead of database calls
+    setWorkSessions(dummyWorkSessions);
+    setPartsUsed(dummyPartsUsed);
+    setUpcomingReturns(dummyUpcomingReturns);
+    setLoading(false);
+    
+    // Set ticket roles for dummy data
+    const roles: Record<string, 'primary' | 'secondary'> = {
+      'WO-001': 'primary',
+      'WO-002': 'primary', 
+      'WO-003': 'secondary',
+      'WO-004': 'primary'
+    };
+    setTicketRoles(roles);
+  }, []);
 
   const fetchWorkSessions = async () => {
-    if (!user?.id) return;
-    
-    try {
-      setLoading(true);
-      
-      // Fetch tickets where user is primary OR secondary mechanic
-      const { data: ticketsData, error } = await supabase
-        .from('tickets')
-        .select(`
-          *,
-          vehicles!inner (
-            id,
-            make,
-            model,
-            year,
-            reg_no,
-            license_no,
-            location_status,
-            expected_return_date
-          )
-        `)
-        .or(`primary_mechanic_id.eq.${user.id},secondary_mechanic_id.eq.${user.id}`)
-        .in('status', ['assigned', 'in_progress'])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch customer profiles and determine roles
-      const sessions: WorkSession[] = [];
-      const roles: Record<string, 'primary' | 'secondary'> = {};
-
-      for (const ticket of ticketsData || []) {
-        const { data: customerProfile } = await supabase
-          .from('profiles')
-          .select('name, phone')
-          .eq('id', ticket.user_id)
-          .single();
-
-        // Determine role
-        const role = ticket.primary_mechanic_id === user.id ? 'primary' : 'secondary';
-        roles[ticket.id] = role;
-
-        // Create or fetch work session
-        let { data: workSession } = await supabase
-          .from('work_sessions')
-          .select('*')
-          .eq('ticket_id', ticket.id)
-          .eq('employee_id', user.id)
-          .maybeSingle();
-
-        if (!workSession) {
-          // Create work session if it doesn't exist
-          const { data: newSession, error: sessionError } = await supabase
-            .from('work_sessions')
-            .insert({
-              ticket_id: ticket.id,
-              employee_id: user.id,
-              status: 'not_started'
-            })
-            .select()
-            .single();
-
-          if (sessionError) throw sessionError;
-          workSession = newSession;
-        }
-
-        sessions.push({
-          id: workSession.id,
-          ticket_id: ticket.id,
-          status: workSession.status,
-          started_at: workSession.started_at,
-          ended_at: workSession.ended_at,
-          notes: workSession.notes,
-          ticket: {
-            id: ticket.id,
-            description: ticket.description,
-            status: ticket.status,
-            user_id: ticket.user_id,
-            vehicle: ticket.vehicles,
-            customer_name: customerProfile?.name || 'Unknown',
-            customer_phone: customerProfile?.phone || 'N/A'
-          }
-        });
-
-        // Fetch parts for this ticket
-        fetchPartsForTicket(ticket.id);
-      }
-
-      setWorkSessions(sessions);
-      setTicketRoles(roles);
-    } catch (error: any) {
-      console.error('Error fetching work sessions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load work assignments",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Use dummy data instead of database calls
+    setWorkSessions(dummyWorkSessions);
+    setPartsUsed(dummyPartsUsed);
+    setUpcomingReturns(dummyUpcomingReturns);
+    setLoading(false);
   };
 
   const fetchPartsForTicket = async (ticketId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('parts')
-        .select('*')
-        .eq('ticket_id', ticketId);
-
-      if (error) throw error;
-
-      const parts: PartUsed[] = (data || []).map(part => ({
-        name: part.name,
-        quantity: part.quantity,
-        unit_price: part.unit_price
-      }));
-
-      setPartsUsed(prev => ({
-        ...prev,
-        [ticketId]: parts
-      }));
-    } catch (error: any) {
-      console.error('Error fetching parts:', error);
-    }
+    // Use dummy data instead of database calls
+    const parts = dummyPartsUsed[ticketId] || [];
+    setPartsUsed(prev => ({
+      ...prev,
+      [ticketId]: parts
+    }));
   };
 
   const handleStartWork = async (sessionId: string, ticketId: string) => {
@@ -818,34 +777,8 @@ export const EmployeeWorkManagement: React.FC = () => {
   };
 
   const fetchUpcomingReturns = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('tickets')
-        .select(`
-          id,
-          ticket_number,
-          description,
-          reschedule_date,
-          reschedule_reason,
-          vehicles (
-            make,
-            model,
-            year,
-            license_no
-          ),
-          profiles (
-            name,
-            phone
-          )
-        `)
-        .not('reschedule_date', 'is', null)
-        .order('reschedule_date', { ascending: true });
-
-      if (error) throw error;
-      setUpcomingReturns(data || []);
-    } catch (e: any) {
-      console.error('Error fetching upcoming returns:', e);
-    }
+    // Use dummy data instead of database calls
+    setUpcomingReturns(dummyUpcomingReturns);
   };
 
   const printIssue = (session: WorkSession) => {
@@ -1679,19 +1612,43 @@ export const EmployeeWorkManagement: React.FC = () => {
                     <div>
                       <Label>VIN Sticker</Label>
                       <div className="mt-2">
-                        <Input type="file" accept="image/*" capture="environment" onChange={(e) => setVinStickerPhotos(prev => ({ ...prev, [session.id]: e.target.files ? Array.from(e.target.files) : [] }))} />
+                        <EnhancedFileUpload
+                          onFilesSelected={(files) => setVinStickerPhotos(prev => ({ ...prev, [session.id]: files }))}
+                          accept="image/*"
+                          multiple={false}
+                          maxFiles={1}
+                          maxFileSize={10}
+                          placeholder="Take VIN sticker photo"
+                          id={`vin-sticker-${session.id}`}
+                        />
                       </div>
                     </div>
                     <div>
                       <Label>Interior Photos</Label>
                       <div className="mt-2">
-                        <Input type="file" accept="image/*" multiple capture="environment" onChange={(e) => setInteriorPhotos(prev => ({ ...prev, [session.id]: e.target.files ? Array.from(e.target.files) : [] }))} />
+                        <EnhancedFileUpload
+                          onFilesSelected={(files) => setInteriorPhotos(prev => ({ ...prev, [session.id]: files }))}
+                          accept="image/*"
+                          multiple={true}
+                          maxFiles={5}
+                          maxFileSize={10}
+                          placeholder="Take interior photos"
+                          id={`interior-${session.id}`}
+                        />
                       </div>
                     </div>
                     <div>
                       <Label>Exterior Photos</Label>
                       <div className="mt-2">
-                        <Input type="file" accept="image/*" multiple capture="environment" onChange={(e) => setExteriorPhotos(prev => ({ ...prev, [session.id]: e.target.files ? Array.from(e.target.files) : [] }))} />
+                        <EnhancedFileUpload
+                          onFilesSelected={(files) => setExteriorPhotos(prev => ({ ...prev, [session.id]: files }))}
+                          accept="image/*"
+                          multiple={true}
+                          maxFiles={5}
+                          maxFileSize={10}
+                          placeholder="Take exterior photos"
+                          id={`exterior-${session.id}`}
+                        />
                       </div>
                     </div>
                   </div>

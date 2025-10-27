@@ -38,10 +38,15 @@ export const EmployeeManagement: React.FC = () => {
   const { toast } = useToast();
 
   const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    employee_id: '',
     employment_type: 'full_time' as 'full_time' | 'part_time' | 'contractor',
     hourly_rate: 0,
     overtime_rate: 0,
-    employment_status: 'active' as 'active' | 'on_leave' | 'terminated'
+    employment_status: 'active' as 'active' | 'on_leave' | 'terminated',
+    hire_date: ''
   });
 
   const [terminateOpen, setTerminateOpen] = useState(false);
@@ -49,6 +54,27 @@ export const EmployeeManagement: React.FC = () => {
     termination_date: '',
     termination_reason: ''
   });
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    employee_id: '',
+    employment_type: 'full_time' as 'full_time' | 'part_time' | 'contractor',
+    hourly_rate: 0,
+    overtime_rate: 0,
+    hire_date: new Date().toISOString().split('T')[0]
+  });
+
+  const [deleteConfirm, setDeleteConfirm] = useState<Record<string, boolean>>({});
+
+  // Auto-generate employee ID
+  const generateEmployeeId = () => {
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+    return `EMP${timestamp}${random}`;
+  };
 
   useEffect(() => {
     fetchEmployees();
@@ -113,10 +139,15 @@ export const EmployeeManagement: React.FC = () => {
       : null;
     
     setEditForm({
+      name: employee.profiles.name || '',
+      email: employee.profiles.email || '',
+      phone: employee.profiles.phone || '',
+      employee_id: employee.employee_id || '',
       employment_type: (details?.employment_type as any) || 'full_time',
       hourly_rate: details?.hourly_rate || 0,
       overtime_rate: details?.overtime_rate || 0,
-      employment_status: (employee.employment_status as any) || 'active'
+      employment_status: (employee.employment_status as any) || 'active',
+      hire_date: employee.hire_date || ''
     });
     setEditOpen(true);
   };
@@ -125,10 +156,26 @@ export const EmployeeManagement: React.FC = () => {
     if (!selectedEmployee) return;
 
     try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+          employee_id: editForm.employee_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedEmployee.user_id);
+
+      if (profileError) throw profileError;
+
       // Update employee status
       const { error: empError } = await supabase
         .from('employees')
         .update({
+          employee_id: editForm.employee_id,
+          hire_date: editForm.hire_date,
           employment_status: editForm.employment_status,
           updated_at: new Date().toISOString()
         })
@@ -166,6 +213,136 @@ export const EmployeeManagement: React.FC = () => {
     }
   };
 
+  const handleCreateEmployee = async () => {
+    if (!createForm.name) {
+      toast({
+        title: "Error",
+        description: "Name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Auto-generate employee ID if not provided
+    const employeeId = createForm.employee_id || generateEmployeeId();
+
+    try {
+      // Create user profile first
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          name: createForm.name,
+          email: createForm.email || null,
+          phone: createForm.phone || null,
+          role: 'employee',
+          employee_id: employeeId
+        })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Create employee record
+      const { data: employeeData, error: empError } = await supabase
+        .from('employees')
+        .insert({
+          user_id: profileData.id,
+          employee_id: employeeId,
+          hire_date: createForm.hire_date,
+          is_active: true,
+          employment_status: 'active'
+        })
+        .select()
+        .single();
+
+      if (empError) throw empError;
+
+      // Create employee details
+      const { error: detailsError } = await supabase
+        .from('employee_details')
+        .insert({
+          employee_id: employeeData.id,
+          employment_type: createForm.employment_type,
+          hourly_rate: createForm.hourly_rate,
+          overtime_rate: createForm.overtime_rate
+        });
+
+      if (detailsError) throw detailsError;
+
+      toast({
+        title: "Success",
+        description: "Employee created successfully"
+      });
+
+      setCreateOpen(false);
+      setCreateForm({
+        name: '',
+        email: '',
+        phone: '',
+        employee_id: '',
+        employment_type: 'full_time',
+        hourly_rate: 0,
+        overtime_rate: 0,
+        hire_date: new Date().toISOString().split('T')[0]
+      });
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error creating employee:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create employee",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    try {
+      // Get employee data first
+      const employee = employees.find(emp => emp.id === employeeId);
+      if (!employee) return;
+
+      // Delete employee details
+      const { error: detailsError } = await supabase
+        .from('employee_details')
+        .delete()
+        .eq('employee_id', employeeId);
+
+      if (detailsError) throw detailsError;
+
+      // Delete employee record
+      const { error: empError } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', employeeId);
+
+      if (empError) throw empError;
+
+      // Delete profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', employee.user_id);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Success",
+        description: "Employee deleted successfully"
+      });
+
+      setDeleteConfirm(prev => ({ ...prev, [employeeId]: false }));
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete employee",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading employees...</div>;
   }
@@ -177,6 +354,10 @@ export const EmployeeManagement: React.FC = () => {
           <h2 className="text-2xl font-bold">Employee Management</h2>
           <p className="text-muted-foreground">Manage employees, rates, and employment status</p>
         </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <span className="mr-2">➕</span>
+          Create New Employee
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -241,6 +422,13 @@ export const EmployeeManagement: React.FC = () => {
                       onClick={() => handleEdit(employee)}
                     >
                       Edit
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => setDeleteConfirm(prev => ({ ...prev, [employee.id]: true }))}
+                    >
+                      Delete
                     </Button>
                   </div>
                   {employee.employment_status === 'active' && (
@@ -335,21 +523,70 @@ export const EmployeeManagement: React.FC = () => {
             <DialogDescription>Update employment details for {selectedEmployee?.profiles.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Employment Type</Label>
-              <Select 
-                value={editForm.employment_type} 
-                onValueChange={(value: any) => setEditForm({...editForm, employment_type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full_time">Full Time</SelectItem>
-                  <SelectItem value="part_time">Part Time</SelectItem>
-                  <SelectItem value="contractor">Contractor</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Full Name</Label>
+                <Input
+                  value={editForm.name || ''}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={editForm.email || ''}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  placeholder="employee@autorepair.com"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Phone</Label>
+                <Input
+                  value={editForm.phone || ''}
+                  onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              <div>
+                <Label>Employee ID</Label>
+                <Input
+                  value={editForm.employee_id || ''}
+                  onChange={(e) => setEditForm({...editForm, employee_id: e.target.value})}
+                  placeholder="EMP001"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Employment Type</Label>
+                <Select 
+                  value={editForm.employment_type} 
+                  onValueChange={(value: any) => setEditForm({...editForm, employment_type: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full_time">Full Time</SelectItem>
+                    <SelectItem value="part_time">Part Time</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Hire Date</Label>
+                <Input
+                  type="date"
+                  value={editForm.hire_date || ''}
+                  onChange={(e) => setEditForm({...editForm, hire_date: e.target.value})}
+                />
+              </div>
             </div>
             <div>
               <Label>Employment Status</Label>
@@ -502,6 +739,151 @@ export const EmployeeManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Employee Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Employee</DialogTitle>
+            <DialogDescription>Add a new employee to the system</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Full Name *</Label>
+                <Input
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
+                  placeholder="employee@autorepair.com"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Phone</Label>
+                <Input
+                  value={createForm.phone}
+                  onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+              <div>
+                <Label>Employee ID (Auto-generated if empty)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={createForm.employee_id}
+                    onChange={(e) => setCreateForm({...createForm, employee_id: e.target.value})}
+                    placeholder="Will be auto-generated"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setCreateForm({...createForm, employee_id: generateEmployeeId()})}
+                  >
+                    Generate
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Employment Type</Label>
+                <Select 
+                  value={createForm.employment_type} 
+                  onValueChange={(value: any) => setCreateForm({...createForm, employment_type: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full_time">Full Time</SelectItem>
+                    <SelectItem value="part_time">Part Time</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Hire Date</Label>
+                <Input
+                  type="date"
+                  value={createForm.hire_date}
+                  onChange={(e) => setCreateForm({...createForm, hire_date: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Hourly Rate ($)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={createForm.hourly_rate}
+                  onChange={(e) => setCreateForm({...createForm, hourly_rate: parseFloat(e.target.value) || 0})}
+                  placeholder="25.00"
+                />
+              </div>
+              <div>
+                <Label>Overtime Rate ($)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={createForm.overtime_rate}
+                  onChange={(e) => setCreateForm({...createForm, overtime_rate: parseFloat(e.target.value) || 0})}
+                  placeholder="37.50"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateEmployee}>Create Employee</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      {Object.entries(deleteConfirm).map(([employeeId, isOpen]) => (
+        isOpen && (
+          <Dialog key={employeeId} open={isOpen} onOpenChange={() => setDeleteConfirm(prev => ({ ...prev, [employeeId]: false }))}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Employee</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this employee? This action cannot be undone and will remove all associated data.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDeleteConfirm(prev => ({ ...prev, [employeeId]: false }))}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive"
+                  onClick={() => handleDeleteEmployee(employeeId)}
+                >
+                  Delete Employee
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )
+      ))}
     </div>
   );
 };
