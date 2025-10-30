@@ -110,8 +110,9 @@ export const EmployeeProfileEditor: React.FC = () => {
     }
   };
 
-  const handleProfilePictureUpload = (file: File) => {
-    if (file) {
+  const handleProfilePictureUpload = (files: File[]) => {
+    if (files && files.length > 0) {
+      const file = files[0];
       setProfilePicture(file);
       setProfilePicturePreview(URL.createObjectURL(file));
     }
@@ -244,7 +245,7 @@ export const EmployeeProfileEditor: React.FC = () => {
               </Avatar>
               <div className="space-y-2">
                 <EnhancedFileUpload
-                  onFilesSelected={(files) => handleProfilePictureUpload(files[0])}
+                  onFilesSelected={handleProfilePictureUpload}
                   accept="image/*"
                   multiple={false}
                   maxFiles={1}

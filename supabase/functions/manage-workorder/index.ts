@@ -252,7 +252,7 @@ async function calculateTotal(supabase: any, workorderId: string) {
   let partsSubtotal = 0;
   let partsTax = 0;
   
-  parts?.forEach(part => {
+  parts?.forEach((part: any) => {
     const partTotal = part.quantity * part.unit_price;
     partsSubtotal += partTotal;
     partsTax += partTotal * (part.tax_percentage / 100);

@@ -12,6 +12,7 @@ import { EmployeeWorkManagement } from '@/components/employee/EmployeeWorkManage
 import { EmployeeProfileEditor } from '@/components/employee/EmployeeProfileEditor';
 import { EmployeeWorkLog } from '@/components/employee/EmployeeWorkLog';
 import { EmployeeAttendance } from '@/components/employee/EmployeeAttendance';
+import { EmployeeSettings } from '@/components/employee/EmployeeSettings';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import DashboardBackground from '@/components/layout/DashboardBackground';
 
@@ -38,6 +39,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
         return renderProfilePage();
       case 'register':
         return renderRegisterCustomerPage();
+      case 'settings':
+        return renderSettingsPage();
       default:
         return renderAssignmentsPage();
     }
@@ -77,6 +80,11 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
     </div>
   );
 
+  const renderSettingsPage = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <EmployeeSettings />
+    </div>
+  );
 
   const handleTicketCreated = () => {
     setShowCreateTicket(false);

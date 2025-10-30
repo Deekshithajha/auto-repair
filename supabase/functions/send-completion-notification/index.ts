@@ -27,10 +27,11 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
       .select(`
+        user_id,
         id,
         description,
         vehicles:vehicles(make, model, year, reg_no),
-        profiles:profiles(name, phone)
+        profiles:profiles(id, name, phone)
       `)
       .eq("id", ticket_id)
       .single();
