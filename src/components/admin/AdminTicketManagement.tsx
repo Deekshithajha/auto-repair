@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { InvoicePopup } from './InvoicePopup';
 
 interface Ticket {
   id: string;
@@ -195,6 +196,8 @@ export const AdminTicketManagement: React.FC = () => {
   const [showEditDialog, setShowEditDialog] = useState<Record<string, boolean>>({});
   const [editForm, setEditForm] = useState<Record<string, { description: string; pickup_time: string }>>({});
   const [showReassignDialog, setShowReassignDialog] = useState<Record<string, boolean>>({});
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState<Record<string, boolean>>({});
+  const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
 
   useEffect(() => {
     // Use dummy data instead of database calls
@@ -348,6 +351,11 @@ export const AdminTicketManagement: React.FC = () => {
     });
   };
 
+  const handleGenerateInvoice = (ticket: Ticket) => {
+    setSelectedTicketForInvoice(ticket);
+    setShowInvoiceDialog(prev => ({ ...prev, [ticket.id]: true }));
+  };
+
   const filteredTickets = tickets.filter(ticket => 
     ticket.status === 'pending' || ticket.status === 'approved' || ticket.status === 'assigned' || ticket.status === 'in_progress' || ticket.status === 'completed'
   );
@@ -490,6 +498,16 @@ export const AdminTicketManagement: React.FC = () => {
                       onClick={() => handleReassignMechanics(ticket.id)}
                     >
                       🔄 Reassign Mechanics
+                    </Button>
+                  )}
+
+                  {(ticket.status === 'in_progress' || ticket.status === 'completed') && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleGenerateInvoice(ticket)}
+                    >
+                      🧾 Generate Invoice
                     </Button>
                   )}
 
@@ -719,6 +737,18 @@ export const AdminTicketManagement: React.FC = () => {
           </Dialog>
         )
       ))}
+
+      {/* Invoice Popup */}
+      <InvoicePopup
+        ticket={selectedTicketForInvoice}
+        isOpen={selectedTicketForInvoice ? (showInvoiceDialog[selectedTicketForInvoice.id] || false) : false}
+        onClose={() => {
+          if (selectedTicketForInvoice) {
+            setShowInvoiceDialog(prev => ({ ...prev, [selectedTicketForInvoice.id]: false }));
+            setSelectedTicketForInvoice(null);
+          }
+        }}
+      />
     </div>
   );
 };

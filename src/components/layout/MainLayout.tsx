@@ -70,6 +70,7 @@ export const MainLayout: React.FC = () => {
                 <Route path="/admin/customers" element={profile.role === 'admin' ? <AdminDashboard activeTab="customers" /> : <Navigate to="/" />} />
                 <Route path="/admin/employees" element={profile.role === 'admin' ? <AdminDashboard activeTab="employees" /> : <Navigate to="/" />} />
                 <Route path="/admin/register" element={profile.role === 'admin' ? <AdminDashboard activeTab="register" /> : <Navigate to="/" />} />
+                <Route path="/admin/invoice" element={profile.role === 'admin' ? <AdminDashboard activeTab="invoice" /> : <Navigate to="/" />} />
                 <Route path="/admin/monitor" element={profile.role === 'admin' ? <AdminDashboard activeTab="monitor" /> : <Navigate to="/" />} />
                 <Route path="/admin/reports" element={profile.role === 'admin' ? <AdminDashboard activeTab="reports" /> : <Navigate to="/" />} />
                 <Route path="/admin/audit" element={profile.role === 'admin' ? <AdminDashboard activeTab="audit" /> : <Navigate to="/" />} />

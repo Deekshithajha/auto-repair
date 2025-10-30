@@ -13,6 +13,7 @@ import { EmployeeManagement } from '@/components/admin/EmployeeManagement';
 import { LiveMonitor } from '@/components/admin/LiveMonitor';
 import { ReportsAnalytics } from '@/components/admin/ReportsAnalytics';
 import { AuditLogs } from '@/components/admin/AuditLogs';
+import { InvoiceList } from '@/components/admin/InvoiceList';
 import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
@@ -196,7 +197,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
     <DashboardBackground>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} onValueChange={(val) => navigate(`/admin/${val}`)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 lg:w-auto text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 lg:w-auto text-xs sm:text-sm">
             <TabsTrigger value="tickets" className="flex items-center space-x-1 sm:space-x-2">
               <span>📧</span>
               <span className="hidden sm:inline">Approve</span>
@@ -212,6 +213,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
             <TabsTrigger value="register" className="flex items-center space-x-1 sm:space-x-2">
               <span>➕</span>
               <span className="hidden sm:inline">Register</span>
+            </TabsTrigger>
+            <TabsTrigger value="invoice" className="flex items-center space-x-1 sm:space-x-2">
+              <span>🧾</span>
+              <span className="hidden sm:inline">Invoice</span>
             </TabsTrigger>
             <TabsTrigger value="monitor" className="flex items-center space-x-1 sm:space-x-2">
               <span>📊</span>
@@ -271,6 +276,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
                 <CustomerRegistration />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Invoice Tab */}
+          <TabsContent value="invoice" className="space-y-4 sm:space-y-6">
+            <InvoiceList />
           </TabsContent>
 
           {/* Live Monitor Tab */}

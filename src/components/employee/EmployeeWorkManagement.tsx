@@ -55,6 +55,17 @@ interface DamageLogEntry {
   ticket_id?: string;
   photo_ids?: string[];
   is_new_damage?: boolean;
+  selected_services?: string[];
+}
+
+interface StandardService {
+  id: string;
+  service_name: string;
+  category: 'standard' | 'non_standard';
+  default_price: number | null;
+  labor_hours: number | null;
+  taxable: boolean;
+  description: string | null;
 }
 
 export const EmployeeWorkManagement: React.FC = () => {
@@ -89,6 +100,9 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [upcomingReturns, setUpcomingReturns] = useState<any[]>([]);
   const [assignmentFilter, setAssignmentFilter] = useState<'all' | 'primary'>('all');
   const [ticketRoles, setTicketRoles] = useState<Record<string, 'primary' | 'secondary'>>({});
+  const [standardServices, setStandardServices] = useState<StandardService[]>([]);
+  const [selectedServices, setSelectedServices] = useState<Record<string, string[]>>({});
+  const [showServiceDialog, setShowServiceDialog] = useState<Record<string, boolean>>({});
 
   // Dummy data for demonstration
   const dummyWorkSessions: WorkSession[] = [
@@ -253,6 +267,9 @@ export const EmployeeWorkManagement: React.FC = () => {
       'WO-004': 'primary'
     };
     setTicketRoles(roles);
+    
+    // Fetch standard services
+    fetchStandardServices();
   }, []);
 
   const fetchWorkSessions = async () => {
@@ -460,7 +477,8 @@ export const EmployeeWorkManagement: React.FC = () => {
         logged_by: user?.id || '',
         ticket_id: ticketId,
         photo_ids: photoIds,
-        is_new_damage: true
+        is_new_damage: true,
+        selected_services: selectedServices[sessionId] || []
       };
 
       // Update local state
@@ -472,6 +490,7 @@ export const EmployeeWorkManagement: React.FC = () => {
       // Clear form
       setNewDamageDescription(prev => ({ ...prev, [sessionId]: '' }));
       setDamagePhotos(prev => ({ ...prev, [sessionId]: [] }));
+      setSelectedServices(prev => ({ ...prev, [sessionId]: [] }));
       setShowDamageDialog(prev => ({ ...prev, [sessionId]: false }));
 
       toast({
@@ -779,6 +798,56 @@ export const EmployeeWorkManagement: React.FC = () => {
   const fetchUpcomingReturns = async () => {
     // Use dummy data instead of database calls
     setUpcomingReturns(dummyUpcomingReturns);
+  };
+
+  const fetchStandardServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('standard_services')
+        .select('*')
+        .eq('is_active', true)
+        .order('service_name');
+
+      if (error) throw error;
+      setStandardServices(data || []);
+    } catch (error: any) {
+      console.error('Error fetching services:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch services',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleServiceSelect = (sessionId: string, serviceId: string) => {
+    setSelectedServices(prev => {
+      const currentServices = prev[sessionId] || [];
+      if (currentServices.includes(serviceId)) {
+        return prev; // Service already selected
+      }
+      return {
+        ...prev,
+        [sessionId]: [...currentServices, serviceId]
+      };
+    });
+  };
+
+  const handleServiceRemove = (sessionId: string, serviceId: string) => {
+    setSelectedServices(prev => ({
+      ...prev,
+      [sessionId]: (prev[sessionId] || []).filter(id => id !== serviceId)
+    }));
+  };
+
+  const getAvailableServices = (sessionId: string) => {
+    const selectedServiceIds = selectedServices[sessionId] || [];
+    return standardServices.filter(service => !selectedServiceIds.includes(service.id));
+  };
+
+  const getSelectedServices = (sessionId: string) => {
+    const selectedServiceIds = selectedServices[sessionId] || [];
+    return standardServices.filter(service => selectedServiceIds.includes(service.id));
   };
 
   const printIssue = (session: WorkSession) => {
@@ -1364,6 +1433,97 @@ export const EmployeeWorkManagement: React.FC = () => {
                               rows={4}
                             />
                           </div>
+
+                          {/* Service Selection */}
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Label>Required Services</Label>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowServiceDialog(prev => ({ ...prev, [session.id]: true }))}
+                              >
+                                + Add Service
+                              </Button>
+                            </div>
+                            
+                            {/* Selected Services Display */}
+                            {getSelectedServices(session.id).length > 0 && (
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium text-green-700">Selected Services:</Label>
+                                <div className="space-y-2">
+                                  {getSelectedServices(session.id).map((service) => (
+                                    <div key={service.id} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant={service.category === 'standard' ? 'default' : 'secondary'}>
+                                          {service.category === 'standard' ? 'Standard' : 'Non-Standard'}
+                                        </Badge>
+                                        <span className="text-sm font-medium">{service.service_name}</span>
+                                        {service.description && (
+                                          <span className="text-xs text-muted-foreground">- {service.description}</span>
+                                        )}
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => handleServiceRemove(session.id, service.id)}
+                                        className="h-6 w-6 p-0"
+                                      >
+                                        ✕
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Service Selection Dialog */}
+                            <Dialog open={showServiceDialog[session.id] || false} onOpenChange={(open) => setShowServiceDialog(prev => ({ ...prev, [session.id]: open }))}>
+                              <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Select Service</DialogTitle>
+                                  <DialogDescription>Choose a service required for this damage</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label>Available Services</Label>
+                                    <div className="max-h-60 overflow-y-auto space-y-2">
+                                      {getAvailableServices(session.id).map((service) => (
+                                        <div
+                                          key={service.id}
+                                          className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                                          onClick={() => {
+                                            handleServiceSelect(session.id, service.id);
+                                            setShowServiceDialog(prev => ({ ...prev, [session.id]: false }));
+                                          }}
+                                        >
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant={service.category === 'standard' ? 'default' : 'secondary'}>
+                                              {service.category === 'standard' ? 'Standard' : 'Non-Standard'}
+                                            </Badge>
+                                            <span className="font-medium">{service.service_name}</span>
+                                          </div>
+                                          {service.description && (
+                                            <p className="text-sm text-muted-foreground">{service.description}</p>
+                                          )}
+                                          {service.default_price && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                              Base Price: ${service.default_price.toFixed(2)}
+                                            </p>
+                                          )}
+                                        </div>
+                                      ))}
+                                      {getAvailableServices(session.id).length === 0 && (
+                                        <p className="text-center text-muted-foreground py-4">
+                                          All services have been selected
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
                           
                           <div className="space-y-2">
                             <Label>Damage Photos (Optional)</Label>
@@ -1579,6 +1739,24 @@ export const EmployeeWorkManagement: React.FC = () => {
                             </div>
                           </div>
                           <p className="text-sm">{log.description}</p>
+                          
+                          {/* Selected Services Display */}
+                          {log.selected_services && log.selected_services.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-medium text-muted-foreground mb-1">Required Services:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {log.selected_services.map((serviceId) => {
+                                  const service = standardServices.find(s => s.id === serviceId);
+                                  return service ? (
+                                    <Badge key={serviceId} variant={service.category === 'standard' ? 'default' : 'secondary'} className="text-xs">
+                                      {service.service_name}
+                                    </Badge>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
                           {log.photo_ids && log.photo_ids.length > 0 && (
                             <div className="mt-2 text-xs text-muted-foreground">
                               📷 {log.photo_ids.length} photo(s) attached
