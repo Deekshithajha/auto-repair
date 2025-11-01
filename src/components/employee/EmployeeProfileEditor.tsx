@@ -124,16 +124,17 @@ export const EmployeeProfileEditor: React.FC = () => {
     try {
       const fileExt = profilePicture.name.split('.').pop();
       const fileName = `profile-${userId}.${fileExt}`;
+      const storagePath = `${userId}/${fileName}`;
       
       const { error } = await supabase.storage
         .from('profile-pictures')
-        .upload(fileName, profilePicture, { upsert: true });
+        .upload(storagePath, profilePicture, { upsert: true });
       
       if (error) throw error;
       
       const { data } = supabase.storage
         .from('profile-pictures')
-        .getPublicUrl(fileName);
+        .getPublicUrl(storagePath);
       
       return data.publicUrl;
     } catch (error: any) {

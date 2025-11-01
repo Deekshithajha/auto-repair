@@ -336,6 +336,14 @@ export const EmployeeWorkManagement: React.FC = () => {
       }));
   };
 
+  const handleRemovePart = (ticketId: string, index: number) => {
+    setPartsUsed(prev => ({
+      ...prev,
+      [ticketId]: (prev[ticketId] || []).filter((_, i) => i !== index)
+    }));
+    toast({ title: 'Removed', description: 'Part removed from this ticket.' });
+  };
+
   const handleFinishWork = async (sessionId: string, ticketId: string) => {
     // Update dummy data instead of database
     setWorkSessions(prev => prev.map(session => 
@@ -1189,19 +1197,100 @@ export const EmployeeWorkManagement: React.FC = () => {
                       <span className="text-xs text-muted-foreground">Ticket: {session.ticket['ticket_number'] || session.ticket.id}</span>
                     </div>
                     <Dialog open={showIssueDialog[session.id] || false} onOpenChange={(open) => setShowIssueDialog(prev => ({ ...prev, [session.id]: open }))}>
-                      <DialogContent className="max-w-2xl">
+                      <DialogContent className="max-w-3xl">
                         <DialogHeader>
-                          <DialogTitle>Edit Customer Issue</DialogTitle>
+                          <DialogTitle>Edit Issue, Services & Damage</DialogTitle>
+                          <DialogDescription>Update the customer issue, select services, and optionally log damage in one place.</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4">
+                        <div className="space-y-6">
+                          {/* Issue description */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Issue Description</Label>
                           <Textarea
                             value={issueEdits[session.id] ?? session.ticket.description}
                             onChange={(e) => setIssueEdits(prev => ({ ...prev, [session.id]: e.target.value }))}
                             rows={4}
                           />
+                          </div>
+
+                          {/* Services selection */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm font-medium">Services</Label>
+                              <span className="text-xs text-muted-foreground">Choose applicable services for this ticket</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {getAvailableServices(session.id).slice(0, 10).map(service => (
+                                <Button key={service.id} size="sm" variant="outline" onClick={() => handleServiceSelect(session.id, service.id)}>
+                                  ➕ {service.service_name}
+                                </Button>
+                              ))}
+                              {getAvailableServices(session.id).length === 0 && (
+                                <span className="text-xs text-muted-foreground">All available services already selected</span>
+                              )}
+                            </div>
+                            {getSelectedServices(session.id).length > 0 && (
+                              <div className="flex flex-wrap gap-2 pt-2">
+                                {getSelectedServices(session.id).map(service => (
+                                  <Badge key={service.id} variant="secondary" className="flex items-center gap-2">
+                                    {service.service_name}
+                                    <button onClick={() => handleServiceRemove(session.id, service.id)} aria-label="Remove service">✖️</button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Optional Damage log */}
+                          <div className="space-y-3 border-t pt-4">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm font-medium">Damage Log (optional)</Label>
+                              <span className="text-xs text-muted-foreground">Add damage details and photos</span>
+                            </div>
+                            <div className="space-y-2">
+                              <Textarea
+                                placeholder="Describe the damage in detail..."
+                                value={newDamageDescription[session.id] || ''}
+                                onChange={(e) => setNewDamageDescription(prev => ({ ...prev, [session.id]: e.target.value }))}
+                                rows={3}
+                              />
+                              <div>
+                                <input
+                                  id={`issue-damage-photo-upload-${session.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const files = e.target.files ? Array.from(e.target.files) : [];
+                                    setDamagePhotos(prev => ({ ...prev, [session.id]: [...(prev[session.id] || []), ...files].slice(0, 5) }));
+                                  }}
+                                />
+                                <Label htmlFor={`issue-damage-photo-upload-${session.id}`} className="inline-flex items-center gap-2 text-blue-600 cursor-pointer">
+                                  📷 Upload Damage Photos (max 5)
+                                </Label>
+                              </div>
+                              {damagePhotos[session.id]?.length > 0 && (
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                  {damagePhotos[session.id].map((photo, index) => (
+                                    <span key={index} className="px-2 py-1 bg-muted rounded">
+                                      {photo.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
                           <div className="flex justify-end gap-2">
                             <Button variant="outline" onClick={() => setShowIssueDialog(prev => ({ ...prev, [session.id]: false }))}>Cancel</Button>
-                            <Button onClick={() => handleSaveIssue(session.id, session.ticket.id)}>Save</Button>
+                            <Button onClick={async () => {
+                              await handleSaveIssue(session.id, session.ticket.id);
+                              // If damage description provided, create a damage log entry using current selections
+                              if ((newDamageDescription[session.id] || '').trim()) {
+                                await handleAddDamageLog(session.id, session.ticket.vehicle.id, session.ticket_id);
+                              }
+                            }}>Save</Button>
                           </div>
                         </div>
                       </DialogContent>
@@ -1308,9 +1397,12 @@ export const EmployeeWorkManagement: React.FC = () => {
                     {partsUsed[session.ticket_id]?.length > 0 ? (
                       <div className="space-y-2 text-sm">
                         {partsUsed[session.ticket_id].map((part, index) => (
-                          <div key={index} className="flex justify-between items-center bg-muted p-2 rounded">
-                            <span>{part.name} (x{part.quantity})</span>
-                            <span>${(part.quantity * part.unit_price).toFixed(2)}</span>
+                          <div key={index} className="flex justify-between items-center bg-muted p-2 rounded gap-2">
+                            <span className="truncate">{part.name} (x{part.quantity})</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span>${(part.quantity * part.unit_price).toFixed(2)}</span>
+                              <Button size="icon" variant="ghost" onClick={() => handleRemovePart(session.ticket_id, index)} aria-label="Remove part">🗑️</Button>
+                            </div>
                           </div>
                         ))}
                         <div className="flex justify-between items-center font-medium pt-2 border-t">
