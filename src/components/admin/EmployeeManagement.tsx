@@ -227,16 +227,20 @@ export const EmployeeManagement: React.FC = () => {
     const employeeId = createForm.employee_id || generateEmployeeId();
 
     try {
+      // Get current user session to use as id
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser) throw new Error('Not authenticated');
+
       // Create user profile first
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .insert([{
+          id: authUser.id,
           name: createForm.name,
           email: createForm.email || null,
           phone: createForm.phone || null,
-          role: 'employee',
           employee_id: employeeId
-        })
+        }])
         .select()
         .single();
 

@@ -26,8 +26,7 @@ interface Ticket {
   };
   customer: {
     id: string;
-    first_name: string;
-    last_name: string;
+    name: string;
     email: string;
     phone: string;
   };
@@ -36,7 +35,7 @@ interface Ticket {
 interface StandardService {
   id: string;
   service_name: string;
-  category: 'standard' | 'non_standard';
+  category: string;
   default_price: number | null;
   labor_hours: number | null;
   taxable: boolean;
@@ -122,12 +121,13 @@ export const InvoiceGeneration: React.FC = () => {
           description,
           created_at,
           vehicle:vehicles(id, make, model, year, vin),
-          customer:customers(id, first_name, last_name, email, phone)
+          customer:profiles!tickets_user_id_fkey(id, name, email, phone)
         `)
         .in('status', ['completed', 'in_progress'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      // @ts-ignore - Supabase type inference issue with renamed relation
       setTickets(data || []);
     } catch (error: any) {
       console.error('Error fetching tickets:', error);
@@ -488,7 +488,7 @@ export const InvoiceGeneration: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Customer</Label>
-                    <p className="text-sm">{invoiceData.ticket.customer.first_name} {invoiceData.ticket.customer.last_name}</p>
+                    <p className="text-sm">{invoiceData.ticket.customer.name}</p>
                     <p className="text-xs text-muted-foreground">{invoiceData.ticket.customer.email}</p>
                     <p className="text-xs text-muted-foreground">{invoiceData.ticket.customer.phone}</p>
                   </div>

@@ -621,6 +621,7 @@ export type Database = {
           parts_cost: number | null
           preferred_pickup_time: string | null
           primary_mechanic_id: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"] | null
           scheduled_pickup_time: string | null
           secondary_mechanic_id: string | null
           status: Database["public"]["Enums"]["ticket_status"]
@@ -644,6 +645,7 @@ export type Database = {
           parts_cost?: number | null
           preferred_pickup_time?: string | null
           primary_mechanic_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"] | null
           scheduled_pickup_time?: string | null
           secondary_mechanic_id?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -667,6 +669,7 @@ export type Database = {
           parts_cost?: number | null
           preferred_pickup_time?: string | null
           primary_mechanic_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"] | null
           scheduled_pickup_time?: string | null
           secondary_mechanic_id?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
@@ -1049,6 +1052,7 @@ export type Database = {
         | "work_completed"
         | "invoice_created"
         | "customer_deleted"
+      ticket_priority: "low" | "normal" | "high" | "urgent"
       ticket_status:
         | "pending"
         | "approved"
@@ -1197,6 +1201,7 @@ export const Constants = {
         "invoice_created",
         "customer_deleted",
       ],
+      ticket_priority: ["low", "normal", "high", "urgent"],
       ticket_status: [
         "pending",
         "approved",

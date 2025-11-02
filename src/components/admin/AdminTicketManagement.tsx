@@ -28,10 +28,12 @@ interface Ticket {
     model: string;
     year: number;
     reg_no: string;
+    vin?: string | null;
   };
   profiles: {
     name: string;
     phone: string;
+    email: string;
   };
   primary_mechanic?: {
     name: string;
@@ -72,7 +74,8 @@ export const AdminTicketManagement: React.FC = () => {
       },
       profiles: {
         name: 'John Smith',
-        phone: '(555) 123-4567'
+        phone: '(555) 123-4567',
+        email: 'john.smith@example.com'
       },
       primary_mechanic: {
         name: 'Alex Rodriguez'
@@ -100,7 +103,8 @@ export const AdminTicketManagement: React.FC = () => {
       },
       profiles: {
         name: 'Sarah Johnson',
-        phone: '(555) 234-5678'
+        phone: '(555) 234-5678',
+        email: 'sarah.johnson@example.com'
       },
       primary_mechanic: {
         name: 'Lisa Chen'
@@ -126,7 +130,8 @@ export const AdminTicketManagement: React.FC = () => {
       },
       profiles: {
         name: 'Mike Davis',
-        phone: '(555) 345-6789'
+        phone: '(555) 345-6789',
+        email: 'mike.davis@example.com'
       }
     },
     {
@@ -146,7 +151,8 @@ export const AdminTicketManagement: React.FC = () => {
       },
       profiles: {
         name: 'Emily Wilson',
-        phone: '(555) 456-7890'
+        phone: '(555) 456-7890',
+        email: 'emily.wilson@example.com'
       }
     },
     {
@@ -168,7 +174,8 @@ export const AdminTicketManagement: React.FC = () => {
       },
       profiles: {
         name: 'David Brown',
-        phone: '(555) 567-8901'
+        phone: '(555) 567-8901',
+        email: 'david.brown@example.com'
       },
       primary_mechanic: {
         name: 'Tom Wilson'

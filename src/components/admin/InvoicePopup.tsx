@@ -21,7 +21,7 @@ interface Ticket {
     model: string;
     year: number;
     reg_no: string;
-    vin: string;
+    vin?: string | null;
   };
   profiles: {
     name: string;
@@ -33,7 +33,7 @@ interface Ticket {
 interface StandardService {
   id: string;
   service_name: string;
-  category: 'standard' | 'non_standard';
+  category: string;
   default_price: number | null;
   labor_hours: number | null;
   taxable: boolean;

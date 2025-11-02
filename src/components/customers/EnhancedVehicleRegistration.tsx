@@ -243,15 +243,28 @@ export const EnhancedVehicleRegistration: React.FC = () => {
     }
 
     try {
+      // Get current user for authentication
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      let profileId: string;
+      
+      // If user is authenticated, use their ID; otherwise create a new one
+      if (authUser) {
+        profileId = authUser.id;
+      } else {
+        // For non-authenticated user creation (admin creating customer)
+        profileId = crypto.randomUUID();
+      }
+
       // Create customer profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .insert([{
+          id: profileId,
           name: newCustomerForm.name,
           email: newCustomerForm.email,
-          phone: newCustomerForm.phone,
-          role: 'user'
-        })
+          phone: newCustomerForm.phone
+        }])
         .select()
         .single();
 

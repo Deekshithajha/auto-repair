@@ -15,6 +15,9 @@ import { KanbanToolbar } from "./KanbanToolbar";
 import { KanbanSkeleton } from "./KanbanSkeleton";
 import { EmptyState } from "./EmptyState";
 import { KanbanCard } from "./KanbanCard";
+import { TicketDetailDialog } from "./TicketDetailDialog";
+import { AssignMechanicDialog } from "./AssignMechanicDialog";
+import { AddNoteDialog } from "./AddNoteDialog";
 import { announceToScreenReader } from "../utils/a11y";
 import { getColumnOrder, getStatusLabel } from "../utils/status.config";
 import type { KanbanFilters, WorkOrderCard, WorkOrderStatus } from "../types/kanban.types";
@@ -31,6 +34,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [filters, setFilters] = useState<KanbanFilters>(initialFilters || {});
   const [compactMode, setCompactMode] = useState(false);
   const [draggedCard, setDraggedCard] = useState<WorkOrderCard | null>(null);
+  
+  // Dialog states
+  const [detailDialogCard, setDetailDialogCard] = useState<WorkOrderCard | null>(null);
+  const [assignDialogCard, setAssignDialogCard] = useState<WorkOrderCard | null>(null);
+  const [noteDialogCard, setNoteDialogCard] = useState<WorkOrderCard | null>(null);
 
   // Query hooks
   const { data: cards = [], isLoading, error, refetch } = useWorkOrdersQuery(filters);
@@ -100,18 +108,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   // Actions
   const handleView = (id: string) => {
-    // TODO: Navigate to ticket detail or open modal
-    console.log("View ticket", id);
+    const card = cards.find((c) => c.id === id);
+    if (card) setDetailDialogCard(card);
   };
 
   const handleAssign = (id: string) => {
-    // TODO: Open assign mechanic dialog
-    console.log("Assign mechanic", id);
+    const card = cards.find((c) => c.id === id);
+    if (card) setAssignDialogCard(card);
   };
 
   const handleAddNote = (id: string) => {
-    // TODO: Open add note dialog
-    console.log("Add note", id);
+    const card = cards.find((c) => c.id === id);
+    if (card) setNoteDialogCard(card);
   };
 
   const handleResetFilters = () => {
@@ -203,6 +211,25 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Action Dialogs */}
+      <TicketDetailDialog
+        card={detailDialogCard}
+        open={!!detailDialogCard}
+        onOpenChange={(open) => !open && setDetailDialogCard(null)}
+      />
+      <AssignMechanicDialog
+        card={assignDialogCard}
+        open={!!assignDialogCard}
+        onOpenChange={(open) => !open && setAssignDialogCard(null)}
+        onSuccess={() => refetch()}
+      />
+      <AddNoteDialog
+        card={noteDialogCard}
+        open={!!noteDialogCard}
+        onOpenChange={(open) => !open && setNoteDialogCard(null)}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 };
