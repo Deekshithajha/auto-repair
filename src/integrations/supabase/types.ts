@@ -1039,6 +1039,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_owns_ticket: {
+        Args: { _ticket_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "employee" | "user"
