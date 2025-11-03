@@ -69,7 +69,6 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
   const [standardServices, setStandardServices] = useState<StandardService[]>([]);
   const [services, setServices] = useState<WorkorderService[]>([]);
   const [parts, setParts] = useState<PartUsed[]>([]);
-  const [laborRate, setLaborRate] = useState(120.00);
   const [taxRate, setTaxRate] = useState(8.25);
   const [notes, setNotes] = useState('');
   const [showServiceDialog, setShowServiceDialog] = useState(false);
@@ -98,6 +97,7 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
     if (isOpen && ticket) {
       fetchStandardServices();
       fetchExistingServices();
+      fetchExistingParts();
     }
   }, [isOpen, ticket]);
 
@@ -129,6 +129,33 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
       setServices(data || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
+    }
+  };
+
+  const fetchExistingParts = async () => {
+    if (!ticket) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('parts')
+        .select('*')
+        .eq('ticket_id', ticket.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Map DB rows to PartUsed shape expected by UI
+      const mapped = (data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        quantity: p.quantity,
+        unit_price: p.unit_price,
+        is_taxable: (p.tax_percentage ?? 0) > 0,
+      }));
+
+      setParts(mapped);
+    } catch (error: any) {
+      console.error('Error fetching parts:', error);
     }
   };
 
@@ -448,17 +475,6 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
                       <span>Total:</span>
                       <span>{formatCurrency(calculateTotal())}</span>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="labor-rate">Labor Rate (per hour)</Label>
-                    <Input
-                      id="labor-rate"
-                      type="number"
-                      step="0.01"
-                      value={laborRate}
-                      onChange={(e) => setLaborRate(parseFloat(e.target.value) || 0)}
-                    />
                   </div>
 
                   <div className="space-y-2">

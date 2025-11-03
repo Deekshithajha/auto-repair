@@ -14,6 +14,8 @@ import { LiveMonitor } from '@/components/admin/LiveMonitor';
 import { ReportsAnalytics } from '@/components/admin/ReportsAnalytics';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { InvoiceList } from '@/components/admin/InvoiceList';
+import { RevenueTracker } from '@/components/admin/RevenueTracker';
+import { NotificationManagement } from '@/components/admin/NotificationManagement';
 import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
@@ -197,7 +199,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
     <DashboardBackground>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         <Tabs value={activeTab} onValueChange={(val) => navigate(`/admin/${val}`)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 lg:w-auto text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-11 lg:w-auto text-xs sm:text-sm">
             <TabsTrigger value="tickets" className="flex items-center space-x-1 sm:space-x-2">
               <span>📧</span>
               <span className="hidden sm:inline">Approve</span>
@@ -222,6 +224,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
               <span>📊</span>
               <span className="hidden sm:inline">Monitor</span>
             </TabsTrigger>
+            <TabsTrigger value="revenue" className="flex items-center space-x-1 sm:space-x-2">
+              <span>💰</span>
+              <span className="hidden sm:inline">Revenue</span>
+            </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center space-x-1 sm:space-x-2">
               <span>📈</span>
               <span className="hidden sm:inline">Reports</span>
@@ -229,6 +235,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
             <TabsTrigger value="audit" className="flex items-center space-x-1 sm:space-x-2">
               <span>🛡️</span>
               <span className="hidden sm:inline">Audit</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center space-x-1 sm:space-x-2">
+              <span>🔔</span>
+              <span className="hidden sm:inline">Notifications</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center space-x-1 sm:space-x-2">
               <span>⚙️</span>
@@ -288,6 +298,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
             <LiveMonitor />
           </TabsContent>
 
+          {/* Revenue Tracker Tab */}
+          <TabsContent value="revenue">
+            <RevenueTracker />
+          </TabsContent>
+
           {/* Reports Tab */}
           <TabsContent value="reports">
             <ReportsAnalytics />
@@ -296,6 +311,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
           {/* Audit Logs Tab */}
           <TabsContent value="audit">
             <AuditLogs />
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
+            <NotificationManagement />
           </TabsContent>
 
           {/* Settings Tab */}

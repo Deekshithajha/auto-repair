@@ -116,12 +116,14 @@ export const CustomerVehicleManagement: React.FC = () => {
     if (!user) return;
 
     try {
+      // Normalize VIN to uppercase and trim spaces to avoid accidental duplicates
+      const normalizedVin = (formData.vin || '').trim().toUpperCase();
       const vehicleData = {
         make: formData.make,
         model: formData.model,
         year: parseInt(formData.year),
         license_no: formData.license_no || null,
-        vin: formData.vin || null,
+        vin: normalizedVin || null,
         user_id: user.id,
         is_active: true
       };
@@ -140,15 +142,49 @@ export const CustomerVehicleManagement: React.FC = () => {
         if (error) throw error;
         vehicleId = editingVehicle.id;
       } else {
-        // Create new vehicle
-        const { data, error } = await supabase
-          .from('vehicles')
-          .insert([vehicleData])
-          .select()
-          .single();
+        // If VIN is provided, check for existing vehicle to avoid UNIQUE constraint errors
+        if (normalizedVin) {
+          const { data: existingByVin, error: existingVinErr } = await supabase
+            .from('vehicles')
+            .select('id, user_id')
+            .eq('vin', normalizedVin)
+            .maybeSingle();
 
-        if (error) throw error;
-        vehicleId = data.id;
+          if (existingVinErr) throw existingVinErr;
+
+          if (existingByVin) {
+            if (existingByVin.user_id === user.id) {
+              // Vehicle already exists for this user. Update it instead of inserting a duplicate
+              const { error: updErr } = await supabase
+                .from('vehicles')
+                .update(vehicleData)
+                .eq('id', existingByVin.id);
+              if (updErr) throw updErr;
+              vehicleId = existingByVin.id;
+              toast({ title: 'Vehicle exists', description: 'Updated your existing vehicle with the new details.' });
+            } else {
+              throw new Error('This VIN is already registered to another customer. Please verify the VIN.');
+            }
+          } else {
+            // Safe to insert a fresh record
+            const { data, error } = await supabase
+              .from('vehicles')
+              .insert([vehicleData])
+              .select()
+              .single();
+            if (error) throw error;
+            vehicleId = data.id;
+          }
+        } else {
+          // No VIN provided, just insert
+          const { data, error } = await supabase
+            .from('vehicles')
+            .insert([vehicleData])
+            .select()
+            .single();
+          if (error) throw error;
+          vehicleId = data.id;
+        }
       }
 
       // Upload photos if any
@@ -185,9 +221,13 @@ export const CustomerVehicleManagement: React.FC = () => {
 
     } catch (error: any) {
       console.error('Error saving vehicle:', error);
+      // Handle Postgres unique violation for VIN gracefully
+      const message = (error?.code === '23505' || /duplicate key value.*vehicles_vin_key/i.test(error?.message || ''))
+        ? 'A vehicle with this VIN already exists. If it is yours, edit that vehicle instead.'
+        : (error.message || 'Failed to save vehicle');
       toast({
         title: "Error",
-        description: error.message || "Failed to save vehicle",
+        description: message,
         variant: "destructive"
       });
     }

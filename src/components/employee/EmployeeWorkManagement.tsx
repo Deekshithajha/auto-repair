@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DamageLogTodoManager } from '@/components/damage/DamageLogTodoManager';
 
 interface WorkSession {
   id: string;
@@ -858,9 +859,32 @@ export const EmployeeWorkManagement: React.FC = () => {
     return standardServices.filter(service => selectedServiceIds.includes(service.id));
   };
 
+  const getServicesByCategory = (sessionId: string) => {
+    const available = getAvailableServices(sessionId);
+    const standard = available.filter(s => s.category === 'standard');
+    const nonStandard = available.filter(s => s.category === 'non_standard');
+    return { standard, nonStandard };
+  };
+
   const printIssue = (session: WorkSession) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    const selected = getSelectedServices(session.id) || [];
+    const servicesHtml = selected.length > 0
+      ? selected.map(s => `<span class=\"chip\">${s.service_name}</span>`).join('')
+      : '<span class="muted">No services selected</span>';
+
+    const logs = damageLogs[session.id] || [];
+    const damageHtml = logs.length > 0
+      ? logs.map(log => `
+          <div style=\"border:1px solid #ccc; padding:8px; margin:6px 0;\">
+            <div style=\"font-weight:bold; color:${log.is_new_damage ? '#d32f2f' : '#666'};\">${log.is_new_damage ? 'NEW DAMAGE' : 'PREVIOUS DAMAGE'} - ${new Date(log.logged_at).toLocaleDateString()}</div>
+            <div><strong>Description:</strong> ${log.description}</div>
+            ${log.photo_ids && log.photo_ids.length > 0 ? `<div><strong>Photos:</strong> ${log.photo_ids.length} photo(s)</div>` : ``}
+          </div>
+        `).join('')
+      : '<span class="muted">No damage entries recorded</span>';
 
     const printContent = `
       <!DOCTYPE html>
@@ -873,6 +897,10 @@ export const EmployeeWorkManagement: React.FC = () => {
           .section { margin-bottom: 20px; }
           .label { font-weight: bold; margin-bottom: 5px; }
           .content { margin-left: 10px; }
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+          .list { margin: 0; padding-left: 18px; }
+          .muted { color: #666; }
+          .chip { display: inline-block; padding: 4px 8px; margin: 2px; background: #f0f0f0; border-radius: 12px; font-size: 12px; }
         </style>
       </head>
       <body>
@@ -880,24 +908,24 @@ export const EmployeeWorkManagement: React.FC = () => {
           <h1>Issue Report</h1>
           <p><strong>Ticket Number:</strong> ${session.ticket['ticket_number'] || session.ticket.id}</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          <p><strong>Customer:</strong> ${session.ticket.customer_name}</p>
+          <p><strong>Phone:</strong> ${session.ticket.customer_phone}</p>
         </div>
         
         <div class="section">
           <div class="label">Vehicle Information:</div>
-          <div class="content">
-            <p><strong>Vehicle:</strong> ${session.ticket.vehicle.year} ${session.ticket.vehicle.make} ${session.ticket.vehicle.model}</p>
-            <p><strong>Registration:</strong> ${session.ticket.vehicle.reg_no}</p>
-            <p><strong>License:</strong> ${session.ticket.vehicle.license_no || 'N/A'}</p>
+          <div class="content grid-2">
+            <div>
+              <p><strong>Vehicle:</strong> ${session.ticket.vehicle.year} ${session.ticket.vehicle.make} ${session.ticket.vehicle.model}</p>
+              <p><strong>Registration:</strong> ${session.ticket.vehicle.reg_no}</p>
+            </div>
+            <div>
+              <p><strong>License:</strong> ${session.ticket.vehicle.license_no || 'N/A'}</p>
+              ${((session.ticket.vehicle as any)['vin']) ? `<p><strong>VIN:</strong> ${(session.ticket.vehicle as any)['vin']}</p>` : ''}
+            </div>
           </div>
         </div>
 
-        <div class="section">
-          <div class="label">Customer Information:</div>
-          <div class="content">
-            <p><strong>Name:</strong> ${session.ticket.customer_name}</p>
-            <p><strong>Phone:</strong> ${session.ticket.customer_phone}</p>
-          </div>
-        </div>
 
         <div class="section">
           <div class="label">Issue Description:</div>
@@ -907,11 +935,16 @@ export const EmployeeWorkManagement: React.FC = () => {
         </div>
 
         <div class="section">
-          <div class="label">Work Status:</div>
+          <div class="label">Selected Services:</div>
           <div class="content">
-            <p><strong>Status:</strong> ${session.status.replace('_', ' ').toUpperCase()}</p>
-            ${session.started_at ? `<p><strong>Started:</strong> ${new Date(session.started_at).toLocaleString()}</p>` : ''}
-            ${session.ended_at ? `<p><strong>Completed:</strong> ${new Date(session.ended_at).toLocaleString()}</p>` : ''}
+            ${servicesHtml}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Damage Log:</div>
+          <div class="content">
+            ${damageHtml}
           </div>
         </div>
       </body>
@@ -1197,7 +1230,7 @@ export const EmployeeWorkManagement: React.FC = () => {
                       <span className="text-xs text-muted-foreground">Ticket: {session.ticket['ticket_number'] || session.ticket.id}</span>
                     </div>
                     <Dialog open={showIssueDialog[session.id] || false} onOpenChange={(open) => setShowIssueDialog(prev => ({ ...prev, [session.id]: open }))}>
-                      <DialogContent className="max-w-3xl">
+                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Edit Issue, Services & Damage</DialogTitle>
                           <DialogDescription>Update the customer issue, select services, and optionally log damage in one place.</DialogDescription>
@@ -1219,66 +1252,92 @@ export const EmployeeWorkManagement: React.FC = () => {
                               <Label className="text-sm font-medium">Services</Label>
                               <span className="text-xs text-muted-foreground">Choose applicable services for this ticket</span>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {getAvailableServices(session.id).slice(0, 10).map(service => (
-                                <Button key={service.id} size="sm" variant="outline" onClick={() => handleServiceSelect(session.id, service.id)}>
-                                  ➕ {service.service_name}
-                                </Button>
-                              ))}
-                              {getAvailableServices(session.id).length === 0 && (
-                                <span className="text-xs text-muted-foreground">All available services already selected</span>
-                              )}
-                            </div>
+                            
+                            {/* Selected Services */}
                             {getSelectedServices(session.id).length > 0 && (
-                              <div className="flex flex-wrap gap-2 pt-2">
-                                {getSelectedServices(session.id).map(service => (
-                                  <Badge key={service.id} variant="secondary" className="flex items-center gap-2">
-                                    {service.service_name}
-                                    <button onClick={() => handleServiceRemove(session.id, service.id)} aria-label="Remove service">✖️</button>
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Optional Damage log */}
-                          <div className="space-y-3 border-t pt-4">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm font-medium">Damage Log (optional)</Label>
-                              <span className="text-xs text-muted-foreground">Add damage details and photos</span>
-                            </div>
-                            <div className="space-y-2">
-                              <Textarea
-                                placeholder="Describe the damage in detail..."
-                                value={newDamageDescription[session.id] || ''}
-                                onChange={(e) => setNewDamageDescription(prev => ({ ...prev, [session.id]: e.target.value }))}
-                                rows={3}
-                              />
-                              <div>
-                                <input
-                                  id={`issue-damage-photo-upload-${session.id}`}
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const files = e.target.files ? Array.from(e.target.files) : [];
-                                    setDamagePhotos(prev => ({ ...prev, [session.id]: [...(prev[session.id] || []), ...files].slice(0, 5) }));
-                                  }}
-                                />
-                                <Label htmlFor={`issue-damage-photo-upload-${session.id}`} className="inline-flex items-center gap-2 text-blue-600 cursor-pointer">
-                                  📷 Upload Damage Photos (max 5)
-                                </Label>
-                              </div>
-                              {damagePhotos[session.id]?.length > 0 && (
-                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                  {damagePhotos[session.id].map((photo, index) => (
-                                    <span key={index} className="px-2 py-1 bg-muted rounded">
-                                      {photo.name}
-                                    </span>
+                              <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground font-normal">Selected Services:</Label>
+                                <div className="flex flex-wrap gap-2">
+                                  {getSelectedServices(session.id).map(service => (
+                                    <Badge key={service.id} variant="secondary" className="flex items-center gap-2">
+                                      {service.service_name}
+                                      <button onClick={() => handleServiceRemove(session.id, service.id)} aria-label="Remove service">✖️</button>
+                                    </Badge>
                                   ))}
                                 </div>
-                              )}
+                              </div>
+                            )}
+
+                            {/* Available Services - Grouped by Category */}
+                            {(() => {
+                              const { standard, nonStandard } = getServicesByCategory(session.id);
+                              const hasAvailable = standard.length > 0 || nonStandard.length > 0;
+                              
+                              if (!hasAvailable) {
+                                return (
+                                  <div className="text-sm text-muted-foreground py-2">
+                                    All available services have been selected
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div className="space-y-4 border rounded-lg p-4 bg-muted/30 max-h-64 overflow-y-auto">
+                                  {/* Standard Services */}
+                                  {standard.length > 0 && (
+                                    <div className="space-y-2">
+                                      <Label className="text-sm font-medium text-foreground">Standard Services</Label>
+                                      <div className="flex flex-wrap gap-2">
+                                        {standard.map(service => (
+                                          <Button 
+                                            key={service.id} 
+                                            size="sm" 
+                                            variant="outline" 
+                                            onClick={() => handleServiceSelect(session.id, service.id)}
+                                            className="text-xs"
+                                          >
+                                            ➕ {service.service_name}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Non-Standard Services */}
+                                  {nonStandard.length > 0 && (
+                                    <div className="space-y-2 pt-2 border-t">
+                                      <Label className="text-sm font-medium text-foreground">Non-Standard Services</Label>
+                                      <div className="flex flex-wrap gap-2">
+                                        {nonStandard.map(service => (
+                                          <Button 
+                                            key={service.id} 
+                                            size="sm" 
+                                            variant="outline" 
+                                            onClick={() => handleServiceSelect(session.id, service.id)}
+                                            className="text-xs"
+                                          >
+                                            ➕ {service.service_name}
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Damage Log Todo Manager */}
+                          <div className="space-y-3 border-t pt-4">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm font-medium">Damage Log Todo Manager</Label>
+                              <span className="text-xs text-muted-foreground">Manage damage entries with photos and completion tracking</span>
+                            </div>
+                            <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-muted/30">
+                              <DamageLogTodoManager
+                                vehicleId={session.ticket.vehicle.id}
+                                ticketId={session.ticket_id}
+                              />
                             </div>
                           </div>
 
@@ -1286,10 +1345,8 @@ export const EmployeeWorkManagement: React.FC = () => {
                             <Button variant="outline" onClick={() => setShowIssueDialog(prev => ({ ...prev, [session.id]: false }))}>Cancel</Button>
                             <Button onClick={async () => {
                               await handleSaveIssue(session.id, session.ticket.id);
-                              // If damage description provided, create a damage log entry using current selections
-                              if ((newDamageDescription[session.id] || '').trim()) {
-                                await handleAddDamageLog(session.id, session.ticket.vehicle.id, session.ticket_id);
-                              }
+                              // Note: Damage logs are managed directly in the Todo Manager component
+                              setShowIssueDialog(prev => ({ ...prev, [session.id]: false }));
                             }}>Save</Button>
                           </div>
                         </div>
@@ -1483,385 +1540,6 @@ export const EmployeeWorkManagement: React.FC = () => {
                       Expected return: {new Date(session.ticket.vehicle.expected_return_date).toLocaleDateString()}
                     </div>
                   )}
-                </div>
-
-                {/* Damage Log Section */}
-                <div className="space-y-3 pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Damage Log</Label>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => printDamageLog(session)}
-                      >
-                        🖨️ Print Damage Log
-                      </Button>
-                      <Dialog open={showDamageDialog[session.id] || false} onOpenChange={(open) => setShowDamageDialog(prev => ({ ...prev, [session.id]: open }))}>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => fetchDamageLogs(session.ticket.vehicle.id, session.id)}
-                          >
-                            📝 Add Damage Entry
-                          </Button>
-                        </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Add Damage Log Entry</DialogTitle>
-                          <DialogDescription>
-                            Document vehicle damage found during check-in
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="damage-description">Damage Description *</Label>
-                            <Textarea
-                              id="damage-description"
-                              placeholder="Describe the damage in detail..."
-                              value={newDamageDescription[session.id] || ''}
-                              onChange={(e) => setNewDamageDescription(prev => ({ ...prev, [session.id]: e.target.value }))}
-                              rows={4}
-                            />
-                          </div>
-
-                          {/* Service Selection */}
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <Label>Required Services</Label>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setShowServiceDialog(prev => ({ ...prev, [session.id]: true }))}
-                              >
-                                + Add Service
-                              </Button>
-                            </div>
-                            
-                            {/* Selected Services Display */}
-                            {getSelectedServices(session.id).length > 0 && (
-                              <div className="space-y-2">
-                                <Label className="text-sm font-medium text-green-700">Selected Services:</Label>
-                                <div className="space-y-2">
-                                  {getSelectedServices(session.id).map((service) => (
-                                    <div key={service.id} className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant={service.category === 'standard' ? 'default' : 'secondary'}>
-                                          {service.category === 'standard' ? 'Standard' : 'Non-Standard'}
-                                        </Badge>
-                                        <span className="text-sm font-medium">{service.service_name}</span>
-                                        {service.description && (
-                                          <span className="text-xs text-muted-foreground">- {service.description}</span>
-                                        )}
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={() => handleServiceRemove(session.id, service.id)}
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        ✕
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Service Selection Dialog */}
-                            <Dialog open={showServiceDialog[session.id] || false} onOpenChange={(open) => setShowServiceDialog(prev => ({ ...prev, [session.id]: open }))}>
-                              <DialogContent className="max-w-md">
-                                <DialogHeader>
-                                  <DialogTitle>Select Service</DialogTitle>
-                                  <DialogDescription>Choose a service required for this damage</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="space-y-2">
-                                    <Label>Available Services</Label>
-                                    <div className="max-h-60 overflow-y-auto space-y-2">
-                                      {getAvailableServices(session.id).map((service) => (
-                                        <div
-                                          key={service.id}
-                                          className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                                          onClick={() => {
-                                            handleServiceSelect(session.id, service.id);
-                                            setShowServiceDialog(prev => ({ ...prev, [session.id]: false }));
-                                          }}
-                                        >
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant={service.category === 'standard' ? 'default' : 'secondary'}>
-                                              {service.category === 'standard' ? 'Standard' : 'Non-Standard'}
-                                            </Badge>
-                                            <span className="font-medium">{service.service_name}</span>
-                                          </div>
-                                          {service.description && (
-                                            <p className="text-sm text-muted-foreground">{service.description}</p>
-                                          )}
-                                          {service.default_price && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                              Base Price: ${service.default_price.toFixed(2)}
-                                            </p>
-                                          )}
-                                        </div>
-                                      ))}
-                                      {getAvailableServices(session.id).length === 0 && (
-                                        <p className="text-center text-muted-foreground py-4">
-                                          All services have been selected
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label>Damage Photos (Optional)</Label>
-                            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-                              <div className="text-center">
-                                <div className="text-2xl mb-2">📸</div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                  Upload photos of the damage (max 5 photos)
-                                </p>
-                                <Input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  onChange={(e) => handleDamagePhotoUpload(session.id, e.target.files)}
-                                  className="hidden"
-                                  id={`damage-photo-upload-${session.id}`}
-                                />
-                                <Label
-                                  htmlFor={`damage-photo-upload-${session.id}`}
-                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 cursor-pointer"
-                                >
-                                  Choose Photos
-                                </Label>
-                              </div>
-                              
-                              {/* Photo Previews */}
-                              {damagePhotos[session.id]?.length > 0 && (
-                                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                  {damagePhotos[session.id].map((photo, index) => (
-                                    <div key={index} className="relative">
-                                      <img
-                                        src={URL.createObjectURL(photo)}
-                                        alt={`Damage ${index + 1}`}
-                                        className="w-full h-20 object-cover rounded-md"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="sm"
-                                        className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
-                                        onClick={() => removeDamagePhoto(session.id, index)}
-                                      >
-                                        <span className="text-xs">✕</span>
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              onClick={() => handleAddDamageLog(session.id, session.ticket.vehicle.id, session.ticket_id)}
-                              disabled={!newDamageDescription[session.id]?.trim()}
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                              Add Damage Entry
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              onClick={() => setShowDamageDialog(prev => ({ ...prev, [session.id]: false }))}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    {/* Edit Damage Log Dialog */}
-                    <Dialog open={showEditDamageDialog[editingDamageLog?.id || ''] || false} onOpenChange={(open) => {
-                      if (!open) {
-                        setShowEditDamageDialog(prev => ({ ...prev, [editingDamageLog?.id || '']: false }));
-                        setEditingDamageLog(null);
-                      }
-                    }}>
-                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Edit Damage Log Entry</DialogTitle>
-                          <DialogDescription>
-                            Update the damage description and photos
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="edit-damage-description">Damage Description *</Label>
-                            <Textarea
-                              id="edit-damage-description"
-                              placeholder="Describe the damage in detail..."
-                              value={editDamageDescription[editingDamageLog?.id || ''] || ''}
-                              onChange={(e) => setEditDamageDescription(prev => ({ ...prev, [editingDamageLog?.id || '']: e.target.value }))}
-                              rows={4}
-                            />
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label>Additional Photos (Optional)</Label>
-                            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-                              <div className="text-center">
-                                <div className="text-2xl mb-2">📸</div>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                  Upload additional photos of the damage (max 5 photos)
-                                </p>
-                                <Input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  onChange={(e) => handleEditDamagePhotoUpload(editingDamageLog?.id || '', e.target.files)}
-                                  className="hidden"
-                                  id={`edit-damage-photo-upload-${editingDamageLog?.id || ''}`}
-                                />
-                                <Label
-                                  htmlFor={`edit-damage-photo-upload-${editingDamageLog?.id || ''}`}
-                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 cursor-pointer"
-                                >
-                                  Choose Photos
-                                </Label>
-                              </div>
-                              
-                              {/* Photo Previews */}
-                              {editDamagePhotos[editingDamageLog?.id || '']?.length > 0 && (
-                                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                  {editDamagePhotos[editingDamageLog?.id || ''].map((photo, index) => (
-                                    <div key={index} className="relative">
-                                      <img
-                                        src={URL.createObjectURL(photo)}
-                                        alt={`Damage ${index + 1}`}
-                                        className="w-full h-20 object-cover rounded-md"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="sm"
-                                        className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
-                                        onClick={() => removeEditDamagePhoto(editingDamageLog?.id || '', index)}
-                                      >
-                                        <span className="text-xs">✕</span>
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button 
-                              onClick={() => handleUpdateDamageLog(editingDamageLog?.id || '', session.id)}
-                              disabled={!editDamageDescription[editingDamageLog?.id || '']?.trim()}
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                              Update Damage Entry
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              onClick={() => {
-                                setShowEditDamageDialog(prev => ({ ...prev, [editingDamageLog?.id || '']: false }));
-                                setEditingDamageLog(null);
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-
-                {/* Damage History */}
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {damageLogs[session.id]?.length > 0 ? (
-                      damageLogs[session.id].map((log) => (
-                        <div 
-                          key={log.id} 
-                          className={`p-3 rounded-lg border-l-4 ${
-                            log.is_new_damage 
-                              ? 'bg-red-50 border-red-400' 
-                              : 'bg-gray-50 border-gray-300'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                log.is_new_damage 
-                                  ? 'bg-red-200 text-red-800' 
-                                  : 'bg-gray-200 text-gray-600'
-                              }`}>
-                                {log.is_new_damage ? 'NEW DAMAGE' : 'PREVIOUS DAMAGE'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(log.logged_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditDamageLog(log, session.id)}
-                                className="h-6 w-6 p-0"
-                              >
-                                ✏️
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteDamageLog(log.id, session.id)}
-                                className="h-6 w-6 p-0"
-                              >
-                                🗑️
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm">{log.description}</p>
-                          
-                          {/* Selected Services Display */}
-                          {log.selected_services && log.selected_services.length > 0 && (
-                            <div className="mt-2">
-                              <div className="text-xs font-medium text-muted-foreground mb-1">Required Services:</div>
-                              <div className="flex flex-wrap gap-1">
-                                {log.selected_services.map((serviceId) => {
-                                  const service = standardServices.find(s => s.id === serviceId);
-                                  return service ? (
-                                    <Badge key={serviceId} variant={service.category === 'standard' ? 'default' : 'secondary'} className="text-xs">
-                                      {service.service_name}
-                                    </Badge>
-                                  ) : null;
-                                })}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {log.photo_ids && log.photo_ids.length > 0 && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                              📷 {log.photo_ids.length} photo(s) attached
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No damage logs recorded for this vehicle
-                      </p>
-                    )}
-                  </div>
                 </div>
 
                 {/* Vehicle Details & Photos */}

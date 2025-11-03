@@ -37,8 +37,10 @@ export function AppSidebar() {
           { title: 'Register Customer', url: '/admin/register', icon: '➕' },
           { title: 'Employee Management', url: '/admin/employees', icon: '👥' },
           { title: 'Live Monitor', url: '/admin/monitor', icon: '📊' },
+          { title: 'Revenue Tracker', url: '/admin/revenue', icon: '💰' },
           { title: 'Reports', url: '/admin/reports', icon: '📈' },
           { title: 'Audit Logs', url: '/admin/audit', icon: '🛡️' },
+          { title: 'Notifications', url: '/admin/notifications', icon: '🔔' },
           { title: 'Settings', url: '/admin/settings', icon: '⚙️' },
         ];
       case 'employee':

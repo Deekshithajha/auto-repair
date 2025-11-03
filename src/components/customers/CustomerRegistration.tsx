@@ -12,8 +12,6 @@ interface CustomerData {
   name: string;
   email: string;
   phone: string;
-  password: string;
-  confirmPassword: string;
   licensePlate: string;
   make: string;
   model: string;
@@ -32,8 +30,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
     name: '',
     email: '',
     phone: '',
-    password: '',
-    confirmPassword: '',
     licensePlate: '',
     make: '',
     model: '',
@@ -65,30 +61,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       });
       return false;
     }
-    if (!customerData.password || customerData.password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
-      return false;
-    }
-    if (customerData.password !== customerData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return false;
-    }
-    if (!customerData.make.trim() || !customerData.model.trim()) {
-      toast({
-        title: "Error",
-        description: "Vehicle make and model are required",
-        variant: "destructive",
-      });
-      return false;
-    }
     if (!customerData.licensePlate.trim()) {
       toast({
         title: "Error",
@@ -115,10 +87,10 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
 
     setIsLoading(true);
     try {
-      // Create the user account
+      // Create the user account, using license plate as password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: customerData.email,
-        password: customerData.password,
+        password: customerData.licensePlate,
         options: {
           data: {
             name: customerData.name,
@@ -142,26 +114,28 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
           console.warn('Profile update failed:', profileError);
         }
 
-        // Create initial vehicle for the customer
-        const yearNumber = customerData.year ? parseInt(customerData.year, 10) : null;
-        const { error: vehicleError } = await supabase
-          .from('vehicles')
-          .insert({
-            user_id: authData.user.id,
-            make: customerData.make,
-            model: customerData.model,
-            year: yearNumber,
-            license_no: customerData.licensePlate,
-            owner_id: authData.user.id
-          });
+        // Create initial vehicle only if make and model are provided
+        if (customerData.make.trim() && customerData.model.trim()) {
+          const yearNumber = customerData.year ? parseInt(customerData.year, 10) : null;
+          const { error: vehicleError } = await supabase
+            .from('vehicles')
+            .insert({
+              user_id: authData.user.id,
+              make: customerData.make,
+              model: customerData.model,
+              year: yearNumber,
+              license_no: customerData.licensePlate,
+              owner_id: authData.user.id
+            });
 
-        if (vehicleError) {
-          console.warn('Vehicle creation failed:', vehicleError);
-          toast({
-            title: "Vehicle Not Saved",
-            description: "Account created, but vehicle could not be saved.",
-            variant: "destructive",
-          });
+          if (vehicleError) {
+            console.warn('Vehicle creation failed:', vehicleError);
+            toast({
+              title: "Vehicle Not Saved",
+              description: "Account created, but vehicle could not be saved.",
+              variant: "destructive",
+            });
+          }
         }
       }
 
@@ -175,8 +149,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
         name: '',
         email: '',
         phone: '',
-        password: '',
-        confirmPassword: '',
         licensePlate: '',
         make: '',
         model: '',
@@ -201,7 +173,7 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ? (
-          <>{trigger}</>
+          <span onClick={() => setOpen(true)}>{trigger}</span>
         ) : (
           <Button variant="outline" className="w-full sm:w-auto">
             <span className="mr-2">👤</span>
@@ -255,25 +227,23 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="vehicle-make">Vehicle Make *</Label>
+              <Label htmlFor="vehicle-make">Vehicle Make</Label>
               <Input
                 id="vehicle-make"
                 type="text"
                 placeholder="Toyota"
                 value={customerData.make}
                 onChange={(e) => handleInputChange('make', e.target.value)}
-                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="vehicle-model">Vehicle Model *</Label>
+              <Label htmlFor="vehicle-model">Vehicle Model</Label>
               <Input
                 id="vehicle-model"
                 type="text"
                 placeholder="Camry"
                 value={customerData.model}
                 onChange={(e) => handleInputChange('model', e.target.value)}
-                required
               />
             </div>
           </div>
@@ -303,29 +273,7 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="customer-password">Password *</Label>
-            <Input
-              id="customer-password"
-              type="password"
-              placeholder="At least 6 characters"
-              value={customerData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              required
-            />
-          </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="customer-confirm-password">Confirm Password *</Label>
-            <Input
-              id="customer-confirm-password"
-              type="password"
-              placeholder="Confirm password"
-              value={customerData.confirmPassword}
-              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-              required
-            />
-          </div>
           
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <Button

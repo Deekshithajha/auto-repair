@@ -64,7 +64,6 @@ interface InvoiceData {
   ticket: Ticket | null;
   services: WorkorderService[];
   parts: PartUsed[];
-  labor_rate: number;
   tax_rate: number;
   notes: string;
 }
@@ -77,7 +76,6 @@ export const InvoiceGeneration: React.FC = () => {
     ticket: null,
     services: [],
     parts: [],
-    labor_rate: 120.00, // Default labor rate per hour
     tax_rate: 8.25, // Default US sales tax rate (8.25% is common in many states)
     notes: ''
   });
@@ -645,17 +643,6 @@ export const InvoiceGeneration: React.FC = () => {
                   <span>Total:</span>
                   <span>{formatCurrency(calculateTotal())}</span>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="labor-rate">Labor Rate (per hour)</Label>
-                <Input
-                  id="labor-rate"
-                  type="number"
-                  step="0.01"
-                  value={invoiceData.labor_rate}
-                  onChange={(e) => setInvoiceData(prev => ({ ...prev, labor_rate: parseFloat(e.target.value) || 0 }))}
-                />
               </div>
 
               <div className="space-y-2">
