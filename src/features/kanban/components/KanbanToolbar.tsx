@@ -128,16 +128,16 @@ export const KanbanToolbar: React.FC<KanbanToolbarProps> = ({
             Mechanic
           </Label>
           <Select
-            value={filters.mechanic_id || ""}
+            value={filters.mechanic_id || "all"}
             onValueChange={(value) =>
-              updateFilter("mechanic_id", value || undefined)
+              updateFilter("mechanic_id", value === "all" ? undefined : value)
             }
           >
             <SelectTrigger id="mechanic-filter" className="h-9">
               <SelectValue placeholder="All mechanics" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All mechanics</SelectItem>
+              <SelectItem value="all">All mechanics</SelectItem>
               {employees.map((emp) => (
                 <SelectItem key={emp.id} value={emp.id}>
                   {emp.name}
