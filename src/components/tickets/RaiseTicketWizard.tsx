@@ -228,7 +228,6 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
         // Pre-fill notification prefs with customer data
         setNotificationPrefs(prev => ({
           ...prev,
-          email: newCustomer.email || selectedCustomer.email || '',
           phone: selectedCustomer.phone || '',
         }));
         setStep(3);

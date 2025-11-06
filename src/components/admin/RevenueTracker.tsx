@@ -124,41 +124,22 @@ export const RevenueTracker: React.FC = () => {
     const today = format(startOfToday(), 'yyyy-MM-dd');
     const tomorrow = format(new Date(startOfToday().getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
-    // Revenue: sum of invoices.total_amount where payment_status = 'paid' and paid_at is today
-    // Handle case where paid_at might be NULL - use created_at as fallback or check for NULL
+    // Revenue: sum of invoices.total_amount where payment_status = 'paid' and created_at is today
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, paid_at, payment_status, created_at')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
-      .or(`paid_at.gte.${today},and(paid_at.is.null,created_at.gte.${today})`)
-      .or(`paid_at.lt.${tomorrow},and(paid_at.is.null,created_at.lt.${tomorrow})`);
+      .gte('created_at', today)
+      .lt('created_at', tomorrow);
 
-    if (invError) {
-      // Fallback: try query without paid_at filter if the field doesn't exist yet
-      const { data: fallbackInvoices, error: fallbackError } = await supabase
-        .from('invoices')
-        .select('id, total_amount, ticket_id, payment_status, created_at')
-        .eq('payment_status', 'paid')
-        .gte('created_at', today)
-        .lt('created_at', tomorrow);
-      
-      if (fallbackError) throw fallbackError;
-      
-      // Use created_at as paid_at if paid_at is null
-      const processedInvoices = (fallbackInvoices || []).map(inv => ({
-        ...inv,
-        paid_at: inv.created_at || null,
-      }));
-      
-      return processTodayMetrics(processedInvoices);
-    }
+    if (invError) throw invError;
     
-    // Filter to only invoices where paid_at is actually today (or created_at if paid_at is null)
+    // Filter to only invoices created today
     const todayInvoices = (invoices || []).filter(inv => {
-      const paidDate = inv.paid_at || inv.created_at;
-      if (!paidDate) return false;
-      const paidDateStr = format(parseISO(paidDate), 'yyyy-MM-dd');
-      return paidDateStr === today;
+      const createdDate = inv.created_at;
+      if (!createdDate) return false;
+      const createdDateStr = format(parseISO(createdDate), 'yyyy-MM-dd');
+      return createdDateStr === today;
     });
     
     return processTodayMetrics(todayInvoices);
@@ -254,7 +235,7 @@ export const RevenueTracker: React.FC = () => {
     const dailyMap = new Map<string, DailyFinance>();
 
     for (const inv of invoices || []) {
-      const paidDate = (inv as any).paid_at || (inv as any).created_at;
+      const paidDate = inv.created_at;
       if (!paidDate) continue;
       const dateStr = format(parseISO(paidDate), 'yyyy-MM-dd');
       if (dateStr < startDate || dateStr > endDate) continue;
@@ -271,12 +252,12 @@ export const RevenueTracker: React.FC = () => {
       }
       
       const dayData = dailyMap.get(dateKey)!;
-      dayData.revenue += inv.total_amount || 0;
+      dayData.revenue += (inv as any).total_amount || 0;
       dayData.invoice_count += 1;
     }
 
     // Fetch COGS for all ticket_ids
-    const allTicketIds = [...new Set((invoices || []).map(inv => inv.ticket_id).filter(Boolean))];
+    const allTicketIds = [...new Set((invoices || []).map((inv: any) => inv.ticket_id).filter(Boolean))];
     if (allTicketIds.length > 0) {
       const { data: parts, error: partsError } = await supabase
         .from('parts')
@@ -336,7 +317,7 @@ export const RevenueTracker: React.FC = () => {
     const monthlyMap = new Map<string, MonthlyFinance>();
 
     for (const inv of invoices || []) {
-      const paidDate = (inv as any).paid_at || (inv as any).created_at;
+      const paidDate = inv.created_at;
       if (!paidDate) continue;
       const date = parseISO(paidDate);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -353,12 +334,12 @@ export const RevenueTracker: React.FC = () => {
       }
       
       const monthData = monthlyMap.get(monthKey)!;
-      monthData.revenue += inv.total_amount || 0;
+      monthData.revenue += (inv as any).total_amount || 0;
       monthData.invoice_count += 1;
     }
 
     // Fetch COGS
-    const allTicketIds = [...new Set((invoices || []).map(inv => inv.ticket_id).filter(Boolean))];
+    const allTicketIds = [...new Set((invoices || []).map((inv: any) => inv.ticket_id).filter(Boolean))];
     if (allTicketIds.length > 0) {
       const { data: parts, error: partsError } = await supabase
         .from('parts')
@@ -394,10 +375,10 @@ export const RevenueTracker: React.FC = () => {
   };
 
   const fetchDetailData = async () => {
-    // Fetch detailed data based on filters (avoid relying on paid_at existing)
+    // Fetch detailed data based on filters
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, paid_at, payment_status, payment_method, created_at')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
       .order('created_at', { ascending: false });
 
@@ -411,9 +392,7 @@ export const RevenueTracker: React.FC = () => {
       return dateStr >= filters.dateFrom && dateStr <= filters.dateTo;
     });
 
-    if (filters.paymentMethod) {
-      filteredInvoices = filteredInvoices.filter(inv => inv.payment_method === filters.paymentMethod);
-    }
+    // Payment method filter removed as column doesn't exist
 
     // Group by date
     const dailyMap = new Map<string, DailyFinance>();
@@ -455,8 +434,8 @@ export const RevenueTracker: React.FC = () => {
       });
 
       filteredInvoices.forEach(inv => {
-        if (!inv.paid_at) return;
-        const dateKey = format(parseISO(inv.paid_at), 'yyyy-MM-dd');
+        if (!inv.created_at) return;
+        const dateKey = format(parseISO(inv.created_at), 'yyyy-MM-dd');
         const dayData = dailyMap.get(dateKey);
         if (dayData) {
           dayData.cogs += partsByTicket.get(inv.ticket_id) || 0;
