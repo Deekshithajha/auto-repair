@@ -92,7 +92,9 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [editDamagePhotos, setEditDamagePhotos] = useState<Record<string, File[]>>({});
   const [issueEdits, setIssueEdits] = useState<Record<string, string>>({});
   const [showIssueDialog, setShowIssueDialog] = useState<Record<string, boolean>>({});
-  const [vehicleEdits, setVehicleEdits] = useState<Record<string, { vin?: string; engine_size?: string; mileage?: string; trim_code?: string; drivetrain?: string }>>({});
+  const [showVehicleDetailsDialog, setShowVehicleDetailsDialog] = useState<Record<string, boolean>>({});
+  const [vehiclePartFiles, setVehiclePartFiles] = useState<Record<string, Record<string, File | null>>>({});
+  const [vehicleEdits, setVehicleEdits] = useState<Record<string, { vin?: string; engine_size?: string; mileage?: string; trim_code?: string; drive_train?: string }>>({});
   const [vinStickerPhotos, setVinStickerPhotos] = useState<Record<string, File[]>>({});
   const [interiorPhotos, setInteriorPhotos] = useState<Record<string, File[]>>({});
   const [exteriorPhotos, setExteriorPhotos] = useState<Record<string, File[]>>({});
@@ -692,6 +694,26 @@ export const EmployeeWorkManagement: React.FC = () => {
   const handleSaveVehicleDetails = async (sessionId: string, vehicleId: string) => {
     const edits = vehicleEdits[sessionId] || {};
     try {
+      // In demo mode (dummy IDs), update local state only
+      if (isDummyId(vehicleId)) {
+        setWorkSessions(prev => prev.map(s => s.id === sessionId ? ({
+          ...s,
+          ticket: {
+            ...s.ticket,
+            vehicle: {
+              ...s.ticket.vehicle,
+              vin: edits.vin ?? s.ticket.vehicle['vin'],
+              engine_size: edits.engine_size ?? s.ticket.vehicle['engine_size'],
+              mileage: edits.mileage ? parseInt(edits.mileage) : (s.ticket.vehicle as any)['mileage'],
+              trim_code: edits.trim_code ?? (s.ticket.vehicle as any)['trim_code'],
+              drive_train: edits.drive_train ?? (s.ticket.vehicle as any)['drive_train']
+            }
+          }
+        }) : s));
+        toast({ title: 'Vehicle Updated (demo)', description: 'Changes saved locally for demo.' });
+        return;
+      }
+
       const payload: any = {
         updated_at: new Date().toISOString()
       };
@@ -699,7 +721,7 @@ export const EmployeeWorkManagement: React.FC = () => {
       if (edits.engine_size !== undefined) payload.engine_size = edits.engine_size || null;
       if (edits.mileage !== undefined) payload.mileage = edits.mileage ? parseInt(edits.mileage) : null;
       if (edits.trim_code !== undefined) payload.trim_code = edits.trim_code || null;
-      if (edits.drivetrain !== undefined) payload.drivetrain = edits.drivetrain || null;
+      if (edits.drive_train !== undefined) payload.drive_train = edits.drive_train || null;
 
       const { error } = await supabase
         .from('vehicles')
@@ -717,13 +739,86 @@ export const EmployeeWorkManagement: React.FC = () => {
             engine_size: edits.engine_size ?? s.ticket.vehicle['engine_size'],
             mileage: edits.mileage ? parseInt(edits.mileage) : (s.ticket.vehicle as any)['mileage'],
             trim_code: edits.trim_code ?? (s.ticket.vehicle as any)['trim_code'],
-            drivetrain: edits.drivetrain ?? (s.ticket.vehicle as any)['drivetrain']
+            drive_train: edits.drive_train ?? (s.ticket.vehicle as any)['drive_train']
           }
         }
       }) : s));
       toast({ title: 'Vehicle Updated', description: 'Vehicle details saved.' });
     } catch (e: any) {
       toast({ title: 'Error', description: e.message || 'Failed to save vehicle details', variant: 'destructive' });
+    }
+  };
+
+  const isDummyId = (id: string | undefined) => {
+    if (!id) return true;
+    return id.startsWith('vehicle-') || id.startsWith('WO-') || id.length < 20; // heuristic for demo IDs
+  };
+
+  const VEHICLE_PARTS: Array<{ key: string; label: string; photoType: 'vin_sticker' | 'exterior' | 'interior' }> = [
+    { key: 'vin_number', label: 'VIN NUMBER', photoType: 'vin_sticker' },
+    { key: 'front_exterior', label: 'Front Exterior', photoType: 'exterior' },
+    { key: 'rear_exterior', label: 'Rear Exterior', photoType: 'exterior' },
+    { key: 'left_exterior', label: 'Left Exterior', photoType: 'exterior' },
+    { key: 'right_exterior', label: 'Right Exterior', photoType: 'exterior' },
+    { key: 'dashboard_odometer', label: 'Dashboard/Odometer', photoType: 'interior' }
+  ];
+
+  const handleVehiclePartFileChange = (sessionId: string, partKey: string, file: File | null) => {
+    setVehiclePartFiles(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...(prev[sessionId] || {}),
+        [partKey]: file
+      }
+    }));
+  };
+
+  const uploadVehiclePartImage = async (sessionId: string, vehicleId: string, partKey: string) => {
+    const file = vehiclePartFiles[sessionId]?.[partKey] || null;
+    if (!file) {
+      toast({ title: 'No file', description: 'Please capture or choose a photo first', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      // In demo mode (dummy IDs), simulate success
+      if (isDummyId(vehicleId)) {
+        setVehiclePartFiles(prev => ({
+          ...prev,
+          [sessionId]: { ...(prev[sessionId] || {}), [partKey]: null }
+        }));
+        toast({ title: 'Uploaded (demo)', description: 'Photo recorded locally for demo.' });
+        return;
+      }
+
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `${vehicleId}/${partKey}-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('vehicle-photos')
+        .upload(fileName, file);
+      if (uploadError) throw uploadError;
+
+      const part = VEHICLE_PARTS.find(p => p.key === partKey);
+      const photoType = part ? part.photoType : 'exterior';
+
+      const { error: insertError } = await supabase
+        .from('vehicle_photos')
+        .insert({
+          vehicle_id: vehicleId,
+          photo_type: photoType,
+          storage_path: fileName,
+          uploaded_by: user?.id || null
+        });
+      if (insertError) throw insertError;
+
+      setVehiclePartFiles(prev => ({
+        ...prev,
+        [sessionId]: { ...(prev[sessionId] || {}), [partKey]: null }
+      }));
+
+      toast({ title: 'Uploaded', description: 'Photo uploaded to vehicle profile.' });
+    } catch (e: any) {
+      toast({ title: 'Upload Failed', description: e.message || 'Failed to upload photo', variant: 'destructive' });
     }
   };
 
@@ -1542,65 +1637,64 @@ export const EmployeeWorkManagement: React.FC = () => {
                   )}
                 </div>
 
-                {/* Vehicle Details & Photos */}
+                {/* Vehicle Details (as Action Button with Popup) */}
                 <div className="space-y-3 pt-4 border-t">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Vehicle Details</Label>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <Input placeholder="VIN" value={(vehicleEdits[session.id]?.vin) ?? (session.ticket.vehicle as any)['vin'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), vin: e.target.value } }))} />
-                    <Input placeholder="Engine Size" value={(vehicleEdits[session.id]?.engine_size) ?? (session.ticket.vehicle as any)['engine_size'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), engine_size: e.target.value } }))} />
-                    <Input placeholder="Mileage" type="number" value={(vehicleEdits[session.id]?.mileage) ?? String((session.ticket.vehicle as any)['mileage'] ?? '')} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), mileage: e.target.value } }))} />
-                    <Input placeholder="Trim Code" value={(vehicleEdits[session.id]?.trim_code) ?? (session.ticket.vehicle as any)['trim_code'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), trim_code: e.target.value } }))} />
-                    <Input placeholder="Drivetrain" value={(vehicleEdits[session.id]?.drivetrain) ?? (session.ticket.vehicle as any)['drivetrain'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), drivetrain: e.target.value } }))} />
-                    <Button variant="outline" onClick={() => handleSaveVehicleDetails(session.id, session.ticket.vehicle.id)}>Save Vehicle</Button>
-                  </div>
+                    <Dialog open={showVehicleDetailsDialog[session.id] || false} onOpenChange={(open) => setShowVehicleDetailsDialog(prev => ({ ...prev, [session.id]: open }))}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline">Open</Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Vehicle Details & Photos</DialogTitle>
+                          <DialogDescription>Update details and upload part-specific photos.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <Input placeholder="VIN" value={(vehicleEdits[session.id]?.vin) ?? (session.ticket.vehicle as any)['vin'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), vin: e.target.value } }))} />
+                            <Input placeholder="Engine Size" value={(vehicleEdits[session.id]?.engine_size) ?? (session.ticket.vehicle as any)['engine_size'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), engine_size: e.target.value } }))} />
+                            <Input placeholder="Mileage" type="number" value={(vehicleEdits[session.id]?.mileage) ?? String((session.ticket.vehicle as any)['mileage'] ?? '')} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), mileage: e.target.value } }))} />
+                            <Input placeholder="Trim Code" value={(vehicleEdits[session.id]?.trim_code) ?? (session.ticket.vehicle as any)['trim_code'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), trim_code: e.target.value } }))} />
+                          <Input placeholder="Drivetrain" value={(vehicleEdits[session.id]?.drive_train) ?? (session.ticket.vehicle as any)['drive_train'] ?? ''} onChange={(e) => setVehicleEdits(prev => ({ ...prev, [session.id]: { ...(prev[session.id] || {}), drive_train: e.target.value } }))} />
+                            <Button variant="outline" onClick={() => handleSaveVehicleDetails(session.id, session.ticket.vehicle.id)}>Save Vehicle</Button>
+                          </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <Label>VIN Sticker</Label>
-                      <div className="mt-2">
-                        <EnhancedFileUpload
-                          onFilesSelected={(files) => setVinStickerPhotos(prev => ({ ...prev, [session.id]: files }))}
-                          accept="image/*"
-                          multiple={false}
-                          maxFiles={1}
-                          maxFileSize={10}
-                          placeholder="Take VIN sticker photo"
-                          id={`vin-sticker-${session.id}`}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Interior Photos</Label>
-                      <div className="mt-2">
-                        <EnhancedFileUpload
-                          onFilesSelected={(files) => setInteriorPhotos(prev => ({ ...prev, [session.id]: files }))}
-                          accept="image/*"
-                          multiple={true}
-                          maxFiles={5}
-                          maxFileSize={10}
-                          placeholder="Take interior photos"
-                          id={`interior-${session.id}`}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Exterior Photos</Label>
-                      <div className="mt-2">
-                        <EnhancedFileUpload
-                          onFilesSelected={(files) => setExteriorPhotos(prev => ({ ...prev, [session.id]: files }))}
-                          accept="image/*"
-                          multiple={true}
-                          maxFiles={5}
-                          maxFileSize={10}
-                          placeholder="Take exterior photos"
-                          id={`exterior-${session.id}`}
-                        />
-                      </div>
-                    </div>
+                          <div className="border rounded-md">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 border-b text-xs font-medium text-muted-foreground">
+                              <div>Vehicle Part</div>
+                              <div>Capture/Upload Image</div>
+                              <div>Action</div>
+                            </div>
+                            <div className="divide-y">
+                              {VEHICLE_PARTS.map(part => (
+                                <div key={part.key} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 items-center">
+                                  <div className="font-medium text-sm">{part.label}</div>
+                                  <div>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      capture="environment"
+                                      onChange={(e) => handleVehiclePartFileChange(session.id, part.key, e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Button
+                                      size="sm"
+                                      disabled={!vehiclePartFiles[session.id]?.[part.key]}
+                                      onClick={() => uploadVehiclePartImage(session.id, session.ticket.vehicle.id, part.key)}
+                                    >
+                                      Upload
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                  <Button className="mt-2" onClick={() => handleUploadVehiclePhotos(session.id, session.ticket.vehicle.id)}>Upload Selected Photos</Button>
                 </div>
 
                 {/* Action Buttons */}

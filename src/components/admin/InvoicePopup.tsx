@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { FileText, Download, Plus, Trash2, Edit, X } from 'lucide-react';
 
 interface Ticket {
@@ -66,6 +67,7 @@ interface InvoicePopupProps {
 
 export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onClose }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [standardServices, setStandardServices] = useState<StandardService[]>([]);
   const [services, setServices] = useState<WorkorderService[]>([]);
   const [parts, setParts] = useState<PartUsed[]>([]);
@@ -272,9 +274,54 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
         }
       }
 
+      // Save parts to parts table
+      for (const part of parts) {
+        if (part.id.startsWith('temp-')) {
+          const { error } = await supabase
+            .from('parts')
+            .insert({
+              ticket_id: ticket.id,
+              name: part.name,
+              quantity: part.quantity,
+              unit_price: part.unit_price,
+              tax_percentage: part.is_taxable ? taxRate : 0,
+              status: 'used',
+              uploaded_by: user?.id
+            });
+          if (error) throw error;
+        }
+      }
+
+      // Recalculate totals from current state
+      const subtotal = calculateSubtotal();
+      const taxAmount = calculateTax();
+      const totalAmount = subtotal + taxAmount;
+
+      // Generate invoice number via RPC if available
+      let invoiceNumber: string | null = null;
+      try {
+        const { data: genData } = await supabase.rpc('generate_invoice_number');
+        if (genData) invoiceNumber = genData as string;
+      } catch (_) {
+        invoiceNumber = null;
+      }
+
+      // Create or upsert invoice record defaulting to pending
+      const { error: invErr } = await supabase.from('invoices').insert({
+        ticket_id: ticket.id,
+        invoice_number: invoiceNumber ?? `INV-${Date.now()}`,
+        subtotal,
+        tax_amount: taxAmount,
+        discount_amount: 0,
+        total_amount: totalAmount,
+        created_by: user?.id,
+        payment_status: 'pending'
+      });
+      if (invErr) throw invErr;
+
       toast({
         title: 'Success',
-        description: 'Invoice generated successfully',
+        description: 'Invoice generated successfully (status pending)',
       });
       
       onClose();

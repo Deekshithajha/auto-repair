@@ -11,6 +11,7 @@ import { CustomerVehicleManagement } from '@/components/customers/CustomerVehicl
 import { EnhancedCustomerProfile } from '@/components/customers/EnhancedCustomerProfile';
 import { toast } from '@/hooks/use-toast';
 import DashboardBackground from '@/components/layout/DashboardBackground';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Ticket {
   id: string;
@@ -64,6 +65,30 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateTicket, setShowCreateTicket] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<{
+    id: string;
+    date: string;
+    amount: number;
+    status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+    description: string;
+    vehicle: string;
+    ticketId?: string;
+  } | null>(null);
+  const [userInvoices, setUserInvoices] = useState<Array<{
+    id: string;
+    date: string;
+    amount: number;
+    status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+    description: string;
+    vehicle: string;
+    ticketId?: string;
+  }>>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState<boolean>(true);
+  const [invoiceServices, setInvoiceServices] = useState<Array<{ name: string; quantity: number; unit_price: number; is_taxable: boolean; is_standard?: boolean }>>([]);
+  const [invoiceParts, setInvoiceParts] = useState<Array<{ name: string; quantity: number; unit_price: number; is_taxable: boolean }>>([]);
+  const [invoiceTaxRate, setInvoiceTaxRate] = useState<number>(8.25);
+  const [loadingInvoiceDetails, setLoadingInvoiceDetails] = useState<boolean>(false);
 
   // Dummy data for demonstration
   const dummyTickets: Ticket[] = [
@@ -126,8 +151,103 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
       status: 'paid',
       description: 'Transmission fluid change and filter replacement',
       vehicle: '2021 Ford Focus'
+    },
+    {
+      id: 'INV-004',
+      date: '2024-02-05',
+      amount: 0,
+      status: 'pending',
+      description: 'Pending invoice demo with services and parts',
+      vehicle: '2022 Hyundai Elantra'
     }
   ];
+
+  const dummyInvoiceDetailsById: Record<string, { services: Array<{ name: string; quantity: number; unit_price: number; is_taxable: boolean; is_standard?: boolean }>; parts: Array<{ name: string; quantity: number; unit_price: number; is_taxable: boolean }>; taxRate: number; }> = {
+    'INV-004': {
+      taxRate: 8.25,
+      services: [
+        { name: 'Oil Change', quantity: 1, unit_price: 45, is_taxable: true, is_standard: true },
+        { name: 'Brake Pad Replacement', quantity: 1, unit_price: 120, is_taxable: true, is_standard: true },
+        { name: 'Custom Detailing', quantity: 1, unit_price: 60, is_taxable: true, is_standard: false },
+      ],
+      parts: [
+        { name: 'Engine Oil 5W-30', quantity: 1, unit_price: 30, is_taxable: true },
+        { name: 'Brake Pads (Front)', quantity: 1, unit_price: 80, is_taxable: true },
+      ],
+    },
+  };
+
+  const handleOpenInvoice = (invoiceId: string) => {
+    const found = userInvoices.find(inv => inv.id === invoiceId) || null;
+    setSelectedInvoice(found);
+    setInvoiceDialogOpen(!!found);
+    if (found) {
+      loadInvoiceDetails({ id: found.id, ticketId: found.ticketId, amount: found.amount });
+    }
+  };
+
+  const loadInvoiceDetails = async (invoice: { id: string; ticketId?: string; amount?: number }) => {
+    setLoadingInvoiceDetails(true);
+    try {
+      if (invoice.ticketId) {
+        const [servicesRes, partsRes, stdRes] = await Promise.all([
+          supabase.from('workorder_services').select('*').eq('ticket_id', invoice.ticketId),
+          supabase.from('parts').select('*').eq('ticket_id', invoice.ticketId),
+          supabase.from('standard_services').select('service_name').eq('is_active', true),
+        ]);
+
+        const standardNames = new Set((stdRes.data || []).map((s: any) => (s.service_name || '').toLowerCase()));
+
+        if (!servicesRes.error) {
+          const mappedServices = (servicesRes.data || []).map((s: any) => ({
+            name: s.service_name ?? 'Service',
+            quantity: Number(s.quantity ?? 1),
+            unit_price: Number(s.unit_price ?? 0),
+            is_taxable: Boolean(s.is_taxable ?? true),
+            is_standard: standardNames.has((s.service_name || '').toLowerCase()),
+          }));
+          setInvoiceServices(mappedServices);
+        }
+
+        if (!partsRes.error) {
+          const mappedParts = (partsRes.data || []).map((p: any) => ({
+            name: p.name ?? 'Part',
+            quantity: Number(p.quantity ?? 1),
+            unit_price: Number(p.unit_price ?? 0),
+            is_taxable: (p.tax_percentage ?? 0) > 0,
+          }));
+          setInvoiceParts(mappedParts);
+        }
+
+        setInvoiceTaxRate(8.25);
+        // If we successfully fetched live items, stop here
+        if ((invoiceServices.length > 0) || (invoiceParts.length > 0)) {
+          return;
+        }
+      }
+
+      const dummy = dummyInvoiceDetailsById[invoice.id];
+      if (dummy) {
+        setInvoiceServices(dummy.services);
+        setInvoiceParts(dummy.parts);
+        setInvoiceTaxRate(dummy.taxRate);
+      } else {
+        setInvoiceServices([]);
+        setInvoiceParts([]);
+        setInvoiceTaxRate(8.25);
+      }
+
+      // Final fallback: if there are still no line items but we know the invoice amount,
+      // inject a single non-taxable line item so the inside total matches the card total.
+      const amount = typeof invoice.amount === 'number' ? invoice.amount : selectedInvoice?.amount;
+      if ((invoiceServices.length === 0) && (invoiceParts.length === 0) && amount && amount > 0) {
+        setInvoiceServices([{ name: 'Billed amount', quantity: 1, unit_price: amount, is_taxable: false, is_standard: false }]);
+        setInvoiceTaxRate(0);
+      }
+    } finally {
+      setLoadingInvoiceDetails(false);
+    }
+  };
 
   const dummyNotifications = [
     {
@@ -256,6 +376,82 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
     setTickets(dummyTickets);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      try {
+        setLoadingInvoices(true);
+        const { data, error } = await supabase
+          .from('invoices')
+          .select(`
+            id,
+            invoice_number,
+            total_amount,
+            payment_status,
+            created_at,
+            tickets:ticket_id (
+              id,
+              ticket_number,
+              vehicles:vehicle_id (
+                make, model, year
+              )
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const mapped = (data || []).map((row: any) => ({
+          id: row.invoice_number ?? row.id,
+          date: row.created_at,
+          amount: Number(row.total_amount ?? 0),
+          status: (row.payment_status ?? 'pending') as 'pending' | 'paid' | 'overdue' | 'cancelled',
+          description: row.tickets?.ticket_number ? `Invoice for ${row.tickets.ticket_number}` : 'Service invoice',
+          vehicle: row.tickets?.vehicles ? `${row.tickets.vehicles.year} ${row.tickets.vehicles.make} ${row.tickets.vehicles.model}` : 'Vehicle',
+          ticketId: row.tickets?.id,
+        }));
+
+        if (mapped.length === 0) {
+          const demo = dummyInvoices.map(inv => ({
+            id: inv.id,
+            date: inv.date,
+            amount: inv.amount,
+            status: (inv.status === 'paid' ? 'paid' : 'pending') as 'pending' | 'paid',
+            description: inv.description,
+            vehicle: inv.vehicle,
+          }));
+          setUserInvoices(demo);
+        } else {
+          setUserInvoices(mapped);
+        }
+      } catch (e) {
+        const demo = dummyInvoices.map(inv => ({
+          id: inv.id,
+          date: inv.date,
+          amount: inv.amount,
+          status: (inv.status === 'paid' ? 'paid' : 'pending') as 'pending' | 'paid',
+          description: inv.description,
+          vehicle: inv.vehicle,
+        }));
+        setUserInvoices(demo);
+      } finally {
+        setLoadingInvoices(false);
+      }
+    };
+
+    fetchInvoices();
+
+    const channel = supabase
+      .channel('invoices-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => {
+        fetchInvoices();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const fetchTickets = async () => {
     // Keep the function for future use but use dummy data for now
@@ -506,7 +702,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         <p className="text-muted-foreground text-sm sm:text-base">View your repair invoices</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {dummyInvoices.map((invoice) => (
+        {(loadingInvoices ? [] : userInvoices).map((invoice) => (
           <Card key={invoice.id} className="hover:shadow-elegant transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
@@ -530,7 +726,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
                   <span className="text-lg font-bold text-green-600">
                     ${invoice.amount.toFixed(2)}
                   </span>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => handleOpenInvoice(invoice.id)}>
                     View Details
                   </Button>
                 </div>
@@ -539,6 +735,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
           </Card>
         ))}
       </div>
+      {(!loadingInvoices && userInvoices.length === 0) && (
+        <Card className="text-center py-10">
+          <CardContent>
+            <div className="text-4xl mb-2">🧾</div>
+            <div className="text-sm text-muted-foreground">No invoices yet.</div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
@@ -596,6 +800,115 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
           onOpenChange={setShowCreateTicket}
           onTicketCreated={handleTicketCreated}
         />
+
+        {/* Invoice Details Dialog */}
+        <Dialog open={invoiceDialogOpen} onOpenChange={(open) => { setInvoiceDialogOpen(open); if (!open) setSelectedInvoice(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invoice Details</DialogTitle>
+              <DialogDescription>Review your invoice information</DialogDescription>
+            </DialogHeader>
+            {selectedInvoice && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Invoice ID</span>
+                  <span className="font-medium">{selectedInvoice.id}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Date</span>
+                  <span className="font-medium">{new Date(selectedInvoice.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Vehicle</span>
+                  <span className="font-medium">{selectedInvoice.vehicle}</span>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">Description</span>
+                  <p className="text-sm mt-1">{selectedInvoice.description}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <Badge variant={selectedInvoice.status === 'paid' ? 'default' : 'secondary'}>
+                    {selectedInvoice.status}
+                  </Badge>
+                </div>
+                {/* Line Items */}
+                <div className="pt-2 space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Services</h4>
+                    {loadingInvoiceDetails ? (
+                      <div className="text-sm text-muted-foreground">Loading services…</div>
+                    ) : invoiceServices.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No services added.</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {invoiceServices.filter(s => s.is_standard).length > 0 && (
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Standard</div>
+                            {invoiceServices.filter(s => s.is_standard).map((s, idx) => (
+                              <div key={`std-${idx}`} className="flex justify-between text-sm">
+                                <span>{s.name} × {s.quantity}</span>
+                                <span>${(s.unit_price * s.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {invoiceServices.filter(s => !s.is_standard).length > 0 && (
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Non-standard</div>
+                            {invoiceServices.filter(s => !s.is_standard).map((s, idx) => (
+                              <div key={`nstd-${idx}`} className="flex justify-between text-sm">
+                                <span>{s.name} × {s.quantity}</span>
+                                <span>${(s.unit_price * s.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold mb-2">Parts</h4>
+                    {loadingInvoiceDetails ? (
+                      <div className="text-sm text-muted-foreground">Loading parts…</div>
+                    ) : invoiceParts.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No parts added.</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {invoiceParts.map((p, idx) => (
+                          <div key={`part-${idx}`} className="flex justify-between text-sm">
+                            <span>{p.name} × {p.quantity}</span>
+                            <span>${(p.unit_price * p.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Summary */}
+                  <div className="border-t pt-3 space-y-1 text-sm">
+                    {(() => {
+                      const servicesSubtotal = invoiceServices.reduce((sum, s) => sum + s.unit_price * s.quantity, 0);
+                      const partsSubtotal = invoiceParts.reduce((sum, p) => sum + p.unit_price * p.quantity, 0);
+                      const taxableAmount = invoiceServices.filter(s => s.is_taxable).reduce((sum, s) => sum + s.unit_price * s.quantity, 0)
+                        + invoiceParts.filter(p => p.is_taxable).reduce((sum, p) => sum + p.unit_price * p.quantity, 0);
+                      const tax = (taxableAmount * invoiceTaxRate) / 100;
+                      const total = servicesSubtotal + partsSubtotal + tax;
+                      return (
+                        <>
+                          <div className="flex justify-between"><span>Services</span><span>${servicesSubtotal.toFixed(2)}</span></div>
+                          <div className="flex justify-between"><span>Parts</span><span>${partsSubtotal.toFixed(2)}</span></div>
+                          <div className="flex justify-between"><span>Tax ({invoiceTaxRate}%)</span><span>${tax.toFixed(2)}</span></div>
+                          <div className="flex justify-between font-semibold text-base"><span>Total</span><span>${total.toFixed(2)}</span></div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardBackground>
   );

@@ -169,11 +169,79 @@ export const RoleBasedAuthForm: React.FC = () => {
         <div className="w-full max-w-md">
         {/* Logo/Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-background rounded-full shadow-glow mb-4">
-            <div className="flex items-center space-x-1">
-              <span className="text-2xl">🔧</span>
-              <span className="text-2xl">🚗</span>
-            </div>
+          {/* Animated mascot: car enters mechanic shop "76" */}
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full shadow-glow mb-4" style={{ background: 'radial-gradient(ellipse at center, rgba(110,231,255,0.25), rgba(110,231,255,0))' }}>
+            <svg width="96" height="96" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated car entering shop 76">
+              <defs>
+                <clipPath id="circleMask"><circle cx="60" cy="60" r="58"/></clipPath>
+                <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0b1220"/>
+                  <stop offset="100%" stopColor="#141a2a"/>
+                </linearGradient>
+                <style>{`
+                  /* Looping glide for the mascot car */
+                  @keyframes driveIn {
+                    0% { transform: translateX(-70px); }
+                    50% { transform: translateX(8px); }
+                    100% { transform: translateX(12px); }
+                  }
+                  /* Door cycles up and down in sync */
+                  @keyframes doorUp {
+                    0%, 40% { transform: translateY(0px); }
+                    60%, 100% { transform: translateY(-26px); }
+                  }
+                  /* Ensure reliable transform behavior across browsers */
+                  g.anim { transform-box: fill-box; transform-origin: center; will-change: transform; }
+                  @media (prefers-reduced-motion: reduce) {
+                    g[aria-label='car'] { animation: none; transform: translateX(12px); }
+                    g[aria-label='door'] { animation: none; transform: translateY(-26px); }
+                  }
+                `}</style>
+              </defs>
+              <g clipPath="url(#circleMask)">
+                {/* background */}
+                <rect x="0" y="0" width="120" height="120" fill="url(#sky)"/>
+                {/* ground */}
+                <rect x="0" y="84" width="120" height="36" fill="#2a334a"/>
+                {/* shop body */}
+                <g transform="translate(60,30)">
+                  <rect x="-4" y="16" width="56" height="46" rx="4" fill="#1d2a46" stroke="#3b4a6a" strokeWidth="2"/>
+                  {/* shop label box */}
+                  <rect x="6" y="-2" width="26" height="18" rx="3" fill="#1e3a8a" stroke="#4c6fbf" strokeWidth="1.5"/>
+                  <text x="19" y="11" textAnchor="middle" fontFamily="Inter, system-ui, -apple-system" fontSize="10" fontWeight="700" fill="#93c5fd">76</text>
+                  {/* garage door frame */}
+                  <rect x="26" y="28" width="22" height="30" fill="#0f172a" stroke="#3b4a6a" strokeWidth="1.5"/>
+                  {/* sliding door */}
+                  <g aria-label="door" className="anim" style={{ transformOrigin: '47px 58px', animation: 'doorUp 12s ease-in-out 0.2s infinite alternate' as any }}>
+                    <rect x="26" y="28" width="22" height="30" fill="#334155"/>
+                    {Array.from({length:4}).map((_,i)=> (
+                      <rect key={i} x="28" y={31 + i*7} width="18" height="3" fill="#64748b"/>
+                    ))}
+                  </g>
+                  {/* small window */}
+                  <rect x="-0.5" y="30" width="18" height="12" fill="#1e40af" stroke="#60a5fa" strokeWidth="1"/>
+                </g>
+                {/* driveway */}
+                <rect x="60" y="78" width="40" height="6" fill="#3b465f"/>
+                {/* car */}
+                <g aria-label="car" className="anim" style={{ animation: 'driveIn 12s cubic-bezier(.28,.75,.25,1) 0s infinite alternate' as any }}>
+                  {/* wheels */}
+                  <g transform="translate(0,0)">
+                    <circle cx="76" cy="88" r="6" fill="#0d47a1" stroke="#1e3a8a" strokeWidth="2"/>
+                    <circle cx="94" cy="88" r="6" fill="#0d47a1" stroke="#1e3a8a" strokeWidth="2"/>
+                  </g>
+                  {/* body */}
+                  <path d="M68 76 h26 a6 6 0 0 1 6 6 v6 h-4 v4 a4 4 0 0 1 -4 4 h-22 a4 4 0 0 1 -4 -4 v-16 z" fill="#d32f2f" stroke="#7b0000" strokeWidth="2"/>
+                  {/* cabin */}
+                  <path d="M72 76 l10 -8 h10 l8 8 v8 h-28 z" fill="#ff6b6b" stroke="#d32f2f" strokeWidth="2"/>
+                  {/* windows */}
+                  <rect x="76" y="72" width="10" height="8" fill="#4fc3f7" stroke="#0d47a1" strokeWidth="1.5"/>
+                  <rect x="88" y="72" width="10" height="8" fill="#4fc3f7" stroke="#0d47a1" strokeWidth="1.5"/>
+                  {/* headlight */}
+                  <circle cx="100" cy="84" r="2" fill="#fde68a"/>
+                </g>
+              </g>
+            </svg>
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">AUTO REPAIR INC</h1>
           <p className="text-white/90 text-lg">Auto Repair Excellence</p>
