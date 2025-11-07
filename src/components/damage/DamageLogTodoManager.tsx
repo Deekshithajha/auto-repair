@@ -2,7 +2,7 @@
  * Damage Log Todo Manager Component
  * Displays damage logs as a todo list with CRUD operations and image uploads
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -67,10 +67,30 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
   const [description, setDescription] = useState('');
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [photoDataCache, setPhotoDataCache] = useState<Record<string, string>>({});
+  const [logPhotoUrls, setLogPhotoUrls] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     fetchDamageLogs();
   }, [vehicleId, ticketId]);
+
+  // Load photos for all damage logs
+  useEffect(() => {
+    const loadPhotos = async () => {
+      const photoUrlsMap: Record<string, string[]> = {};
+      for (const log of damageLogs) {
+        if (log.photo_ids && log.photo_ids.length > 0) {
+          const urls = await getPhotoUrls(log);
+          photoUrlsMap[log.id] = urls;
+        }
+      }
+      setLogPhotoUrls(photoUrlsMap);
+    };
+    
+    if (damageLogs.length > 0) {
+      loadPhotos();
+    }
+  }, [damageLogs, getPhotoUrls]);
 
   const fetchDamageLogs = async () => {
     try {
@@ -101,43 +121,90 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const uploadPhotos = async (files: File[]): Promise<string[]> => {
     if (files.length === 0) return [];
 
-    const uploadedPaths: string[] = [];
-    for (const file of files) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${vehicleId}/damage/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { error } = await supabase.storage
-        .from('vehicle-photos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('Error uploading photo:', error);
-        toast({
-          title: 'Upload Error',
-          description: `Failed to upload ${file.name}`,
-          variant: 'destructive',
-        });
-        continue;
-      }
-
-      // Store file path (will convert to public URL when displaying)
-      uploadedPaths.push(fileName);
+    const uploadedPhotoIds: string[] = [];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: 'Authentication Error',
+        description: 'Please log in to upload photos',
+        variant: 'destructive',
+      });
+      return [];
     }
 
-    return uploadedPaths;
+    for (const file of files) {
+      try {
+        // Convert image to base64
+        const base64Data = await convertFileToBase64(file);
+
+        // Store photo directly in database
+        const { data, error } = await supabase
+          .from('vehicle_photos')
+          .insert({
+            vehicle_id: vehicleId,
+            photo_type: 'damage',
+            photo_data: base64Data,
+            storage_path: null,
+            uploaded_by: user.id
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error uploading photo:', error);
+          toast({
+            title: 'Upload Error',
+            description: `Failed to upload ${file.name}`,
+            variant: 'destructive',
+          });
+          continue;
+        }
+
+        uploadedPhotoIds.push(data.id);
+      } catch (error: any) {
+        console.error('Error processing photo:', error);
+        toast({
+          title: 'Upload Error',
+          description: `Failed to process ${file.name}`,
+          variant: 'destructive',
+        });
+      }
+    }
+
+    return uploadedPhotoIds;
   };
 
-  const getPhotoUrl = (photoPath: string): string => {
-    const { data } = supabase.storage
-      .from('vehicle-photos')
-      .getPublicUrl(photoPath);
-    return data?.publicUrl || photoPath;
+  const getPhotoUrl = async (photoId: string): Promise<string> => {
+    // Check cache first
+    if (photoDataCache[photoId]) {
+      return photoDataCache[photoId];
+    }
+
+    const { data } = await supabase
+      .from('vehicle_photos')
+      .select('photo_data')
+      .eq('id', photoId)
+      .single();
+    
+    const photoData = data?.photo_data || '';
+    // Cache the result
+    setPhotoDataCache(prev => ({ ...prev, [photoId]: photoData }));
+    return photoData;
   };
 
   const handleAddDamageLog = async () => {
@@ -163,7 +230,6 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
           photo_ids: allPhotoUrls.length > 0 ? allPhotoUrls : null,
           logged_by: user?.id || '',
           ticket_id: ticketId || null,
-          is_completed: false,
         })
         .select()
         .single();
@@ -193,11 +259,17 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
     }
   };
 
-  const handleEditDamageLog = (log: DamageLog) => {
+  const handleEditDamageLog = async (log: DamageLog) => {
     setEditingId(log.id);
     setDescription(log.description);
-    // Store existing photo paths (these are file paths, not URLs)
-    setExistingPhotos(log.photo_ids || []);
+    // Load existing photo data
+    if (log.photo_ids && log.photo_ids.length > 0) {
+      const photoDataPromises = log.photo_ids.map(id => getPhotoUrl(id));
+      const photoDataArray = await Promise.all(photoDataPromises);
+      setExistingPhotos(photoDataArray);
+    } else {
+      setExistingPhotos([]);
+    }
     setUploadedPhotos([]);
     setShowAddDialog(true);
   };
@@ -342,9 +414,10 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
     setShowAddDialog(false);
   };
 
-  const getPhotoUrls = (log: DamageLog): string[] => {
-    return (log.photo_ids || []).map(getPhotoUrl);
-  };
+  const getPhotoUrls = useCallback(async (log: DamageLog): Promise<string[]> => {
+    if (!log.photo_ids || log.photo_ids.length === 0) return [];
+    return Promise.all(log.photo_ids.map(id => getPhotoUrl(id)));
+  }, [photoDataCache]);
 
   if (loading) {
     return (
@@ -412,10 +485,10 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
                   <div className="mt-2 space-y-2">
                     <p className="text-xs text-muted-foreground">Existing Photos:</p>
                     <div className="grid grid-cols-4 gap-2">
-                      {existingPhotos.map((photoPath, index) => (
+                      {existingPhotos.map((photoData, index) => (
                         <div key={index} className="relative group">
                           <img
-                            src={getPhotoUrl(photoPath)}
+                            src={photoData}
                             alt={`Damage photo ${index + 1}`}
                             className="w-full h-20 object-cover rounded border"
                           />
@@ -489,7 +562,7 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
           </Card>
         ) : (
           damageLogs.map((log) => {
-            const photoUrls = getPhotoUrls(log);
+            const photoUrls = logPhotoUrls[log.id] || [];
             return (
               <Card
                 key={log.id}
@@ -590,7 +663,7 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
         <PhotoViewerModal
           open={!!viewingPhotoIndex}
           onClose={() => setViewingPhotoIndex(null)}
-          photos={getPhotoUrls(damageLogs.find((l) => l.id === viewingPhotoIndex.logId) || damageLogs[0]).map((url, idx) => ({
+          photos={(logPhotoUrls[viewingPhotoIndex.logId] || []).map((url, idx) => ({
             id: `${viewingPhotoIndex.logId}-${idx}`,
             url: url,
           }))}

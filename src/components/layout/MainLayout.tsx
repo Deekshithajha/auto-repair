@@ -8,6 +8,9 @@ import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { AdminRescheduledVehicles } from '@/components/admin/AdminRescheduledVehicles';
+import { EmployeeRescheduledVehicles } from '@/components/employee/EmployeeRescheduledVehicles';
+import { CustomerRescheduledVehicles } from '@/components/customers/CustomerRescheduledVehicles';
 
 export const MainLayout: React.FC = () => {
   const { user, profile, loading, signIn, signUp } = useAuth();
@@ -54,12 +57,14 @@ export const MainLayout: React.FC = () => {
                 <Route path="/user/tickets" element={profile.role === 'user' ? <UserDashboard activeTab="tickets" /> : <Navigate to="/" />} />
                 <Route path="/user/vehicle-status" element={profile.role === 'user' ? <UserDashboard activeTab="vehicle-status" /> : <Navigate to="/" />} />
                 <Route path="/user/vehicles" element={profile.role === 'user' ? <UserDashboard activeTab="vehicles" /> : <Navigate to="/" />} />
+                <Route path="/user/rescheduled" element={profile.role === 'user' ? <CustomerRescheduledVehicles /> : <Navigate to="/" />} />
                 <Route path="/user/invoices" element={profile.role === 'user' ? <UserDashboard activeTab="invoices" /> : <Navigate to="/" />} />
                 <Route path="/user/notifications" element={profile.role === 'user' ? <UserDashboard activeTab="notifications" /> : <Navigate to="/" />} />
                 <Route path="/user/profile" element={profile.role === 'user' ? <UserDashboard activeTab="profile" /> : <Navigate to="/" />} />
                 
                 {/* Employee Routes */}
                 <Route path="/employee/assignments" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="assignments" /> : <Navigate to="/" />} />
+                <Route path="/employee/rescheduled" element={profile.role === 'employee' ? <EmployeeRescheduledVehicles /> : <Navigate to="/" />} />
                 <Route path="/employee/worklog" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="worklog" /> : <Navigate to="/" />} />
                 <Route path="/employee/attendance" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="attendance" /> : <Navigate to="/" />} />
                 <Route path="/employee/profile" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="profile" /> : <Navigate to="/" />} />
@@ -69,7 +74,7 @@ export const MainLayout: React.FC = () => {
                 <Route path="/admin/tickets" element={profile.role === 'admin' ? <AdminDashboard activeTab="tickets" /> : <Navigate to="/" />} />
                 <Route path="/admin/customers" element={profile.role === 'admin' ? <AdminDashboard activeTab="customers" /> : <Navigate to="/" />} />
                 <Route path="/admin/employees" element={profile.role === 'admin' ? <AdminDashboard activeTab="employees" /> : <Navigate to="/" />} />
-                <Route path="/admin/register" element={profile.role === 'admin' ? <AdminDashboard activeTab="register" /> : <Navigate to="/" />} />
+                <Route path="/admin/rescheduled" element={profile.role === 'admin' ? <AdminRescheduledVehicles /> : <Navigate to="/" />} />
                 <Route path="/admin/invoice" element={profile.role === 'admin' ? <AdminDashboard activeTab="invoice" /> : <Navigate to="/" />} />
                 <Route path="/admin/monitor" element={profile.role === 'admin' ? <AdminDashboard activeTab="monitor" /> : <Navigate to="/" />} />
                 <Route path="/admin/reports" element={profile.role === 'admin' ? <AdminDashboard activeTab="reports" /> : <Navigate to="/" />} />

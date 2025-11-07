@@ -30,6 +30,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
   const [cameraPermission, setCameraPermission] = useState<PermissionState>('prompt');
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [isStreamActive, setIsStreamActive] = useState(false);
+  const [hasStream, setHasStream] = useState(false);
 
   // Load saved permission choice from localStorage
   useEffect(() => {
@@ -41,17 +43,66 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
 
   // Check camera permission status
   useEffect(() => {
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'camera' as PermissionName }).then((result) => {
-        setCameraPermission(result.state);
-      });
-    }
+    const checkPermission = async () => {
+      if (navigator.permissions) {
+        try {
+          const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          setCameraPermission(result.state);
+          
+          // Listen for permission changes
+          result.onchange = () => {
+            setCameraPermission(result.state);
+          };
+        } catch (err) {
+          console.error('Error checking camera permission:', err);
+        }
+      }
+    };
+    
+    checkPermission();
   }, []);
+
+  // Auto-start camera when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      // Re-check permission status when dialog opens
+      if (navigator.permissions) {
+        navigator.permissions.query({ name: 'camera' as PermissionName }).then((result) => {
+          setCameraPermission(result.state);
+          
+          // If permission was already granted, start camera immediately
+          if (result.state === 'granted' && !streamRef.current) {
+            startCamera();
+          }
+        });
+      }
+      
+      // If permission was already granted, start camera immediately
+      if (cameraPermission === 'granted' && !streamRef.current) {
+        startCamera();
+      }
+      // If permission is prompt and user has previously allowed, try to start
+      else if (cameraPermission === 'prompt' && (permissionChoice === 'always' || permissionChoice === 'once')) {
+        startCamera();
+      }
+    }
+    // Cleanup when dialog closes
+    if (!isOpen && streamRef.current) {
+      stopCamera();
+      setCapturedPhotos([]);
+    }
+  }, [isOpen, cameraPermission, permissionChoice]);
 
   const handleCameraAccess = async () => {
     // If user previously chose "never", show permission dialog again
     if (permissionChoice === 'never') {
       setPermissionDialog(true);
+      return;
+    }
+
+    // Check if permission is already granted (browser might have granted it)
+    if (cameraPermission === 'granted') {
+      await startCamera();
       return;
     }
 
@@ -86,25 +137,128 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      console.log('Starting camera...');
+      
+      // Stop any existing stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      // Request camera access - remove facingMode constraint for desktop Safari
+      const constraints: MediaStreamConstraints = {
         video: { 
-          facingMode: 'environment', // Use back camera on mobile
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
-      });
+      };
+      
+      console.log('Requesting camera access with constraints:', constraints);
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('Camera stream obtained:', stream);
+      console.log('Stream tracks:', stream.getTracks());
       
       streamRef.current = stream;
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      
       setCameraPermission('granted');
+      setHasStream(true);
+      
+      // Wait a bit for the video element to be in the DOM
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Set up video element
+      const setupVideo = () => {
+        if (!videoRef.current) {
+          console.error('Video element not found!');
+          // Retry after a short delay
+          setTimeout(setupVideo, 100);
+          return;
+        }
+
+        const video = videoRef.current;
+        console.log('Setting video srcObject...');
+        video.srcObject = stream;
+        
+        // Ensure video plays
+        const playVideo = async () => {
+          try {
+            if (video && video.srcObject) {
+              console.log('Attempting to play video...');
+              console.log('Video readyState:', video.readyState);
+              console.log('Video paused:', video.paused);
+              
+              await video.play();
+              setIsStreamActive(true);
+              console.log('✅ Video stream is now active and playing!');
+            }
+          } catch (err: any) {
+            console.error('Error playing video:', err);
+            console.error('Error details:', {
+              name: err.name,
+              message: err.message,
+              code: err.code
+            });
+            setIsStreamActive(false);
+            toast({
+              title: "Camera Error",
+              description: `Failed to start camera preview: ${err.message || 'Unknown error'}`,
+              variant: "destructive"
+            });
+          }
+        };
+
+        // Handle when video metadata is loaded
+        const handleLoadedMetadata = () => {
+          console.log('✅ Video metadata loaded, readyState:', video.readyState);
+          playVideo();
+        };
+        
+        // Handle when video starts playing
+        const handlePlaying = () => {
+          console.log('✅ Video is now playing');
+          setIsStreamActive(true);
+        };
+        
+        // Handle when video can play
+        const handleCanPlay = () => {
+          console.log('✅ Video can play');
+          playVideo();
+        };
+        
+        // Handle video errors
+        const handleError = (e: Event) => {
+          console.error('Video element error:', e);
+        };
+        
+        // Add event listeners
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        video.addEventListener('playing', handlePlaying);
+        video.addEventListener('canplay', handleCanPlay);
+        video.addEventListener('error', handleError);
+        
+        // Try to play immediately
+        playVideo();
+        
+        // Also try after a short delay in case metadata loads quickly
+        setTimeout(() => {
+          if (video.paused && video.readyState >= 2) {
+            playVideo();
+          }
+        }, 200);
+      };
+      
+      setupVideo();
+      
     } catch (error: any) {
       console.error('Error accessing camera:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        code: error.code
+      });
       
       if (error.name === 'NotAllowedError') {
+        setCameraPermission('denied');
         toast({
           title: "Camera Access Denied",
           description: "Please allow camera access to take photos",
@@ -119,7 +273,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       } else {
         toast({
           title: "Camera Error",
-          description: "Failed to access camera. Please try again.",
+          description: `Failed to access camera: ${error.message || 'Unknown error'}`,
           variant: "destructive"
         });
       }
@@ -185,6 +339,17 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    setIsStreamActive(false);
+    setHasStream(false);
+    if (videoRef.current) {
+      // Remove all event listeners before clearing srcObject
+      const video = videoRef.current;
+      video.srcObject = null;
+      // Clear any event listeners by cloning the element (if needed)
+      video.onloadedmetadata = null;
+      video.onplaying = null;
+      video.oncanplay = null;
+    }
   };
 
   const handleClose = () => {
@@ -193,12 +358,54 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
     onClose();
   };
 
-  // Cleanup on unmount
+  // Cleanup event listeners and camera on unmount
   useEffect(() => {
+    const video = videoRef.current;
     return () => {
+      if (video) {
+        // Remove event listeners
+        video.onloadedmetadata = null;
+        video.onplaying = null;
+        video.oncanplay = null;
+      }
       stopCamera();
     };
   }, []);
+  
+  // Ensure video element gets the stream when it becomes available
+  useEffect(() => {
+    if (hasStream && streamRef.current && videoRef.current) {
+      const video = videoRef.current;
+      const stream = streamRef.current;
+      
+      if (!video.srcObject || video.srcObject !== stream) {
+        console.log('Setting stream on video element via useEffect');
+        video.srcObject = stream;
+        
+        // Try to play immediately
+        video.play().then(() => {
+          console.log('Video playing successfully from useEffect');
+          setIsStreamActive(true);
+        }).catch(err => {
+          console.error('Error playing video in useEffect:', err);
+          // Video will play when metadata loads
+        });
+      }
+    }
+  }, [hasStream]);
+  
+  // Force video to play when stream becomes active
+  useEffect(() => {
+    if (isStreamActive && videoRef.current && streamRef.current) {
+      const video = videoRef.current;
+      // Ensure video is playing
+      if (video.paused) {
+        video.play().catch(err => {
+          console.error('Error forcing video play:', err);
+        });
+      }
+    }
+  }, [isStreamActive]);
 
   return (
     <>
@@ -212,21 +419,39 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
           </DialogHeader>
           
           <div className="space-y-4">
-            {cameraPermission === 'granted' ? (
-              <div className="space-y-4">
-                <div className="relative">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-64 object-cover rounded-lg border"
-                  />
-                  <canvas ref={canvasRef} className="hidden" />
+            {/* Always render video element so it's available when stream is set */}
+            <div className="relative">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-64 object-cover rounded-lg border bg-black"
+                style={{ transform: 'scaleX(-1)' }} // Mirror the video for better UX
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              {!streamRef.current && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-4xl mb-4">📷</div>
+                    <p className="text-white text-sm">Click "Access Camera" to start</p>
+                  </div>
                 </div>
-                
+              )}
+              {streamRef.current && !isStreamActive && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                  <div className="text-center">
+                    <div className="animate-spin text-white text-2xl mb-2">⏳</div>
+                    <p className="text-white text-sm">Starting camera...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {streamRef.current ? (
+              <>
                 <div className="flex gap-2 justify-center">
-                  <Button onClick={capturePhoto} disabled={isCapturing}>
+                  <Button onClick={capturePhoto} disabled={isCapturing || !isStreamActive}>
                     {isCapturing ? 'Capturing...' : '📸 Capture Photo'}
                   </Button>
                   <Button variant="outline" onClick={handleClose}>
@@ -249,16 +474,20 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             ) : (
               <div className="text-center py-8">
-                <div className="text-4xl mb-4">📷</div>
                 <p className="text-muted-foreground mb-4">
                   Click the button below to access your camera
                 </p>
-                <Button onClick={handleCameraAccess}>
+                <Button onClick={handleCameraAccess} disabled={cameraPermission === 'denied'}>
                   Access Camera
                 </Button>
+                {cameraPermission === 'denied' && (
+                  <p className="text-sm text-destructive mt-2">
+                    Camera access was denied. Please enable it in your browser settings.
+                  </p>
+                )}
               </div>
             )}
           </div>

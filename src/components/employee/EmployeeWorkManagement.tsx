@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
+import { CameraCapture } from '@/components/shared/CameraCapture';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DamageLogTodoManager } from '@/components/damage/DamageLogTodoManager';
@@ -94,6 +95,8 @@ export const EmployeeWorkManagement: React.FC = () => {
   const [showIssueDialog, setShowIssueDialog] = useState<Record<string, boolean>>({});
   const [showVehicleDetailsDialog, setShowVehicleDetailsDialog] = useState<Record<string, boolean>>({});
   const [vehiclePartFiles, setVehiclePartFiles] = useState<Record<string, Record<string, File | null>>>({});
+  const [vehiclePartUploadMethod, setVehiclePartUploadMethod] = useState<Record<string, Record<string, 'file' | 'camera' | null>>>({});
+  const [showCameraForPart, setShowCameraForPart] = useState<Record<string, Record<string, boolean>>>({});
   const [vehicleEdits, setVehicleEdits] = useState<Record<string, { vin?: string; engine_size?: string; mileage?: string; trim_code?: string; drive_train?: string }>>({});
   const [vinStickerPhotos, setVinStickerPhotos] = useState<Record<string, File[]>>({});
   const [interiorPhotos, setInteriorPhotos] = useState<Record<string, File[]>>({});
@@ -461,19 +464,28 @@ export const EmployeeWorkManagement: React.FC = () => {
     }
 
     try {
-      // Upload photos first if any
+      // Upload photos first if any (store as base64 in database)
       let photoIds: string[] = [];
       if (damagePhotos[sessionId]?.length > 0) {
-        const uploadPromises = damagePhotos[sessionId].map(async (photo, index) => {
-          const fileExt = photo.name.split('.').pop();
-          const fileName = `damage-${Date.now()}-${index}.${fileExt}`;
+        const uploadPromises = damagePhotos[sessionId].map(async (photo) => {
+          // Convert image to base64
+          const base64Data = await convertFileToBase64(photo);
           
-          const { error } = await supabase.storage
-            .from('vehicle-photos')
-            .upload(fileName, photo);
+          // Store photo directly in database
+          const { data, error } = await supabase
+            .from('vehicle_photos')
+            .insert({
+              vehicle_id: vehicleId,
+              photo_type: 'damage',
+              photo_data: base64Data,
+              storage_path: null,
+              uploaded_by: user?.id || null
+            })
+            .select()
+            .single();
           
           if (error) throw error;
-          return fileName;
+          return data.id;
         });
 
         photoIds = await Promise.all(uploadPromises);
@@ -563,19 +575,28 @@ export const EmployeeWorkManagement: React.FC = () => {
     }
 
     try {
-      // Upload new photos if any
+      // Upload new photos if any (store as base64 in database)
       let photoIds: string[] = [];
       if (editDamagePhotos[damageLogId]?.length > 0) {
-        const uploadPromises = editDamagePhotos[damageLogId].map(async (photo, index) => {
-          const fileExt = photo.name.split('.').pop();
-          const fileName = `damage-${Date.now()}-${index}.${fileExt}`;
+        const uploadPromises = editDamagePhotos[damageLogId].map(async (photo) => {
+          // Convert image to base64
+          const base64Data = await convertFileToBase64(photo);
           
-          const { error } = await supabase.storage
-            .from('vehicle-photos')
-            .upload(fileName, photo);
+          // Store photo directly in database
+          const { data, error } = await supabase
+            .from('vehicle_photos')
+            .insert({
+              vehicle_id: vehicleId,
+              photo_type: 'damage',
+              photo_data: base64Data,
+              storage_path: null,
+              uploaded_by: user?.id || null
+            })
+            .select()
+            .single();
           
           if (error) throw error;
-          return fileName;
+          return data.id;
         });
 
         photoIds = await Promise.all(uploadPromises);
@@ -773,6 +794,50 @@ export const EmployeeWorkManagement: React.FC = () => {
     }));
   };
 
+  const handleUploadMethodChange = (sessionId: string, partKey: string, method: 'file' | 'camera') => {
+    setVehiclePartUploadMethod(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...(prev[sessionId] || {}),
+        [partKey]: method
+      }
+    }));
+
+    // If camera is selected, open camera dialog
+    if (method === 'camera') {
+      setShowCameraForPart(prev => ({
+        ...prev,
+        [sessionId]: {
+          ...(prev[sessionId] || {}),
+          [partKey]: true
+        }
+      }));
+    }
+  };
+
+  const handleCameraCapture = (sessionId: string, partKey: string, file: File) => {
+    handleVehiclePartFileChange(sessionId, partKey, file);
+    setShowCameraForPart(prev => ({
+      ...prev,
+      [sessionId]: {
+        ...(prev[sessionId] || {}),
+        [partKey]: false
+      }
+    }));
+  };
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const uploadVehiclePartImage = async (sessionId: string, vehicleId: string, partKey: string) => {
     const file = vehiclePartFiles[sessionId]?.[partKey] || null;
     if (!file) {
@@ -791,12 +856,8 @@ export const EmployeeWorkManagement: React.FC = () => {
         return;
       }
 
-      const ext = file.name.split('.').pop() || 'jpg';
-      const fileName = `${vehicleId}/${partKey}-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('vehicle-photos')
-        .upload(fileName, file);
-      if (uploadError) throw uploadError;
+      // Convert image to base64
+      const base64Data = await convertFileToBase64(file);
 
       const part = VEHICLE_PARTS.find(p => p.key === partKey);
       const photoType = part ? part.photoType : 'exterior';
@@ -806,7 +867,8 @@ export const EmployeeWorkManagement: React.FC = () => {
         .insert({
           vehicle_id: vehicleId,
           photo_type: photoType,
-          storage_path: fileName,
+          photo_data: base64Data,
+          storage_path: null,
           uploaded_by: user?.id || null
         });
       if (insertError) throw insertError;
@@ -822,15 +884,27 @@ export const EmployeeWorkManagement: React.FC = () => {
     }
   };
 
-  const uploadPhotos = async (files: File[], pathPrefix: string) => {
+  const uploadPhotos = async (files: File[], photoType: 'exterior' | 'interior' | 'vin_sticker', vehicleId: string) => {
     const uploaded: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const ext = file.name.split('.').pop();
-      const fileName = `${pathPrefix}-${Date.now()}-${i}.${ext}`;
-      const { error } = await supabase.storage.from('vehicle-photos').upload(fileName, file);
+    for (const file of files) {
+      // Convert image to base64
+      const base64Data = await convertFileToBase64(file);
+      
+      // Store photo directly in database
+      const { data, error } = await supabase
+        .from('vehicle_photos')
+        .insert({
+          vehicle_id: vehicleId,
+          photo_type: photoType,
+          photo_data: base64Data,
+          storage_path: null,
+          uploaded_by: user?.id || null
+        })
+        .select()
+        .single();
+      
       if (error) throw error;
-      uploaded.push(fileName);
+      uploaded.push(data.id);
     }
     return uploaded;
   };
@@ -844,9 +918,9 @@ export const EmployeeWorkManagement: React.FC = () => {
         toast({ title: 'No Photos', description: 'Please select photos to upload.' });
         return;
       }
-      await uploadPhotos(vinFiles, `${vehicleId}/vin-sticker`);
-      await uploadPhotos(intFiles, `${vehicleId}/interior`);
-      await uploadPhotos(extFiles, `${vehicleId}/exterior`);
+      await uploadPhotos(vinFiles, 'vin_sticker', vehicleId);
+      await uploadPhotos(intFiles, 'interior', vehicleId);
+      await uploadPhotos(extFiles, 'exterior', vehicleId);
       setVinStickerPhotos(prev => ({ ...prev, [sessionId]: [] }));
       setInteriorPhotos(prev => ({ ...prev, [sessionId]: [] }));
       setExteriorPhotos(prev => ({ ...prev, [sessionId]: [] }));
@@ -1553,7 +1627,7 @@ export const EmployeeWorkManagement: React.FC = () => {
                             <span className="truncate">{part.name} (x{part.quantity})</span>
                             <div className="flex items-center gap-2 shrink-0">
                               <span>${(part.quantity * part.unit_price).toFixed(2)}</span>
-                              <Button size="icon" variant="ghost" onClick={() => handleRemovePart(session.ticket_id, index)} aria-label="Remove part">🗑️</Button>
+                              <Button size="icon" variant="ghost" onClick={() => handleRemovePart(session.ticket_id, index)} aria-label="Remove part" className="bg-destructive/10 hover:bg-destructive/20">🗑️</Button>
                             </div>
                           </div>
                         ))}
@@ -1667,28 +1741,57 @@ export const EmployeeWorkManagement: React.FC = () => {
                               <div>Action</div>
                             </div>
                             <div className="divide-y">
-                              {VEHICLE_PARTS.map(part => (
-                                <div key={part.key} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 items-center">
-                                  <div className="font-medium text-sm">{part.label}</div>
-                                  <div>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      capture="environment"
-                                      onChange={(e) => handleVehiclePartFileChange(session.id, part.key, e.target.files && e.target.files[0] ? e.target.files[0] : null)}
-                                    />
+                              {VEHICLE_PARTS.map(part => {
+                                const uploadMethod = vehiclePartUploadMethod[session.id]?.[part.key] || null;
+                                const hasFile = !!vehiclePartFiles[session.id]?.[part.key];
+                                
+                                return (
+                                  <div key={part.key} className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 items-center">
+                                    <div className="font-medium text-sm">{part.label}</div>
+                                    <div className="space-y-2">
+                                      <Select
+                                        value={uploadMethod || 'choose'}
+                                        onValueChange={(value) => {
+                                          if (value === 'file' || value === 'camera') {
+                                            handleUploadMethodChange(session.id, part.key, value);
+                                          }
+                                        }}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue placeholder="Choose a way" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="choose">Choose a way</SelectItem>
+                                          <SelectItem value="file">Choose from file</SelectItem>
+                                          <SelectItem value="camera">Capture photo</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      
+                                      {uploadMethod === 'file' && (
+                                        <Input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => handleVehiclePartFileChange(session.id, part.key, e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                                          className="mt-2"
+                                        />
+                                      )}
+                                      
+                                      {hasFile && (
+                                        <p className="text-xs text-green-600 mt-1">✓ Photo selected</p>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <Button
+                                        size="sm"
+                                        disabled={!hasFile}
+                                        onClick={() => uploadVehiclePartImage(session.id, session.ticket.vehicle.id, part.key)}
+                                      >
+                                        Upload
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <Button
-                                      size="sm"
-                                      disabled={!vehiclePartFiles[session.id]?.[part.key]}
-                                      onClick={() => uploadVehiclePartImage(session.id, session.ticket.vehicle.id, part.key)}
-                                    >
-                                      Upload
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
                         </div>
@@ -1794,6 +1897,28 @@ export const EmployeeWorkManagement: React.FC = () => {
         })
         )}
       </div>
+      
+      {/* Camera Capture Dialogs for vehicle parts */}
+      {workSessions.map(session => 
+        VEHICLE_PARTS.map(part => {
+          const isCameraOpen = showCameraForPart[session.id]?.[part.key] || false;
+          return (
+            <CameraCapture
+              key={`camera-${session.id}-${part.key}`}
+              isOpen={isCameraOpen}
+              onClose={() => setShowCameraForPart(prev => ({
+                ...prev,
+                [session.id]: {
+                  ...(prev[session.id] || {}),
+                  [part.key]: false
+                }
+              }))}
+              onCapture={(file) => handleCameraCapture(session.id, part.key, file)}
+              multiple={false}
+            />
+          );
+        })
+      )}
     </div>
   );
 };

@@ -34,8 +34,8 @@ export function AppSidebar() {
         return [
           { title: 'Ticket Inbox', url: '/admin/tickets', icon: '📧' },
           { title: 'Customers', url: '/admin/customers', icon: '👤' },
-          { title: 'Register Customer', url: '/admin/register', icon: '➕' },
           { title: 'Employee Management', url: '/admin/employees', icon: '👥' },
+          { title: 'Rescheduled Vehicles', url: '/admin/rescheduled', icon: '📅' },
           { title: 'Live Monitor', url: '/admin/monitor', icon: '📊' },
           { title: 'Revenue Tracker', url: '/admin/revenue', icon: '💰' },
           { title: 'Reports', url: '/admin/reports', icon: '📈' },
@@ -47,6 +47,7 @@ export function AppSidebar() {
         return [
           { title: 'My Assignments', url: '/employee/assignments', icon: '📋' },
           { title: 'Register Customer', url: '/employee/register', icon: '➕' },
+          { title: 'Rescheduled Vehicles', url: '/employee/rescheduled', icon: '📅' },
           { title: 'Work Log', url: '/employee/worklog', icon: '📄' },
           { title: 'Attendance', url: '/employee/attendance', icon: '⏰' },
           { title: 'Profile', url: '/employee/profile', icon: '👤' },
@@ -57,6 +58,7 @@ export function AppSidebar() {
           { title: 'My Tickets', url: '/user/tickets', icon: '🎫' },
           { title: 'My Vehicles', url: '/user/vehicles', icon: '🚗' },
           { title: 'Vehicle Status', url: '/user/vehicle-status', icon: '📊' },
+          { title: 'Rescheduled Vehicles', url: '/user/rescheduled', icon: '📅' },
           { title: 'Invoices', url: '/user/invoices', icon: '🧾' },
           { title: 'Notifications', url: '/user/notifications', icon: '🔔' },
           { title: 'Profile', url: '/user/profile', icon: '👤' },

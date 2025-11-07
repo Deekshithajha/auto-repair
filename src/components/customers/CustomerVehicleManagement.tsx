@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedFileUpload } from '@/components/shared/EnhancedFileUpload';
+import { VehicleServiceHistory } from '@/components/vehicles/VehicleServiceHistory';
 
 interface Vehicle {
   id: string;
@@ -16,7 +17,12 @@ interface Vehicle {
   model: string;
   year: number;
   license_no?: string;
+  reg_no?: string;
   vin?: string;
+  engine_size?: string;
+  mileage?: number;
+  trim_code?: string;
+  drive_train?: string;
   photos?: string[];
   is_active: boolean;
   created_at: string;
@@ -28,7 +34,12 @@ interface VehicleFormData {
   model: string;
   year: string;
   license_no: string;
+  reg_no: string;
   vin: string;
+  engine_size: string;
+  mileage: string;
+  trim_code: string;
+  drive_train: string;
 }
 
 export const CustomerVehicleManagement: React.FC = () => {
@@ -39,14 +50,23 @@ export const CustomerVehicleManagement: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [vehiclePhotos, setVehiclePhotos] = useState<Record<string, File[]>>({});
+  const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState<string | null>(null);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   
   const [formData, setFormData] = useState<VehicleFormData>({
     make: '',
     model: '',
     year: new Date().getFullYear().toString(),
     license_no: '',
-    vin: ''
+    reg_no: '',
+    vin: '',
+    engine_size: '',
+    mileage: '',
+    trim_code: '',
+    drive_train: ''
   });
+  const [existingPhotos, setExistingPhotos] = useState<Record<string, Array<{id: string, data: string}>>>({});
+  const [photosToRemove, setPhotosToRemove] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (user) {
@@ -59,14 +79,48 @@ export const CustomerVehicleManagement: React.FC = () => {
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setVehicles(data || []);
+      if (vehiclesError) throw vehiclesError;
+      
+      // Fetch photos for each vehicle from vehicle_photos table
+      const vehiclesWithPhotos = await Promise.all(
+        (vehiclesData || []).map(async (vehicle) => {
+          const { data: photosData, error: photosError } = await supabase
+            .from('vehicle_photos')
+            .select('id, photo_data')
+            .eq('vehicle_id', vehicle.id);
+          
+          if (photosError) {
+            console.error('Error fetching photos for vehicle:', vehicle.id, photosError);
+            return { ...vehicle, photos: [] };
+          }
+          
+          // Store photo data for display
+          const photoIds = (photosData || []).map(p => p.id);
+          return { ...vehicle, photos: photoIds };
+        })
+      );
+      
+      setVehicles(vehiclesWithPhotos);
+      
+      // Store photo data for editing
+      const photosMap: Record<string, Array<{id: string, data: string}>> = {};
+      for (const vehicle of vehiclesData || []) {
+        const { data: photosData } = await supabase
+          .from('vehicle_photos')
+          .select('id, photo_data')
+          .eq('vehicle_id', vehicle.id);
+        
+        if (photosData) {
+          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.photo_data || '' }));
+        }
+      }
+      setExistingPhotos(photosMap);
     } catch (error: any) {
       console.error('Error fetching vehicles:', error);
       toast({
@@ -93,19 +147,70 @@ export const CustomerVehicleManagement: React.FC = () => {
     }));
   };
 
+  const removeExistingPhoto = (vehicleId: string, photoId: string) => {
+    setPhotosToRemove(prev => ({
+      ...prev,
+      [vehicleId]: [...(prev[vehicleId] || []), photoId]
+    }));
+    setExistingPhotos(prev => ({
+      ...prev,
+      [vehicleId]: prev[vehicleId]?.filter(p => p.id !== photoId) || []
+    }));
+  };
+
+  const restoreRemovedPhoto = (vehicleId: string, photoId: string) => {
+    setPhotosToRemove(prev => ({
+      ...prev,
+      [vehicleId]: prev[vehicleId]?.filter(p => p !== photoId) || []
+    }));
+    // Restore photo data from existing photos
+    const removedPhoto = existingPhotos[vehicleId]?.find(p => p.id === photoId);
+    if (removedPhoto) {
+      setExistingPhotos(prev => ({
+        ...prev,
+        [vehicleId]: [...(prev[vehicleId] || []), removedPhoto]
+      }));
+    }
+  };
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const uploadVehiclePhotos = async (vehicleId: string, photos: File[]) => {
     if (photos.length === 0) return [];
 
-    const uploadPromises = photos.map(async (photo, index) => {
-      const fileExt = photo.name.split('.').pop();
-      const fileName = `vehicle-${vehicleId}/${Date.now()}-${index}.${fileExt}`;
+    const uploadPromises = photos.map(async (photo) => {
+      // Convert image to base64
+      const base64Data = await convertFileToBase64(photo);
       
-      const { error } = await supabase.storage
-        .from('vehicle-photos')
-        .upload(fileName, photo);
+      // Get current user for uploaded_by field
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Store photo directly in database
+      const { data, error } = await supabase
+        .from('vehicle_photos')
+        .insert({
+          vehicle_id: vehicleId,
+          photo_type: 'exterior',
+          photo_data: base64Data,
+          storage_path: null,
+          uploaded_by: user.id
+        })
+        .select()
+        .single();
       
       if (error) throw error;
-      return fileName;
+      return data.id;
     });
 
     return Promise.all(uploadPromises);
@@ -123,7 +228,12 @@ export const CustomerVehicleManagement: React.FC = () => {
         model: formData.model,
         year: parseInt(formData.year),
         license_no: formData.license_no || null,
+        reg_no: formData.reg_no || null,
         vin: normalizedVin || null,
+        engine_size: formData.engine_size || null,
+        mileage: formData.mileage ? parseInt(formData.mileage) : null,
+        trim_code: formData.trim_code || null,
+        drive_train: formData.drive_train || null,
         user_id: user.id,
         is_active: true
       };
@@ -187,15 +297,41 @@ export const CustomerVehicleManagement: React.FC = () => {
         }
       }
 
-      // Upload photos if any
-      const photos = vehiclePhotos[editingVehicle?.id || 'new'];
-      if (photos && photos.length > 0) {
-        const uploadedPhotos = await uploadVehiclePhotos(vehicleId, photos);
-        
-        // Update vehicle with photo paths
+      // Handle photos: remove deleted ones and add new ones
+      const photosToDelete = photosToRemove[editingVehicle?.id || ''] || [];
+      const newPhotos = vehiclePhotos[editingVehicle?.id || 'new'] || [];
+      const existingPhotosList = existingPhotos[editingVehicle?.id || ''] || [];
+      
+      // Delete removed photos from database
+      if (photosToDelete.length > 0) {
+        const deletePromises = photosToDelete.map(photoId => 
+          supabase.from('vehicle_photos').delete().eq('id', photoId)
+        );
+        await Promise.all(deletePromises);
+      }
+
+      // Upload new photos (store as base64 in database)
+      let uploadedPhotoIds: string[] = [];
+      if (newPhotos.length > 0) {
+        uploadedPhotoIds = await uploadVehiclePhotos(vehicleId, newPhotos);
+      }
+
+      // Combine existing (not removed) photo IDs with new uploaded photo IDs
+      const existingPhotoIds = existingPhotosList
+        .filter(p => !photosToDelete.includes(p.id))
+        .map(p => p.id);
+      const finalPhotoIds = [
+        ...existingPhotoIds,
+        ...uploadedPhotoIds
+      ];
+
+      // Update vehicle with all photo IDs (if vehicles table has photos column)
+      // Note: We're now storing photos in vehicle_photos table, so we may not need to update vehicles.photos
+      // But keeping this for backward compatibility if needed
+      if (editingVehicle || finalPhotoIds.length > 0) {
         const { error: photoError } = await supabase
           .from('vehicles')
-          .update({ photos: uploadedPhotos })
+          .update({ photos: finalPhotoIds })
           .eq('id', vehicleId);
 
         if (photoError) throw photoError;
@@ -212,9 +348,16 @@ export const CustomerVehicleManagement: React.FC = () => {
         model: '',
         year: new Date().getFullYear().toString(),
         license_no: '',
-        vin: ''
+        reg_no: '',
+        vin: '',
+        engine_size: '',
+        mileage: '',
+        trim_code: '',
+        drive_train: ''
       });
       setVehiclePhotos({});
+      setExistingPhotos({});
+      setPhotosToRemove({});
       setEditingVehicle(null);
       setShowAddDialog(false);
       fetchVehicles();
@@ -233,15 +376,35 @@ export const CustomerVehicleManagement: React.FC = () => {
     }
   };
 
-  const handleEdit = (vehicle: Vehicle) => {
+  const handleEdit = async (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
       make: vehicle.make,
       model: vehicle.model,
       year: vehicle.year.toString(),
       license_no: vehicle.license_no || '',
-      vin: vehicle.vin || ''
+      reg_no: vehicle.reg_no || '',
+      vin: vehicle.vin || '',
+      engine_size: vehicle.engine_size || '',
+      mileage: vehicle.mileage?.toString() || '',
+      trim_code: vehicle.trim_code || '',
+      drive_train: vehicle.drive_train || ''
     });
+    
+    // Fetch existing photos from database
+    const { data: photosData } = await supabase
+      .from('vehicle_photos')
+      .select('id, photo_data')
+      .eq('vehicle_id', vehicle.id);
+    
+    setExistingPhotos(prev => ({
+      ...prev,
+      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.photo_data || '' }))
+    }));
+    setPhotosToRemove(prev => ({
+      ...prev,
+      [vehicle.id]: []
+    }));
     setShowAddDialog(true);
   };
 
@@ -278,9 +441,16 @@ export const CustomerVehicleManagement: React.FC = () => {
       model: '',
       year: new Date().getFullYear().toString(),
       license_no: '',
-      vin: ''
+      reg_no: '',
+      vin: '',
+      engine_size: '',
+      mileage: '',
+      trim_code: '',
+      drive_train: ''
     });
     setVehiclePhotos({});
+    setExistingPhotos({});
+    setPhotosToRemove({});
     setEditingVehicle(null);
   };
 
@@ -367,38 +537,141 @@ export const CustomerVehicleManagement: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="vin">VIN Number</Label>
-                <Input
-                  id="vin"
-                  value={formData.vin}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vin: e.target.value.toUpperCase() }))}
-                  placeholder="17-character VIN"
-                  maxLength={17}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reg_no">Registration Number</Label>
+                  <Input
+                    id="reg_no"
+                    value={formData.reg_no}
+                    onChange={(e) => setFormData(prev => ({ ...prev, reg_no: e.target.value.toUpperCase() }))}
+                    placeholder="REG-1234"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vin">VIN Number</Label>
+                  <Input
+                    id="vin"
+                    value={formData.vin}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vin: e.target.value.toUpperCase() }))}
+                    placeholder="17-character VIN"
+                    maxLength={17}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="engine_size">Engine Size</Label>
+                  <Input
+                    id="engine_size"
+                    value={formData.engine_size}
+                    onChange={(e) => setFormData(prev => ({ ...prev, engine_size: e.target.value }))}
+                    placeholder="2.0L, 3.5L, etc."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mileage">Mileage</Label>
+                  <Input
+                    id="mileage"
+                    type="number"
+                    value={formData.mileage}
+                    onChange={(e) => setFormData(prev => ({ ...prev, mileage: e.target.value }))}
+                    placeholder="50000"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="trim_code">Trim Code</Label>
+                  <Input
+                    id="trim_code"
+                    value={formData.trim_code}
+                    onChange={(e) => setFormData(prev => ({ ...prev, trim_code: e.target.value }))}
+                    placeholder="LE, XLE, etc."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="drive_train">Drive Train</Label>
+                  <Input
+                    id="drive_train"
+                    value={formData.drive_train}
+                    onChange={(e) => setFormData(prev => ({ ...prev, drive_train: e.target.value }))}
+                    placeholder="FWD, RWD, AWD, 4WD"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Vehicle Photos</Label>
+                
+                {/* Existing Photos */}
+                {editingVehicle && existingPhotos[editingVehicle.id] && existingPhotos[editingVehicle.id].length > 0 && (
+                  <div className="mb-4">
+                    <Label className="text-sm text-muted-foreground mb-2 block">Existing Photos</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {existingPhotos[editingVehicle.id].map((photo, index) => {
+                        const isRemoved = photosToRemove[editingVehicle.id]?.includes(photo.id);
+                        return (
+                          <div key={photo.id} className={`relative ${isRemoved ? 'opacity-50' : ''}`}>
+                            <img
+                              src={photo.data}
+                              alt={`Existing photo ${index + 1}`}
+                              className="w-full h-20 object-cover rounded-md border"
+                            />
+                            {isRemoved ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 bg-green-500 hover:bg-green-600"
+                                onClick={() => restoreRemovedPhoto(editingVehicle.id, photo.id)}
+                                title="Restore photo"
+                              >
+                                <span className="text-xs text-white">↺</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
+                                onClick={() => removeExistingPhoto(editingVehicle.id, photo.id)}
+                                title="Remove photo"
+                              >
+                                <span className="text-xs">✕</span>
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Photo Upload */}
                 <EnhancedFileUpload
                   onFilesSelected={(files) => handlePhotoUpload(editingVehicle?.id || 'new', files)}
                   accept="image/*"
                   multiple={true}
                   maxFiles={5}
                   maxFileSize={10}
-                  placeholder="Upload photos of your vehicle"
+                  placeholder="Upload new photos of your vehicle"
                   id="vehicle-photo-upload"
                 />
                   
-                  {/* Photo Previews */}
-                  {vehiclePhotos[editingVehicle?.id || 'new']?.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {/* New Photo Previews */}
+                {vehiclePhotos[editingVehicle?.id || 'new']?.length > 0 && (
+                  <div className="mt-4">
+                    <Label className="text-sm text-muted-foreground mb-2 block">New Photos</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {vehiclePhotos[editingVehicle?.id || 'new'].map((photo, index) => (
                         <div key={index} className="relative">
                           <img
                             src={URL.createObjectURL(photo)}
-                            alt={`Vehicle ${index + 1}`}
-                            className="w-full h-20 object-cover rounded-md"
+                            alt={`New photo ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-md border"
                           />
                           <Button
                             type="button"
@@ -406,14 +679,16 @@ export const CustomerVehicleManagement: React.FC = () => {
                             size="sm"
                             className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0"
                             onClick={() => removePhoto(editingVehicle?.id || 'new', index)}
+                            title="Remove photo"
                           >
                             <span className="text-xs">✕</span>
                           </Button>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button type="submit" className="flex-1">
@@ -454,20 +729,47 @@ export const CustomerVehicleManagement: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {vehicle.vin && (
-                <div className="text-sm text-muted-foreground">
-                  <strong>VIN:</strong> {vehicle.vin}
-                </div>
-              )}
+              <div className="space-y-1 text-sm">
+                {vehicle.vin && (
+                  <div className="text-muted-foreground">
+                    <strong>VIN:</strong> {vehicle.vin}
+                  </div>
+                )}
+                {vehicle.reg_no && (
+                  <div className="text-muted-foreground">
+                    <strong>Reg:</strong> {vehicle.reg_no}
+                  </div>
+                )}
+                {vehicle.engine_size && (
+                  <div className="text-muted-foreground">
+                    <strong>Engine:</strong> {vehicle.engine_size}
+                  </div>
+                )}
+                {vehicle.mileage && (
+                  <div className="text-muted-foreground">
+                    <strong>Mileage:</strong> {vehicle.mileage.toLocaleString()} miles
+                  </div>
+                )}
+                {vehicle.trim_code && (
+                  <div className="text-muted-foreground">
+                    <strong>Trim:</strong> {vehicle.trim_code}
+                  </div>
+                )}
+                {vehicle.drive_train && (
+                  <div className="text-muted-foreground">
+                    <strong>Drive:</strong> {vehicle.drive_train}
+                  </div>
+                )}
+              </div>
               
               {vehicle.photos && vehicle.photos.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-sm">Photos</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    {vehicle.photos.slice(0, 4).map((photo, index) => (
+                    {existingPhotos[vehicle.id]?.slice(0, 4).map((photo, index) => (
                       <img
-                        key={index}
-                        src={`${supabase.storage.from('vehicle-photos').getPublicUrl(photo).data.publicUrl}`}
+                        key={photo.id}
+                        src={photo.data}
                         alt={`Vehicle photo ${index + 1}`}
                         className="w-full h-16 object-cover rounded-md"
                       />
@@ -481,23 +783,36 @@ export const CustomerVehicleManagement: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col gap-2 pt-2">
                 <Button 
                   size="sm" 
-                  variant="outline" 
-                  onClick={() => handleEdit(vehicle)}
-                  className="flex-1"
+                  variant="default" 
+                  onClick={() => {
+                    setSelectedVehicleForHistory(vehicle.id);
+                    setShowHistoryDialog(true);
+                  }}
+                  className="w-full"
                 >
-                  Edit
+                  📋 View Service History
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
-                  onClick={() => handleDelete(vehicle.id)}
-                  className="flex-1"
-                >
-                  Remove
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleEdit(vehicle)}
+                    className="flex-1"
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="destructive" 
+                    onClick={() => handleDelete(vehicle.id)}
+                    className="flex-1"
+                  >
+                    Remove
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -518,6 +833,29 @@ export const CustomerVehicleManagement: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Service History Dialog */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Service History</DialogTitle>
+            <DialogDescription>
+              {selectedVehicleForHistory && vehicles.find(v => v.id === selectedVehicleForHistory) && (
+                <>
+                  Complete service history for {vehicles.find(v => v.id === selectedVehicleForHistory)?.year}{' '}
+                  {vehicles.find(v => v.id === selectedVehicleForHistory)?.make}{' '}
+                  {vehicles.find(v => v.id === selectedVehicleForHistory)?.model}
+                  {vehicles.find(v => v.id === selectedVehicleForHistory)?.license_no && 
+                    ` (${vehicles.find(v => v.id === selectedVehicleForHistory)?.license_no})`}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedVehicleForHistory && (
+            <VehicleServiceHistory vehicleId={selectedVehicleForHistory} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

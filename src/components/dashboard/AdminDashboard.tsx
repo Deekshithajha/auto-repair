@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 import { AdminTicketManagement } from '@/components/admin/AdminTicketManagement';
 import { CustomerList } from '@/components/admin/CustomerList';
 import { EmployeeManagement } from '@/components/admin/EmployeeManagement';
@@ -222,26 +221,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
           {/* Employees Tab */}
           <TabsContent value="employees">
             <EmployeeManagement />
-          </TabsContent>
-
-          {/* Register Tab */}
-          <TabsContent value="register" className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Customer Registration</h2>
-                <p className="text-muted-foreground text-sm sm:text-base">Register new customers in the system</p>
-              </div>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>New Customer</CardTitle>
-                <CardDescription>Add a new customer to AUTO REPAIR INC</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CustomerRegistration />
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Invoice Tab */}

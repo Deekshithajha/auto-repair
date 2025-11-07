@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
 import { CustomerVehicleManagement } from '@/components/customers/CustomerVehicleManagement';
 import { EnhancedCustomerProfile } from '@/components/customers/EnhancedCustomerProfile';
+import { VehicleServiceHistory } from '@/components/vehicles/VehicleServiceHistory';
 import { toast } from '@/hooks/use-toast';
 import DashboardBackground from '@/components/layout/DashboardBackground';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -89,6 +90,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
   const [invoiceParts, setInvoiceParts] = useState<Array<{ name: string; quantity: number; unit_price: number; is_taxable: boolean }>>([]);
   const [invoiceTaxRate, setInvoiceTaxRate] = useState<number>(8.25);
   const [loadingInvoiceDetails, setLoadingInvoiceDetails] = useState<boolean>(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState<string | null>(null);
+  const [userVehicles, setUserVehicles] = useState<Array<{ id: string; make: string; model: string; year: number; license_no?: string }>>([]);
 
   // Dummy data for demonstration
   const dummyTickets: Ticket[] = [
@@ -376,6 +380,27 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
     setTickets(dummyTickets);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    const fetchUserVehicles = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('vehicles')
+          .select('id, make, model, year, license_no')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setUserVehicles(data || []);
+      } catch (error: any) {
+        console.error('Error fetching vehicles:', error);
+      }
+    };
+
+    fetchUserVehicles();
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -668,7 +693,29 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
 
               {/* Service History */}
               <div>
-                <h3 className="font-semibold text-sm mb-3">Recent Service History</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-sm">Recent Service History</h3>
+                  {(() => {
+                    // Try to find matching vehicle ID from user vehicles
+                    const matchingVehicle = userVehicles.find(v => 
+                      v.year === vehicleStatus.vehicle.year &&
+                      v.make === vehicleStatus.vehicle.make &&
+                      v.model === vehicleStatus.vehicle.model
+                    );
+                    return matchingVehicle ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedVehicleForHistory(matchingVehicle.id);
+                          setShowHistoryDialog(true);
+                        }}
+                      >
+                        📋 View Full History
+                      </Button>
+                    ) : null;
+                  })()}
+                </div>
                 <div className="space-y-2">
                   {vehicleStatus.service_history.slice(0, 3).map((service, index) => (
                     <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
@@ -906,6 +953,29 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
                   </div>
                 </div>
               </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Service History Dialog */}
+        <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Service History</DialogTitle>
+              <DialogDescription>
+                {selectedVehicleForHistory && userVehicles.find(v => v.id === selectedVehicleForHistory) && (
+                  <>
+                    Complete service history for {userVehicles.find(v => v.id === selectedVehicleForHistory)?.year}{' '}
+                    {userVehicles.find(v => v.id === selectedVehicleForHistory)?.make}{' '}
+                    {userVehicles.find(v => v.id === selectedVehicleForHistory)?.model}
+                    {userVehicles.find(v => v.id === selectedVehicleForHistory)?.license_no && 
+                      ` (${userVehicles.find(v => v.id === selectedVehicleForHistory)?.license_no})`}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedVehicleForHistory && (
+              <VehicleServiceHistory vehicleId={selectedVehicleForHistory} />
             )}
           </DialogContent>
         </Dialog>

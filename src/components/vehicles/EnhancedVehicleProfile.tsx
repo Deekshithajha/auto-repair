@@ -40,7 +40,8 @@ interface VehiclePhoto {
   id: string;
   vehicle_id: string;
   photo_type: 'exterior' | 'interior' | 'vin_sticker' | 'damage';
-  storage_path: string;
+  storage_path: string | null;
+  photo_data: string | null;
   uploaded_at: string;
 }
 
@@ -245,6 +246,18 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handlePhotoUpload = async (photoType: VehiclePhoto['photo_type'], file: File) => {
     if (!vehicleId || !file) return;
     
@@ -253,23 +266,17 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Upload to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${vehicleId}/${photoType}_${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('vehicle-photos')
-        .upload(fileName, file);
+      // Convert image to base64
+      const base64Data = await convertFileToBase64(file);
 
-      if (uploadError) throw uploadError;
-
-      // Save photo record
+      // Save photo record directly in database
       const { error: dbError } = await supabase
         .from('vehicle_photos')
         .insert([{
           vehicle_id: vehicleId,
           photo_type: photoType,
-          storage_path: fileName,
+          photo_data: base64Data,
+          storage_path: null,
           uploaded_by: user.id
         }]);
 
@@ -325,11 +332,18 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
     }
   };
 
-  const getPhotoUrl = (storagePath: string) => {
-    const { data } = supabase.storage
-      .from('vehicle-photos')
-      .getPublicUrl(storagePath);
-    return data.publicUrl;
+  const getPhotoUrl = (photo: VehiclePhoto) => {
+    // Use photo_data if available (base64), otherwise fall back to storage_path
+    if (photo.photo_data) {
+      return photo.photo_data;
+    }
+    if (photo.storage_path) {
+      const { data } = supabase.storage
+        .from('vehicle-photos')
+        .getPublicUrl(photo.storage_path);
+      return data.publicUrl;
+    }
+    return '';
   };
 
   const handleOpenPhotoViewer = (photoType: string) => {
@@ -337,7 +351,7 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
       .filter(p => p.photo_type === photoType)
       .map(p => ({
         id: p.id,
-        url: getPhotoUrl(p.storage_path),
+        url: getPhotoUrl(p),
         caption: `${photoType.replace('_', ' ')} photo`,
         date: new Date(p.uploaded_at).toLocaleDateString()
       }));
@@ -614,7 +628,7 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
                     {photos.filter(p => p.photo_type === type).map((photo) => (
                       <div key={photo.id} className="relative group">
                         <img
-                          src={getPhotoUrl(photo.storage_path)}
+                          src={getPhotoUrl(photo)}
                           alt={type}
                           className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => handleOpenPhotoViewer(type)}
