@@ -181,16 +181,15 @@ export const RevenueTracker: React.FC = () => {
     const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
     const today = format(startOfToday(), 'yyyy-MM-dd');
 
-    // Try to use paid_at; if not available, fallback to created_at and filter client-side
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, paid_at, payment_status, created_at')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid');
 
     if (invError) throw invError;
 
     const inRangeInvoices = (invoices || []).filter((inv: any) => {
-      const paidDate = inv.paid_at || inv.created_at;
+      const paidDate = inv.created_at;
       if (!paidDate) return false;
       const paidStr = format(parseISO(paidDate), 'yyyy-MM-dd');
       return paidStr >= monthStart && paidStr <= today;
@@ -225,7 +224,7 @@ export const RevenueTracker: React.FC = () => {
 
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, paid_at, payment_status, created_at')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
       .order('created_at', { ascending: true });
 
@@ -273,8 +272,8 @@ export const RevenueTracker: React.FC = () => {
       });
 
       // Assign COGS to dates
-      (invoices || []).forEach(inv => {
-        const paidDate = (inv as any).paid_at || (inv as any).created_at;
+      (invoices || []).forEach((inv: any) => {
+        const paidDate = inv.created_at;
         if (!paidDate) return;
         const dateKey = format(parseISO(paidDate), 'yyyy-MM-dd');
         const dayData = dailyMap.get(dateKey);
@@ -307,7 +306,7 @@ export const RevenueTracker: React.FC = () => {
     
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, paid_at, payment_status, created_at')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
       .order('created_at', { ascending: true });
 
@@ -353,8 +352,8 @@ export const RevenueTracker: React.FC = () => {
         partsByTicket.set(part.ticket_id, cost);
       });
 
-      (invoices || []).forEach(inv => {
-        const paidDate = (inv as any).paid_at || (inv as any).created_at;
+      (invoices || []).forEach((inv: any) => {
+        const paidDate = inv.created_at;
         if (!paidDate) return;
         const date = parseISO(paidDate);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -386,7 +385,7 @@ export const RevenueTracker: React.FC = () => {
 
     // Apply date range and additional filters client-side
     let filteredInvoices = (invoices || []).filter((inv: any) => {
-      const paidDate = inv.paid_at || inv.created_at;
+      const paidDate = inv.created_at;
       if (!paidDate) return false;
       const dateStr = format(parseISO(paidDate), 'yyyy-MM-dd');
       return dateStr >= filters.dateFrom && dateStr <= filters.dateTo;
@@ -398,7 +397,7 @@ export const RevenueTracker: React.FC = () => {
     const dailyMap = new Map<string, DailyFinance>();
 
     for (const inv of filteredInvoices as any[]) {
-      const paidDate = inv.paid_at || inv.created_at;
+      const paidDate = inv.created_at;
       if (!paidDate) continue;
       const dateKey = format(parseISO(paidDate), 'yyyy-MM-dd');
       

@@ -16,6 +16,8 @@ import { AuditLogs } from '@/components/admin/AuditLogs';
 import { InvoiceList } from '@/components/admin/InvoiceList';
 import { RevenueTracker } from '@/components/admin/RevenueTracker';
 import { NotificationManagement } from '@/components/admin/NotificationManagement';
+import { ServiceManagement } from '@/components/admin/ServiceManagement';
+import { AdminAttendanceManagement } from '@/components/admin/AdminAttendanceManagement';
 import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
@@ -270,6 +272,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
             <NotificationManagement />
+          </TabsContent>
+
+          {/* Services Management Tab */}
+          <TabsContent value="services" className="space-y-4 sm:space-y-6">
+            <ServiceManagement />
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance" className="space-y-4 sm:space-y-6">
+            <AdminAttendanceManagement />
           </TabsContent>
 
           {/* Settings Tab */}
