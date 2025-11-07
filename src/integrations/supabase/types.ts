@@ -22,8 +22,10 @@ export type Database = {
           date: string
           employee_id: string
           id: string
+          is_paused: boolean | null
           notes: string | null
           status: Database["public"]["Enums"]["attendance_status"]
+          total_pause_duration: unknown
           updated_at: string
         }
         Insert: {
@@ -33,8 +35,10 @@ export type Database = {
           date: string
           employee_id: string
           id?: string
+          is_paused?: boolean | null
           notes?: string | null
           status?: Database["public"]["Enums"]["attendance_status"]
+          total_pause_duration?: unknown
           updated_at?: string
         }
         Update: {
@@ -44,8 +48,10 @@ export type Database = {
           date?: string
           employee_id?: string
           id?: string
+          is_paused?: boolean | null
           notes?: string | null
           status?: Database["public"]["Enums"]["attendance_status"]
+          total_pause_duration?: unknown
           updated_at?: string
         }
         Relationships: [
