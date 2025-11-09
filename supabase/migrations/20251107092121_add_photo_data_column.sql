@@ -9,3 +9,6 @@ ALTER COLUMN storage_path DROP NOT NULL;
 -- Add comment to explain the column
 COMMENT ON COLUMN public.vehicle_photos.photo_data IS 'Base64 encoded image data stored directly in database';
 
+
+
+
