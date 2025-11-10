@@ -90,7 +90,7 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
     if (damageLogs.length > 0) {
       loadPhotos();
     }
-  }, [damageLogs, getPhotoUrls]);
+  }, [damageLogs]);
 
   const fetchDamageLogs = async () => {
     try {
@@ -197,14 +197,14 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
 
     const { data } = await supabase
       .from('vehicle_photos')
-      .select('photo_data')
+      .select('storage_path')
       .eq('id', photoId)
       .single();
     
-    const photoData = data?.photo_data || '';
+    const photoPath = data?.storage_path || '';
     // Cache the result
-    setPhotoDataCache(prev => ({ ...prev, [photoId]: photoData }));
-    return photoData;
+    setPhotoDataCache(prev => ({ ...prev, [photoId]: photoPath }));
+    return photoPath;
   };
 
   const handleAddDamageLog = async () => {

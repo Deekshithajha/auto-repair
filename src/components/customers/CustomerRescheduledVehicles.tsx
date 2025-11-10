@@ -88,14 +88,14 @@ export const CustomerRescheduledVehicles: React.FC = () => {
         (tickets || []).map(async (ticket: any) => {
           // Get damage log items for work stages
           const { data: damageLogs } = await supabase
-            .from('damage_logs')
-            .select('id, description, is_completed, completed_at')
+            .from('damage_log')
+            .select('id, description')
             .eq('ticket_id', ticket.id);
 
           const workStages = damageLogs?.map((log: any) => ({
             stage: log.description || 'Work item',
-            status: log.is_completed ? 'completed' as const : 'pending' as const,
-            completed_at: log.completed_at || undefined
+            status: 'pending' as const,
+            completed_at: undefined
           })) || [];
 
           // Get work sessions to calculate progress

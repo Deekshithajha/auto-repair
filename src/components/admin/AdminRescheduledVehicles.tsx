@@ -141,14 +141,14 @@ export const AdminRescheduledVehicles: React.FC = () => {
 
           // Get damage log items for work stages
           const { data: damageLogs } = await supabase
-            .from('damage_logs')
-            .select('id, description, is_completed, completed_at')
+            .from('damage_log')
+            .select('id, description')
             .eq('ticket_id', ticket.id);
 
           const workStages = damageLogs?.map((log: any) => ({
             stage: log.description || 'Work item',
-            status: log.is_completed ? 'completed' as const : 'pending' as const,
-            completed_at: log.completed_at || undefined
+            status: 'pending' as const,
+            completed_at: undefined
           })) || [];
 
           return {
@@ -216,16 +216,16 @@ export const AdminRescheduledVehicles: React.FC = () => {
       // Send notification to customer
       const { error: notifError } = await supabase
         .from('notifications')
-        .insert({
+        .insert([{
           user_id: vehicle.customer.id,
-          type: 'vehicle_reschedule_reminder',
+          type: 'work_started',
           title: 'Vehicle Rescheduled',
           message: `Your vehicle ${vehicle.vehicle.make} ${vehicle.vehicle.model} has been rescheduled to ${format(nextDay, 'MMM dd, yyyy')} as you did not arrive on the scheduled date.`,
           metadata: { 
             ticket_id: vehicle.ticket_id, 
             reschedule_date: nextDay.toISOString() 
           }
-        });
+        }]);
 
       if (notifError) console.error('Notification error:', notifError);
 

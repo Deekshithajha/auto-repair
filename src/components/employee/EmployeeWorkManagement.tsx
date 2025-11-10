@@ -574,6 +574,18 @@ export const EmployeeWorkManagement: React.FC = () => {
       return;
     }
 
+    // Find the vehicle ID from the work session
+    const session = workSessions.find(ws => ws.id === sessionId);
+    if (!session) {
+      toast({
+        title: "Error",
+        description: "Work session not found",
+        variant: "destructive"
+      });
+      return;
+    }
+    const vehicleId = session.ticket.vehicle.id;
+
     try {
       // Upload new photos if any (store as base64 in database)
       let photoIds: string[] = [];
@@ -582,14 +594,13 @@ export const EmployeeWorkManagement: React.FC = () => {
           // Convert image to base64
           const base64Data = await convertFileToBase64(photo);
           
-          // Store photo directly in database
+          // Store photo with storage_path instead of photo_data
           const { data, error } = await supabase
             .from('vehicle_photos')
             .insert({
               vehicle_id: vehicleId,
               photo_type: 'damage',
-              photo_data: base64Data,
-              storage_path: null,
+              storage_path: `damage/${Date.now()}_${photo.name}`,
               uploaded_by: user?.id || null
             })
             .select()

@@ -41,8 +41,9 @@ interface VehiclePhoto {
   vehicle_id: string;
   photo_type: 'exterior' | 'interior' | 'vin_sticker' | 'damage';
   storage_path: string | null;
-  photo_data: string | null;
   uploaded_at: string;
+  uploaded_by?: string;
+  created_at?: string;
 }
 
 interface DamageLog {
@@ -150,7 +151,10 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
         .eq('vehicle_id', vehicleId)
         .order('uploaded_at', { ascending: false });
 
-      setPhotos((photosData || []) as VehiclePhoto[]);
+      setPhotos((photosData || []).map(p => ({
+        ...p,
+        photo_type: p.photo_type as 'exterior' | 'interior' | 'vin_sticker' | 'damage'
+      })));
 
       // Fetch damage log
       const { data: damageData } = await supabase
@@ -333,10 +337,7 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
   };
 
   const getPhotoUrl = (photo: VehiclePhoto) => {
-    // Use photo_data if available (base64), otherwise fall back to storage_path
-    if (photo.photo_data) {
-      return photo.photo_data;
-    }
+    // Use storage_path
     if (photo.storage_path) {
       const { data } = supabase.storage
         .from('vehicle-photos')

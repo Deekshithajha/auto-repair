@@ -92,7 +92,7 @@ export const CustomerVehicleManagement: React.FC = () => {
         (vehiclesData || []).map(async (vehicle) => {
           const { data: photosData, error: photosError } = await supabase
             .from('vehicle_photos')
-            .select('id, photo_data')
+            .select('id, storage_path')
             .eq('vehicle_id', vehicle.id);
           
           if (photosError) {
@@ -100,7 +100,7 @@ export const CustomerVehicleManagement: React.FC = () => {
             return { ...vehicle, photos: [] };
           }
           
-          // Store photo data for display
+          // Store photo IDs for display
           const photoIds = (photosData || []).map(p => p.id);
           return { ...vehicle, photos: photoIds };
         })
@@ -108,16 +108,16 @@ export const CustomerVehicleManagement: React.FC = () => {
       
       setVehicles(vehiclesWithPhotos);
       
-      // Store photo data for editing
+      // Store photo storage paths for editing
       const photosMap: Record<string, Array<{id: string, data: string}>> = {};
       for (const vehicle of vehiclesData || []) {
         const { data: photosData } = await supabase
           .from('vehicle_photos')
-          .select('id, photo_data')
+          .select('id, storage_path')
           .eq('vehicle_id', vehicle.id);
         
         if (photosData) {
-          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.photo_data || '' }));
+          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.storage_path || '' }));
         }
       }
       setExistingPhotos(photosMap);
@@ -394,12 +394,12 @@ export const CustomerVehicleManagement: React.FC = () => {
     // Fetch existing photos from database
     const { data: photosData } = await supabase
       .from('vehicle_photos')
-      .select('id, photo_data')
+      .select('id, storage_path')
       .eq('vehicle_id', vehicle.id);
     
     setExistingPhotos(prev => ({
       ...prev,
-      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.photo_data || '' }))
+      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.storage_path || '' }))
     }));
     setPhotosToRemove(prev => ({
       ...prev,

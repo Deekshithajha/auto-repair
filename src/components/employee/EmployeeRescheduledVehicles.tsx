@@ -214,7 +214,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
       // Send notification to customer
       const { error: notifError } = await supabase
         .from('notifications')
-        .insert({
+        .insert([{
           user_id: selectedVehicle.customer.id,
           type: 'work_started',
           title: 'Work Resumed',
@@ -222,7 +222,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
           metadata: { 
             ticket_id: selectedVehicle.ticket_id
           }
-        });
+        }]);
 
       if (notifError) console.error('Notification error:', notifError);
 
