@@ -377,6 +377,236 @@ export type Database = {
           },
         ]
       }
+      kanban_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          card_id: string
+          created_at: string | null
+          diff: Json | null
+          from_column_id: string | null
+          id: string
+          to_column_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          card_id: string
+          created_at?: string | null
+          diff?: Json | null
+          from_column_id?: string | null
+          id?: string
+          to_column_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          card_id?: string
+          created_at?: string | null
+          diff?: Json | null
+          from_column_id?: string | null
+          id?: string
+          to_column_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_activity_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_activity_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kanban_boards: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_boards_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "kanban_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kanban_cards: {
+        Row: {
+          assignee: string | null
+          board_id: string
+          column_id: string
+          created_at: string | null
+          description: string | null
+          eta: string | null
+          id: string
+          is_blocked: boolean | null
+          position: number
+          priority: string | null
+          tags: string[] | null
+          ticket_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assignee?: string | null
+          board_id: string
+          column_id: string
+          created_at?: string | null
+          description?: string | null
+          eta?: string | null
+          id?: string
+          is_blocked?: boolean | null
+          position: number
+          priority?: string | null
+          tags?: string[] | null
+          ticket_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assignee?: string | null
+          board_id?: string
+          column_id?: string
+          created_at?: string | null
+          description?: string | null
+          eta?: string | null
+          id?: string
+          is_blocked?: boolean | null
+          position?: number
+          priority?: string | null
+          tags?: string[] | null
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_cards_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_cards_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_cards_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kanban_columns: {
+        Row: {
+          board_id: string
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          position: number
+          updated_at: string | null
+          wip_limit: number | null
+        }
+        Insert: {
+          board_id: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          position: number
+          updated_at?: string | null
+          wip_limit?: number | null
+        }
+        Update: {
+          board_id?: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string | null
+          wip_limit?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_columns_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kanban_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          password_hash: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          password_hash: string
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          password_hash?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
