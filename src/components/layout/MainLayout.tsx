@@ -47,12 +47,11 @@ export const MainLayout: React.FC = () => {
   }
 
   return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AppSidebar />
-          <main className="flex-1 overflow-auto">
-              <Routes>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar />
+        <main className="flex-1 overflow-auto">
+            <Routes>
                 {/* User Routes */}
                 <Route path="/user/tickets" element={profile.role === 'user' ? <UserDashboard activeTab="tickets" /> : <Navigate to="/" />} />
                 <Route path="/user/vehicle-status" element={profile.role === 'user' ? <UserDashboard activeTab="vehicle-status" /> : <Navigate to="/" />} />
@@ -89,10 +88,9 @@ export const MainLayout: React.FC = () => {
                     '/user/tickets'
                   } replace />
                 } />
-              </Routes>
-          </main>
-        </div>
-      </SidebarProvider>
-    </Router>
+            </Routes>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 };
