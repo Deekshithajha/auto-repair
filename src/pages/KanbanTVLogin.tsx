@@ -23,7 +23,11 @@ export const KanbanTVLogin: React.FC = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/kanban-tv/shop-floor');
+      if (user.role === 'KANBAN_ADMIN') {
+        navigate('/kanban-tv/admin');
+      } else {
+        navigate('/kanban-tv/shop-floor');
+      }
     }
   }, [user, navigate]);
 
@@ -36,9 +40,8 @@ export const KanbanTVLogin: React.FC = () => {
       const result = await signIn(email, password);
       if (result.error) {
         setError(result.error);
-      } else {
-        navigate('/kanban-tv/shop-floor');
       }
+      // Redirect handled by useEffect
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {

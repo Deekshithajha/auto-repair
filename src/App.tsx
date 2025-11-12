@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { KanbanAuthProvider } from "@/features/kanban-tv";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { KanbanTVLogin } from "@/pages/KanbanTVLogin";
+import KanbanTVAdmin from "@/pages/KanbanTVAdmin";
 import { KanbanTVViewer } from "@/pages/KanbanTVViewer";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,11 @@ const App = () => (
           <Route path="/kanban-tv/login" element={
             <KanbanAuthProvider>
               <KanbanTVLogin />
+            </KanbanAuthProvider>
+          } />
+          <Route path="/kanban-tv/admin" element={
+            <KanbanAuthProvider>
+              <KanbanTVAdmin />
             </KanbanAuthProvider>
           } />
           <Route path="/kanban-tv/:boardSlug" element={

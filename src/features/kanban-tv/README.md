@@ -23,6 +23,7 @@ A standalone TV display system for auto repair shops to visualize work orders on
 ## Routes
 
 - `/kanban-tv/login` - Login page for TV system
+- `/kanban-tv/admin` - Admin panel for managing boards, columns, and users (KANBAN_ADMIN only)
 - `/kanban-tv/shop-floor` - Full-screen TV viewer for "Shop Floor" board
 - `/kanban-tv/:boardSlug` - Generic board viewer
 
@@ -31,7 +32,28 @@ A standalone TV display system for auto repair shops to visualize work orders on
 ### 1. Login to TV System
 Navigate to `/kanban-tv/login` and sign in with a viewer account.
 
-### 2. TV Display
+### 2. Admin Panel (KANBAN_ADMIN only)
+Navigate to `/kanban-tv/admin` after signing in with an admin account.
+
+**Admin Features:**
+- **Boards Tab**: Create, edit, and manage multiple Kanban boards
+  - Set board name and URL slug
+  - Activate/deactivate boards
+  - Delete boards (removes all columns and cards)
+
+- **Columns Tab**: Manage columns for selected board
+  - Create new columns with custom colors
+  - Set WIP (Work In Progress) limits
+  - Drag-and-drop reordering
+  - Edit/delete existing columns
+
+- **Users Tab**: Manage Kanban TV user accounts
+  - Create new users with roles (VIEWER/EDITOR/ADMIN)
+  - Update user passwords and roles
+  - Activate/deactivate user accounts
+  - Delete user accounts
+
+### 3. TV Display
 Once logged in, the system automatically redirects to `/kanban-tv/shop-floor`.
 
 **TV Display Features:**
@@ -49,9 +71,11 @@ Cards are marked with a left border indicating ETA status:
 - 🟡 **Amber** - Less than 2 hours remaining
 - 🔴 **Red** - Overdue
 
-### 4. Adding/Editing Cards
+## Editor Mode (Coming Soon)
 
-**Important:** This initial implementation includes the TV **viewer** only. Editor and Admin modes for managing cards/boards are not yet built.
+**Important:** Editor mode is planned but not yet implemented. For now, you can:
+- Use the **Admin Panel** to manage boards, columns, and users
+- Use the API directly to create/manage cards programmatically
 
 To add cards programmatically, use the Kanban TV API:
 
@@ -96,26 +120,23 @@ The following features were spec'd but not yet implemented:
 
 - [ ] **Editor Mode** (`/kanban-tv/:boardSlug/edit`)
   - Drag & drop cards between columns
-  - CRUD operations for cards
+  - Quick card editing inline
   - Bulk actions
-  - Activity logging
-
-- [ ] **Admin Mode** (`/kanban-tv/:boardSlug/admin`)
-  - Manage columns (add/edit/reorder)
-  - Manage Kanban users
-  - Board settings (auto-pan speed, WIP limits)
-  - Multiple board management
+  
+- [ ] **Advanced TV Settings**
+  - Configurable auto-pan speed per board
+  - Toggle SLA colors
+  - Compact mode toggle
 
 - [ ] **Security Improvements**
   - Bcrypt password hashing via edge function
   - Enable Supabase leaked password protection
-  - Role-based RLS policies (currently simplified)
+  - Session expiry and refresh tokens
 
 - [ ] **Advanced Features**
   - Device pairing with TV codes
   - Read-only API tokens for hardware players
   - Snapshot endpoint for external displays
-  - Multiple board support in UI
 
 ## Security Notes
 
