@@ -254,7 +254,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
   }, [user?.id]);
 
   const fetchVehicleStatuses = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('❌ fetchVehicleStatuses: No user ID found');
+      return;
+    }
+    
+    console.log('🚗 fetchVehicleStatuses: Starting fetch for user:', user.id);
     
     try {
       // Fetch user's vehicles with their current tickets
@@ -272,6 +277,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         `)
         .eq('owner_id', user.id)
         .eq('status', 'active');
+
+      console.log('🚗 fetchVehicleStatuses: Vehicles result', { vehicles, vehiclesError, count: vehicles?.length });
 
       if (vehiclesError) throw vehiclesError;
 
@@ -458,7 +465,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
   }, [user?.id]);
 
   const fetchTickets = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('❌ fetchTickets: No user ID found', user);
+      return;
+    }
+    
+    console.log('🔍 fetchTickets: Starting fetch for user:', user.id);
     
     try {
       setLoading(true);
@@ -478,6 +490,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
 
+      console.log('📊 fetchTickets: Query result', { data, error, count: data?.length });
+
       if (error) throw error;
 
       const formattedTickets = (data || []).map((ticket: any) => ({
@@ -488,9 +502,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         vehicles: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
       }));
 
+      console.log('✅ fetchTickets: Formatted tickets', formattedTickets);
       setTickets(formattedTickets);
     } catch (error: any) {
-      console.error('Error fetching tickets:', error);
+      console.error('❌ Error fetching tickets:', error);
       toast({
         title: "Error",
         description: "Failed to load tickets",
