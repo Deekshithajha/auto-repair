@@ -56,9 +56,9 @@ export const NotificationManagement: React.FC = () => {
 
       // Type filter removed as it needs specific enum values
       if (filters.is_read === 'read') {
-        query = query.eq('is_read', true);
+        query = query.eq('read', true);
       } else if (filters.is_read === 'unread') {
-        query = query.eq('is_read', false);
+        query = query.eq('read', false);
       }
       if (filters.date_from) {
         query = query.gte('created_at', filters.date_from);
@@ -69,7 +69,7 @@ export const NotificationManagement: React.FC = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      setNotifications(data || []);
+      setNotifications((data || []) as any);
     } catch (error: any) {
       console.error('Error fetching notifications:', error);
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -82,7 +82,7 @@ export const NotificationManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
+        .update({ read: true })
         .eq('id', notificationId);
 
       if (error) throw error;

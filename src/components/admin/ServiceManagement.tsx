@@ -47,13 +47,13 @@ export const ServiceManagement: React.FC = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('standard_services')
         .select('*')
         .order('service_name');
 
       if (error) throw error;
-      setServices(data || []);
+      setServices((data || []) as any);
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {

@@ -382,7 +382,7 @@ export const InvoiceGeneration: React.FC = () => {
       for (const service of invoiceData.services) {
         if (service.id.startsWith('temp-')) {
           // New service - insert
-          const { error } = await supabase
+          const { error } = await (supabase as any)
             .from('workorder_services')
             .insert({
               ticket_id: invoiceData.ticket!.id,
