@@ -79,7 +79,14 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
 
   const renderRegisterCustomerPage = () => (
     <div className="space-y-4 sm:space-y-6">
-      <EnhancedVehicleRegistration />
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold">Customer Management</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">View and register customers</p>
+        </div>
+        <CustomerRegistration />
+      </div>
+      <EmployeeCustomerList />
     </div>
   );
 
