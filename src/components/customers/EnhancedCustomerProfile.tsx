@@ -101,7 +101,12 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
       if (profileError) throw profileError;
 
       const typedProfile = profileData as any;
-      setProfile(typedProfile);
+      setProfile({
+        ...typedProfile,
+        legacy_status: typedProfile.legacy_status || 'new',
+        invoice_count: typedProfile.invoice_count || 0,
+        preferred_notification: typedProfile.preferred_notification || 'email'
+      });
       setFormData({
         name: typedProfile.name || typedProfile.full_name || '',
         phone: typedProfile.phone || '',
@@ -214,11 +219,11 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
         <div>
           <h2 className="text-2xl font-bold">{profile.name}</h2>
           <div className="flex gap-2 mt-2">
-            <Badge variant={getLegacyStatusColor(profile.legacy_status)}>
-              {profile.legacy_status.replace('_', ' ').toUpperCase()}
+            <Badge variant={getLegacyStatusColor(profile.legacy_status || 'new')}>
+              {(profile.legacy_status || 'new').replace('_', ' ').toUpperCase()}
             </Badge>
             <Badge variant="outline">
-              {profile.invoice_count} Invoice{profile.invoice_count !== 1 ? 's' : ''}
+              {profile.invoice_count || 0} Invoice{profile.invoice_count !== 1 ? 's' : ''}
             </Badge>
           </div>
         </div>
