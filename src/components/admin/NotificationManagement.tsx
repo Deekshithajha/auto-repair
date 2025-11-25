@@ -56,9 +56,9 @@ export const NotificationManagement: React.FC = () => {
 
       // Type filter removed as it needs specific enum values
       if (filters.is_read === 'read') {
-        query = query.eq('read', true);
+        query = query.eq('is_read', true);
       } else if (filters.is_read === 'unread') {
-        query = query.eq('read', false);
+        query = query.eq('is_read', false);
       }
       if (filters.date_from) {
         query = query.gte('created_at', filters.date_from);

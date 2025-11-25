@@ -23,7 +23,7 @@ export const ReportsAnalytics: React.FC = () => {
       // Fetch ticket statistics
       const { data: tickets, error: ticketsError } = await supabase
         .from('tickets')
-        .select('id, status, created_at, work_completed_at');
+        .select('id, status, created_at, completed_date');
 
       if (ticketsError) throw ticketsError;
 

@@ -98,7 +98,7 @@ export const EmployeeManagement: React.FC = () => {
           termination_reason,
           created_at,
           updated_at,
-          profiles!inner (
+          profiles (
             name,
             email,
             phone

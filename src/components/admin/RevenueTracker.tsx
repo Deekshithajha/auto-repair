@@ -183,8 +183,8 @@ export const RevenueTracker: React.FC = () => {
 
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, status, created_at')
-      .eq('status', 'paid') as any;
+      .select('id, total_amount, ticket_id, payment_status, created_at')
+      .eq('payment_status', 'paid') as any;
 
     if (invError) throw invError;
 
@@ -224,8 +224,8 @@ export const RevenueTracker: React.FC = () => {
 
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, status, created_at')
-      .eq('status', 'paid')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: true }) as any;
 
     if (invError) throw invError;
@@ -306,8 +306,8 @@ export const RevenueTracker: React.FC = () => {
     
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, status, created_at')
-      .eq('status', 'paid')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: true }) as any;
 
     if (invError) throw invError;
@@ -377,8 +377,8 @@ export const RevenueTracker: React.FC = () => {
     // Fetch detailed data based on filters
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
-      .select('id, total_amount, ticket_id, status, created_at')
-      .eq('status', 'paid')
+      .select('id, total_amount, ticket_id, payment_status, created_at')
+      .eq('payment_status', 'paid')
       .order('created_at', { ascending: false }) as any;
 
     if (invError) throw invError;
