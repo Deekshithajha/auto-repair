@@ -19,7 +19,6 @@ interface RaiseTicketWizardProps {
 interface Profile {
   id: string;
   name: string;
-  role: 'user' | 'employee' | 'admin';
   phone?: string;
 }
 
@@ -28,7 +27,7 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
-  license_no?: string | null;
+  license_plate?: string | null;
 }
 
 type Step = 1 | 2 | 3;
@@ -53,7 +52,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
     make: '',
     model: '',
     year: new Date().getFullYear(),
-    license_no: '',
+    license_plate: '',
   });
   const [ticketDetails, setTicketDetails] = useState({
     description: '',
@@ -84,7 +83,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
         setNewCustomer({ name: '', email: '', password: '' });
         setVehicles([]);
         setSelectedVehicleId('');
-        setNewVehicle({ make: '', model: '', year: new Date().getFullYear(), license_no: '' });
+        setNewVehicle({ make: '', model: '', year: new Date().getFullYear(), license_plate: '' });
         setTicketDetails({ description: '', preferred_pickup_time: '' });
         setCreatedTicketId(null);
         setNotificationPrefs({
@@ -126,12 +125,12 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
       if (error) throw error;
       if (users && users.length > 0) {
         const u = users[0] as any;
-        setSelectedCustomer({ id: u.id, name: u.name, role: u.role, phone: u.phone });
+        setSelectedCustomer({ id: u.id, name: u.name, phone: u.phone });
         // load vehicles for this customer
         const { data: vehiclesData, error: vehErr } = await supabase
           .from('vehicles')
-          .select('id, make, model, year, license_no')
-          .eq('user_id', u.id)
+          .select('id, make, model, year, license_plate')
+          .eq('owner_id', u.id)
           .order('updated_at', { ascending: false });
         if (!vehErr && vehiclesData) setVehicles(vehiclesData as any);
         toast({ title: 'Customer found', description: `${u.name} selected` });
@@ -170,7 +169,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
             .maybeSingle();
           if (profErr) throw profErr;
           if (prof) {
-            setSelectedCustomer({ id: prof.id, name: prof.name, role: prof.role, phone: prof.phone });
+            setSelectedCustomer({ id: prof.id, name: prof.name, phone: prof.phone });
           }
           toast({ title: 'Customer created', description: `${newCustomer.name} added` });
         } catch (err: any) {
@@ -210,7 +209,7 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
           // insert new vehicle
           const { data: veh, error: vehErr } = await supabase
             .from('vehicles')
-            .insert([{ make: newVehicle.make, model: newVehicle.model, year: newVehicle.year, license_no: newVehicle.license_no, user_id: selectedCustomer.id }])
+            .insert([{ make: newVehicle.make, model: newVehicle.model, year: newVehicle.year, license_plate: newVehicle.license_plate, owner_id: selectedCustomer.id, is_active: true }])
             .select()
             .single();
           if (vehErr) throw vehErr;
@@ -219,7 +218,13 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
 
         const { data: ticket, error: tErr } = await supabase
           .from('tickets')
-          .insert([{ vehicle_id: vehicleId, description: ticketDetails.description, preferred_pickup_time: ticketDetails.preferred_pickup_time || null, user_id: selectedCustomer.id }])
+          .insert([{ 
+            vehicle_id: vehicleId, 
+            title: 'Repair Request',
+            description: ticketDetails.description, 
+            preferred_pickup_time: ticketDetails.preferred_pickup_time || null, 
+            customer_id: selectedCustomer.id 
+          }])
           .select()
           .single();
         if (tErr) throw tErr;
@@ -441,8 +446,8 @@ export const RaiseTicketWizard: React.FC<RaiseTicketWizardProps> = ({ open, onOp
                   <Input id="year" type="number" value={newVehicle.year} onChange={(e) => setNewVehicle(prev => ({ ...prev, year: parseInt(e.target.value || '0') }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="license_no">License Plate</Label>
-                  <Input id="license_no" value={newVehicle.license_no} onChange={(e) => setNewVehicle(prev => ({ ...prev, license_no: e.target.value.toUpperCase() }))} placeholder="ABC-1234" />
+                  <Label htmlFor="license_plate">License Plate</Label>
+                  <Input id="license_plate" value={newVehicle.license_plate} onChange={(e) => setNewVehicle(prev => ({ ...prev, license_plate: e.target.value.toUpperCase() }))} placeholder="ABC-1234" />
                 </div>
               </div>
 
