@@ -78,7 +78,7 @@ export const ServiceManagement: React.FC = () => {
 
       if (editingService) {
         const { error } = await supabase
-          .from('standard_services')
+          .from('services' as any)
           .update(serviceData)
           .eq('id', editingService.id);
 
@@ -86,7 +86,7 @@ export const ServiceManagement: React.FC = () => {
         toast({ title: 'Success', description: 'Service updated successfully' });
       } else {
         const { error } = await supabase
-          .from('standard_services')
+          .from('services' as any)
           .insert([serviceData]);
 
         if (error) throw error;
@@ -123,7 +123,7 @@ export const ServiceManagement: React.FC = () => {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('standard_services')
+        .from('services' as any)
         .delete()
         .eq('id', id);
 
