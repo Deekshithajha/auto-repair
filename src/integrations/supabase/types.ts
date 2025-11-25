@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -73,6 +117,158 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      damage_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          is_completed: boolean | null
+          logged_at: string
+          logged_by: string | null
+          photo_ids: string[] | null
+          ticket_id: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          is_completed?: boolean | null
+          logged_at?: string
+          logged_by?: string | null
+          photo_ids?: string[] | null
+          ticket_id?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_completed?: boolean | null
+          logged_at?: string
+          logged_by?: string | null
+          photo_ids?: string[] | null
+          ticket_id?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "damage_log_logged_by_fkey"
+            columns: ["logged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damage_log_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "damage_log_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_details: {
+        Row: {
+          created_at: string
+          employee_id: string
+          employment_type: string
+          hourly_rate: number | null
+          id: string
+          overtime_rate: number | null
+          position: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          employment_type?: string
+          hourly_rate?: number | null
+          id?: string
+          overtime_rate?: number | null
+          position?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          employment_type?: string
+          hourly_rate?: number | null
+          id?: string
+          overtime_rate?: number | null
+          position?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_details_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          created_at: string
+          employee_id: string
+          employment_status: string
+          hire_date: string
+          id: string
+          is_active: boolean | null
+          termination_date: string | null
+          termination_reason: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          employment_status?: string
+          hire_date: string
+          id?: string
+          is_active?: boolean | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          employment_status?: string
+          hire_date?: string
+          id?: string
+          is_active?: boolean | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -234,6 +430,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          name: string | null
           phone: string | null
           system_id: string | null
           updated_at: string
@@ -244,6 +441,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          name?: string | null
           phone?: string | null
           system_id?: string | null
           updated_at?: string
@@ -254,6 +452,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          name?: string | null
           phone?: string | null
           system_id?: string | null
           updated_at?: string
@@ -438,6 +637,51 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_photos: {
+        Row: {
+          created_at: string
+          id: string
+          photo_data: string
+          photo_type: string
+          updated_at: string
+          uploaded_by: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          photo_data: string
+          photo_type?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          photo_data?: string
+          photo_type?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_photos_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           color: string | null
@@ -488,6 +732,60 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      work_sessions: {
+        Row: {
+          created_at: string
+          employee_id: string
+          ended_at: string | null
+          hours_worked: number | null
+          id: string
+          notes: string | null
+          started_at: string
+          status: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          ended_at?: string | null
+          hours_worked?: number | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          ended_at?: string | null
+          hours_worked?: number | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sessions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
