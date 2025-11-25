@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { UserPlus } from 'lucide-react';
 
 interface CustomerData {
   name: string;
@@ -175,7 +176,7 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
           <span onClick={() => setOpen(true)}>{trigger}</span>
         ) : (
           <Button variant="outline" className="w-full sm:w-auto">
-            <span className="mr-2">👤</span>
+            <UserPlus className="mr-2 h-4 w-4" />
             Register New Customer
           </Button>
         )}
