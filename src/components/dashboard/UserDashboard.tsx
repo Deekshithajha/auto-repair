@@ -245,6 +245,49 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
     }
   };
 
+  // Fetch tickets on mount
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🎯 UserDashboard: Triggering fetchTickets for user:', user.id);
+      fetchTickets();
+    }
+  }, [user?.id]);
+
+  // Fetch vehicles on mount
+  useEffect(() => {
+    if (user?.id) {
+      console.log('🚗 UserDashboard: Triggering fetchUserVehicles for user:', user.id);
+      fetchUserVehicles();
+    }
+  }, [user?.id]);
+
+  const fetchUserVehicles = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data: vehicles, error } = await supabase
+        .from('vehicles')
+        .select('id, make, model, year, license_plate')
+        .eq('owner_id', user.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      
+      const formatted = (vehicles || []).map(v => ({
+        id: v.id,
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        license_no: v.license_plate
+      }));
+      
+      console.log('✅ fetchUserVehicles: Got vehicles', formatted);
+      setUserVehicles(formatted);
+    } catch (error: any) {
+      console.error('❌ Error fetching user vehicles:', error);
+    }
+  };
+
   const [vehicleStatuses, setVehicleStatuses] = useState<VehicleStatus[]>([]);
 
   useEffect(() => {
