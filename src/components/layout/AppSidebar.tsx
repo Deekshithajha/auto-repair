@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import lakewoodLogo from '@/assets/lakewood-logo.png';
 
 export function AppSidebar() {
   const { user, profile, signOut } = useAuth();
@@ -73,12 +74,13 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
-            <span className="text-primary-foreground">🔧</span>
-          </div>
+          <img 
+            src={lakewoodLogo} 
+            alt="Lakewood 76 Auto Repair" 
+            className={collapsed ? "w-8 h-8 object-contain" : "h-12 object-contain"}
+          />
           {!collapsed && (
             <div>
-              <h1 className="font-bold text-sidebar-foreground">AUTO REPAIR INC</h1>
               <p className="text-xs text-muted-foreground capitalize">{profile?.role} Portal</p>
             </div>
           )}

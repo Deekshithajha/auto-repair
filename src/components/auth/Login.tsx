@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff, Car, Wrench, Key } from 'lucide-react';
+import lakewoodLogo from '@/assets/lakewood-logo.png';
 
 interface LoginProps {
   onSubmit?: (credentials: { email: string; password: string; rememberMe: boolean }) => void;
@@ -143,14 +144,16 @@ export const Login: React.FC<LoginProps> = ({ onSubmit, theme = 'blue' }) => {
         <div className="w-full max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             
-            {/* Left Panel - Mascot & Branding */}
+            {/* Left Panel - Logo & Branding */}
             <div className="space-y-8">
-              {/* Brand Header */}
-              <div className="space-y-4">
-                <h1 className={`text-5xl font-bold font-['Poppins'] ${isRedTheme ? 'text-auto-red-900' : 'text-auto-blue-900'}`}>
-                  AutoFix Pro
-                </h1>
-                <p className={`text-xl ${isRedTheme ? 'text-auto-red-600' : 'text-auto-blue-600'} font-medium`}>
+              {/* Brand Header with Logo */}
+              <div className="space-y-4 flex flex-col items-center lg:items-start">
+                <img 
+                  src={lakewoodLogo} 
+                  alt="Lakewood 76 Auto Repair Inc." 
+                  className="h-40 w-auto object-contain"
+                />
+                <p className={`text-xl ${isRedTheme ? 'text-auto-red-600' : 'text-auto-blue-600'} font-medium text-center lg:text-left`}>
                   Your trusted repair partner
                 </p>
               </div>
