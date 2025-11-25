@@ -64,7 +64,7 @@ export const MainLayout: React.FC = () => {
                 
                 {/* Employee Routes */}
                 <Route path="/employee/assignments" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="assignments" /> : <Navigate to="/" />} />
-                <Route path="/employee/register" element={profile.role === 'employee' ? <div className="p-6"><CustomerRegistration /></div> : <Navigate to="/" />} />
+                <Route path="/employee/register" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="register" /> : <Navigate to="/" />} />
                 <Route path="/employee/customers" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="customers" /> : <Navigate to="/" />} />
                 <Route path="/employee/rescheduled" element={profile.role === 'employee' ? <EmployeeRescheduledVehicles /> : <Navigate to="/" />} />
                 <Route path="/employee/worklog" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="worklog" /> : <Navigate to="/" />} />

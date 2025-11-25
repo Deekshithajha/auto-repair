@@ -127,11 +127,20 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ phone: customerData.phone, license_plate: customerData.licensePlate })
+          .update({ phone: customerData.phone })
           .eq('id', authData.user.id);
 
         if (profileError) {
           console.warn('Profile update failed:', profileError);
+        }
+        
+        // Assign customer role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: authData.user.id, role: 'customer' });
+        
+        if (roleError) {
+          console.warn('Role assignment failed:', roleError);
         }
 
         // Create initial vehicle only if make and model are provided
