@@ -289,7 +289,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
             profiles:primary_mechanic_id (name)
           `)
           .eq('vehicle_id', vehicle.id)
-          .in('status', ['pending', 'approved', 'assigned', 'in_progress', 'completed'])
+          .in('status', ['pending', 'in_progress', 'awaiting_parts', 'completed'])
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -331,7 +331,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
             id: currentTicket.ticket_number || currentTicket.id,
             description: currentTicket.description || '',
             status: currentTicket.status,
-            progress_percentage: currentTicket.status === 'completed' ? 100 : currentTicket.status === 'in_progress' ? 50 : currentTicket.status === 'assigned' ? 25 : 0,
+            progress_percentage: currentTicket.status === 'completed' ? 100 : currentTicket.status === 'in_progress' ? 50 : currentTicket.status === 'awaiting_parts' ? 25 : 0,
             estimated_completion: currentTicket.preferred_pickup_time || '',
             assigned_mechanic: mechanic?.name || 'Pending Assignment',
             work_stages: [] // Would need to fetch from work_sessions or damage_log
@@ -475,7 +475,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
             year
           )
         `)
-        .eq('user_id', user.id)
+        .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
