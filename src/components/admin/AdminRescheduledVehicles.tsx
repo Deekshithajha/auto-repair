@@ -19,8 +19,7 @@ interface RescheduledVehicle {
     make: string;
     model: string;
     year: number;
-    reg_no: string;
-    license_no?: string;
+    license_plate: string;
   };
   customer: {
     id: string;
@@ -103,10 +102,9 @@ export const AdminRescheduledVehicles: React.FC = () => {
             make,
             model,
             year,
-            reg_no,
-            license_no
+            license_plate
           ),
-          profiles:user_id (
+          profiles:customer_id (
             id,
             name,
             phone,
@@ -396,15 +394,9 @@ export const AdminRescheduledVehicles: React.FC = () => {
                         <p className="font-semibold">{selectedVehicle.vehicle.year}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Registration</p>
-                        <p className="font-semibold">{selectedVehicle.vehicle.reg_no}</p>
+                        <p className="text-sm text-muted-foreground">License Plate</p>
+                        <p className="font-semibold">{selectedVehicle.vehicle.license_plate}</p>
                       </div>
-                      {selectedVehicle.vehicle.license_no && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">License</p>
-                          <p className="font-semibold">{selectedVehicle.vehicle.license_no}</p>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
