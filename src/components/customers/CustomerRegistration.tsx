@@ -13,6 +13,7 @@ interface CustomerData {
   name: string;
   email: string;
   phone: string;
+  password: string;
   licensePlate: string;
   make: string;
   model: string;
@@ -31,6 +32,7 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
     name: '',
     email: '',
     phone: '',
+    password: '',
     licensePlate: '',
     make: '',
     model: '',
@@ -62,6 +64,22 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       });
       return false;
     }
+    if (!customerData.password.trim()) {
+      toast({
+        title: "Error",
+        description: "Password is required",
+        variant: "destructive",
+      });
+      return false;
+    }
+    if (customerData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return false;
+    }
     if (!customerData.licensePlate.trim()) {
       toast({
         title: "Error",
@@ -88,11 +106,12 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
 
     setIsLoading(true);
     try {
-      // Create the user account, using license plate as password
+      // Create the user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: customerData.email,
-        password: customerData.licensePlate,
+        password: customerData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: customerData.name,
             phone: customerData.phone
@@ -149,6 +168,7 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
         name: '',
         email: '',
         phone: '',
+        password: '',
         licensePlate: '',
         make: '',
         model: '',
@@ -223,6 +243,22 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
               value={customerData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="customer-password">Password *</Label>
+            <Input
+              id="customer-password"
+              type="password"
+              placeholder="Minimum 6 characters"
+              value={customerData.password}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              required
+              minLength={6}
+            />
+            <p className="text-xs text-muted-foreground">
+              Customer will use this to login to their account
+            </p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
