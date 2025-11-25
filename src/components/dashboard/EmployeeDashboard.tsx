@@ -14,6 +14,7 @@ import { EmployeeWorkLog } from '@/components/employee/EmployeeWorkLog';
 import { EmployeeAttendance } from '@/components/employee/EmployeeAttendance';
 import { EmployeeSettings } from '@/components/employee/EmployeeSettings';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
+import { EmployeeCustomerList } from '@/components/employee/EmployeeCustomerList';
 import DashboardBackground from '@/components/layout/DashboardBackground';
 
 interface EmployeeDashboardProps {
@@ -39,6 +40,8 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
         return renderProfilePage();
       case 'register':
         return renderRegisterCustomerPage();
+      case 'customers':
+        return renderCustomersPage();
       case 'settings':
         return renderSettingsPage();
       default:
@@ -77,6 +80,12 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
   const renderRegisterCustomerPage = () => (
     <div className="space-y-4 sm:space-y-6">
       <EnhancedVehicleRegistration />
+    </div>
+  );
+
+  const renderCustomersPage = () => (
+    <div className="space-y-4 sm:space-y-6">
+      <EmployeeCustomerList />
     </div>
   );
 
