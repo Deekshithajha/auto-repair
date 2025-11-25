@@ -11,6 +11,7 @@ import { NotificationCenter } from '@/components/notifications/NotificationCente
 import { AdminRescheduledVehicles } from '@/components/admin/AdminRescheduledVehicles';
 import { EmployeeRescheduledVehicles } from '@/components/employee/EmployeeRescheduledVehicles';
 import { CustomerRescheduledVehicles } from '@/components/customers/CustomerRescheduledVehicles';
+import { CustomerRegistration } from '@/components/customers/CustomerRegistration';
 
 export const MainLayout: React.FC = () => {
   const { user, profile, loading, signIn, signUp } = useAuth();
@@ -63,6 +64,7 @@ export const MainLayout: React.FC = () => {
                 
                 {/* Employee Routes */}
                 <Route path="/employee/assignments" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="assignments" /> : <Navigate to="/" />} />
+                <Route path="/employee/register" element={profile.role === 'employee' ? <div className="p-6"><CustomerRegistration /></div> : <Navigate to="/" />} />
                 <Route path="/employee/rescheduled" element={profile.role === 'employee' ? <EmployeeRescheduledVehicles /> : <Navigate to="/" />} />
                 <Route path="/employee/worklog" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="worklog" /> : <Navigate to="/" />} />
                 <Route path="/employee/attendance" element={profile.role === 'employee' ? <EmployeeDashboard activeTab="attendance" /> : <Navigate to="/" />} />
