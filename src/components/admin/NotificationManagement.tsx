@@ -82,7 +82,7 @@ export const NotificationManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ read: true })
+        .update({ is_read: true })
         .eq('id', notificationId);
 
       if (error) throw error;

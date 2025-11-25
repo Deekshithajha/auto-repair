@@ -44,6 +44,7 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
+  license_plate?: string;
   is_active: boolean;
   created_at: string;
 }

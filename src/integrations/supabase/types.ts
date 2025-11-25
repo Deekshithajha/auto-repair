@@ -280,6 +280,7 @@ export type Database = {
           notes: string | null
           paid_date: string | null
           payment_method: string | null
+          payment_status: string | null
           status: string | null
           subtotal: number
           tax_amount: number
@@ -296,6 +297,7 @@ export type Database = {
           notes?: string | null
           paid_date?: string | null
           payment_method?: string | null
+          payment_status?: string | null
           status?: string | null
           subtotal?: number
           tax_amount?: number
@@ -312,6 +314,7 @@ export type Database = {
           notes?: string | null
           paid_date?: string | null
           payment_method?: string | null
+          payment_status?: string | null
           status?: string | null
           subtotal?: number
           tax_amount?: number
@@ -333,8 +336,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_read: boolean | null
           message: string
-          read: boolean | null
           sent_at: string | null
           ticket_id: string | null
           title: string
@@ -344,8 +347,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_read?: boolean | null
           message: string
-          read?: boolean | null
           sent_at?: string | null
           ticket_id?: string | null
           title: string
@@ -355,8 +358,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_read?: boolean | null
           message?: string
-          read?: boolean | null
           sent_at?: string | null
           ticket_id?: string | null
           title?: string
@@ -713,6 +716,7 @@ export type Database = {
           color: string | null
           created_at: string
           id: string
+          is_active: boolean | null
           license_plate: string
           location_status: string | null
           make: string
@@ -730,6 +734,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean | null
           license_plate: string
           location_status?: string | null
           make: string
@@ -747,6 +752,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean | null
           license_plate?: string
           location_status?: string | null
           make?: string
@@ -809,6 +815,63 @@ export type Database = {
           },
           {
             foreignKeyName: "work_sessions_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workorder_services: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_taxable: boolean | null
+          labor_hours: number | null
+          notes: string | null
+          quantity: number
+          service_id: string | null
+          service_name: string
+          ticket_id: string
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_taxable?: boolean | null
+          labor_hours?: number | null
+          notes?: string | null
+          quantity?: number
+          service_id?: string | null
+          service_name: string
+          ticket_id: string
+          unit_price: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_taxable?: boolean | null
+          labor_hours?: number | null
+          notes?: string | null
+          quantity?: number
+          service_id?: string | null
+          service_name?: string
+          ticket_id?: string
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workorder_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workorder_services_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
