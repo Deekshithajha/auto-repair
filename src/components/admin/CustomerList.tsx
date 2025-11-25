@@ -107,14 +107,12 @@ export const CustomerList: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'user')
-        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setCustomers((data || []) as Customer[]);
-      setFilteredCustomers((data || []) as Customer[]);
+      setCustomers((data || []) as any);
+      setFilteredCustomers((data || []) as any);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -219,11 +217,7 @@ export const CustomerList: React.FC = () => {
 
       const { error } = await supabase
         .from('profiles')
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-          deleted_by: user?.id || null
-        })
+        .delete()
         .eq('id', customerToDelete.id);
 
       if (error) throw error;

@@ -115,8 +115,8 @@ export const AdminAttendanceManagement: React.FC = () => {
       if (attError) throw attError;
       if (sessError) throw sessError;
 
-      setAttendanceRecords(attendance || []);
-      setWorkSessions(sessions || []);
+      setAttendanceRecords((attendance || []) as any);
+      setWorkSessions((sessions || []) as any);
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
