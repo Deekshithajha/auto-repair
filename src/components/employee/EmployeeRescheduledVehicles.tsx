@@ -13,7 +13,7 @@ import { CalendarIcon, Car, User, Clock, PlayCircle } from 'lucide-react';
 interface RescheduledVehicle {
   ticket_id: string;
   ticket_number: string;
-  scheduled_date: string;
+  reschedule_date: string;
   vehicle: {
     id: string;
     make: string;
@@ -63,7 +63,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
   useEffect(() => {
     if (selectedDate) {
       const filtered = rescheduledVehicles.filter(vehicle => 
-        isSameDay(parseISO(vehicle.scheduled_date), selectedDate)
+        isSameDay(parseISO(vehicle.reschedule_date), selectedDate)
       );
       setFilteredVehicles(filtered);
     } else {
@@ -82,7 +82,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         .select(`
           id,
           ticket_number,
-          scheduled_date,
+          reschedule_date,
           description,
           status,
           vehicles:vehicle_id (
@@ -99,8 +99,8 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
           )
         `)
         .eq('status', 'pending')
-        .not('scheduled_date', 'is', null)
-        .order('scheduled_date', { ascending: true });
+        .not('reschedule_date', 'is', null)
+        .order('reschedule_date', { ascending: true });
 
       if (error) throw error;
 
@@ -117,7 +117,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         return {
           ticket_id: ticket.id,
           ticket_number: ticket.ticket_number || ticket.id.slice(-8),
-          scheduled_date: ticket.scheduled_date,
+          reschedule_date: ticket.reschedule_date,
           vehicle: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
           customer: Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles,
           description: ticket.description,
@@ -141,7 +141,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
   const getDatesWithVehicles = () => {
     const dates = new Set<string>();
     rescheduledVehicles.forEach(vehicle => {
-      const dateStr = format(parseISO(vehicle.scheduled_date), 'yyyy-MM-dd');
+      const dateStr = format(parseISO(vehicle.reschedule_date), 'yyyy-MM-dd');
       dates.add(dateStr);
     });
     return Array.from(dates).map(d => parseISO(d));
@@ -326,7 +326,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
-                              <span>{format(parseISO(vehicle.scheduled_date), 'MMM dd, yyyy hh:mm a')}</span>
+                              <span>{format(parseISO(vehicle.reschedule_date), 'MMM dd, yyyy hh:mm a')}</span>
                             </div>
                           </div>
                         </div>
@@ -412,9 +412,9 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div>
-                      <p className="text-sm text-muted-foreground">Scheduled Date</p>
+                      <p className="text-sm text-muted-foreground">Rescheduled Date</p>
                       <p className="font-semibold">
-                        {format(parseISO(selectedVehicle.scheduled_date), 'MMMM dd, yyyy hh:mm a')}
+                        {format(parseISO(selectedVehicle.reschedule_date), 'MMMM dd, yyyy hh:mm a')}
                       </p>
                     </div>
                     <div>

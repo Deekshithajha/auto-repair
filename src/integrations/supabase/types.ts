@@ -545,8 +545,12 @@ export type Database = {
           parts_cost: number | null
           photos: Json | null
           preferred_pickup_time: string | null
+          primary_mechanic_id: string | null
           priority: string | null
+          reschedule_date: string | null
+          reschedule_reason: string | null
           scheduled_date: string | null
+          secondary_mechanic_id: string | null
           service_ids: string[] | null
           status: Database["public"]["Enums"]["ticket_status"]
           tax_amount: number | null
@@ -570,8 +574,12 @@ export type Database = {
           parts_cost?: number | null
           photos?: Json | null
           preferred_pickup_time?: string | null
+          primary_mechanic_id?: string | null
           priority?: string | null
+          reschedule_date?: string | null
+          reschedule_reason?: string | null
           scheduled_date?: string | null
+          secondary_mechanic_id?: string | null
           service_ids?: string[] | null
           status?: Database["public"]["Enums"]["ticket_status"]
           tax_amount?: number | null
@@ -595,8 +603,12 @@ export type Database = {
           parts_cost?: number | null
           photos?: Json | null
           preferred_pickup_time?: string | null
+          primary_mechanic_id?: string | null
           priority?: string | null
+          reschedule_date?: string | null
+          reschedule_reason?: string | null
           scheduled_date?: string | null
+          secondary_mechanic_id?: string | null
           service_ids?: string[] | null
           status?: Database["public"]["Enums"]["ticket_status"]
           tax_amount?: number | null
@@ -607,6 +619,20 @@ export type Database = {
           vehicle_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_primary_mechanic_id_fkey"
+            columns: ["primary_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_secondary_mechanic_id_fkey"
+            columns: ["secondary_mechanic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tickets_vehicle_id_fkey"
             columns: ["vehicle_id"]
@@ -688,6 +714,7 @@ export type Database = {
           created_at: string
           id: string
           license_plate: string
+          location_status: string | null
           make: string
           mileage: number | null
           model: string
@@ -704,6 +731,7 @@ export type Database = {
           created_at?: string
           id?: string
           license_plate: string
+          location_status?: string | null
           make: string
           mileage?: number | null
           model: string
@@ -720,6 +748,7 @@ export type Database = {
           created_at?: string
           id?: string
           license_plate?: string
+          location_status?: string | null
           make?: string
           mileage?: number | null
           model?: string
