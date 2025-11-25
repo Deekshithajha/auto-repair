@@ -84,42 +84,54 @@ export const EmployeeManagement: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch employees with joined profile data manually
+      // Fetch employees with joined profile and detail data
       const { data: employeeData, error: empError } = await supabase
         .from('employees')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          employee_id,
+          hire_date,
+          is_active,
+          employment_status,
+          termination_date,
+          termination_reason,
+          created_at,
+          updated_at,
+          profiles!inner (
+            name,
+            email,
+            phone
+          ),
+          employee_details (
+            employment_type,
+            hourly_rate,
+            overtime_rate,
+            position
+          )
+        `)
         .order('hire_date', { ascending: false });
 
       if (empError) throw empError;
 
-      // Fetch profile data for each employee
-      const employeesWithProfiles = await Promise.all(
-        (employeeData || []).map(async (emp) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('name, email, phone')
-            .eq('id', emp.user_id)
-            .single();
+      // Transform the data to match our interface
+      const transformedEmployees = (employeeData || []).map((emp: any) => ({
+        ...emp,
+        profiles: emp.profiles || { name: 'Unknown', email: 'N/A', phone: null },
+        employee_details: emp.employee_details || []
+      }));
 
-          const { data: details } = await supabase
-            .from('employee_details')
-            .select('employment_type, hourly_rate, overtime_rate')
-            .eq('employee_id', emp.id);
-
-          return {
-            ...emp,
-            profiles: profile || { name: 'Unknown', email: 'N/A', phone: null },
-            employee_details: details || []
-          };
-        })
-      );
-
-      setEmployees(employeesWithProfiles as any);
+      setEmployees(transformedEmployees as Employee[]);
+      
+      toast({
+        title: "Success",
+        description: `Loaded ${transformedEmployees.length} employee(s) from database`
+      });
     } catch (error: any) {
       console.error('Error fetching employees:', error);
       toast({
         title: "Error",
-        description: "Failed to load employees",
+        description: error.message || "Failed to load employees",
         variant: "destructive"
       });
     } finally {
