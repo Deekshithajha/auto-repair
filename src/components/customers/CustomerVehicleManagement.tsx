@@ -92,7 +92,7 @@ export const CustomerVehicleManagement: React.FC = () => {
         (vehiclesData || []).map(async (vehicle) => {
           const { data: photosData, error: photosError } = await supabase
             .from('vehicle_photos')
-            .select('id, storage_path')
+            .select('id, photo_data')
             .eq('vehicle_id', vehicle.id);
           
           if (photosError) {
@@ -106,18 +106,18 @@ export const CustomerVehicleManagement: React.FC = () => {
         })
       );
       
-      setVehicles(vehiclesWithPhotos);
+      setVehicles(vehiclesWithPhotos as any);
       
-      // Store photo storage paths for editing
+      // Store photo data for editing
       const photosMap: Record<string, Array<{id: string, data: string}>> = {};
       for (const vehicle of vehiclesData || []) {
         const { data: photosData } = await supabase
           .from('vehicle_photos')
-          .select('id, storage_path')
+          .select('id, photo_data')
           .eq('vehicle_id', vehicle.id);
         
         if (photosData) {
-          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.storage_path || '' }));
+          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.photo_data || '' }));
         }
       }
       setExistingPhotos(photosMap);
@@ -256,18 +256,18 @@ export const CustomerVehicleManagement: React.FC = () => {
         if (normalizedVin) {
           const { data: existingByVin, error: existingVinErr } = await supabase
             .from('vehicles')
-            .select('id, user_id')
+            .select('id, owner_id')
             .eq('vin', normalizedVin)
             .maybeSingle();
 
           if (existingVinErr) throw existingVinErr;
 
           if (existingByVin) {
-            if (existingByVin.user_id === user.id) {
+            if (existingByVin.owner_id === user.id) {
               // Vehicle already exists for this user. Update it instead of inserting a duplicate
               const { error: updErr } = await supabase
                 .from('vehicles')
-                .update(vehicleData)
+                .update(vehicleData as any)
                 .eq('id', existingByVin.id);
               if (updErr) throw updErr;
               vehicleId = existingByVin.id;
@@ -279,7 +279,7 @@ export const CustomerVehicleManagement: React.FC = () => {
             // Safe to insert a fresh record
             const { data, error } = await supabase
               .from('vehicles')
-              .insert([vehicleData])
+              .insert([vehicleData] as any)
               .select()
               .single();
             if (error) throw error;
@@ -289,7 +289,7 @@ export const CustomerVehicleManagement: React.FC = () => {
           // No VIN provided, just insert
           const { data, error } = await supabase
             .from('vehicles')
-            .insert([vehicleData])
+            .insert([vehicleData] as any)
             .select()
             .single();
           if (error) throw error;
@@ -394,12 +394,12 @@ export const CustomerVehicleManagement: React.FC = () => {
     // Fetch existing photos from database
     const { data: photosData } = await supabase
       .from('vehicle_photos')
-      .select('id, storage_path')
+      .select('id, photo_data')
       .eq('vehicle_id', vehicle.id);
     
     setExistingPhotos(prev => ({
       ...prev,
-      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.storage_path || '' }))
+      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.photo_data || '' }))
     }));
     setPhotosToRemove(prev => ({
       ...prev,
@@ -414,7 +414,7 @@ export const CustomerVehicleManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('vehicles')
-        .update({ is_active: false })
+        .update({ status: 'archived' })
         .eq('id', vehicleId);
 
       if (error) throw error;

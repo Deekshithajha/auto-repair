@@ -65,8 +65,8 @@ export const CustomerRescheduledVehicles: React.FC = () => {
         .select(`
           id,
           ticket_number,
-          reschedule_date,
-          reschedule_reason,
+          scheduled_date,
+          notes,
           description,
           status,
           vehicles:vehicle_id (
