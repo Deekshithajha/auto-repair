@@ -39,6 +39,7 @@ export function AppSidebar() {
       case 'admin':
         return [
           { title: 'Ticket Inbox', url: '/admin/tickets', icon: Mail },
+          { title: 'Quotes', url: '/admin/quotes', icon: FileText },
           { title: 'Customers', url: '/admin/customers', icon: Users },
           { title: 'Employee Management', url: '/admin/employees', icon: Users },
           { title: 'Rescheduled Vehicles', url: '/admin/rescheduled', icon: Calendar },

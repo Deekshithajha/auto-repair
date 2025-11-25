@@ -351,7 +351,7 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
                 <span className="text-2xl">🔧</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold">AUTO REPAIR INC</h1>
+                <h1 className="text-2xl font-bold whitespace-nowrap">Lakewood 76 Auto Repair Inc</h1>
                 <p className="text-blue-100">Professional Automotive Services</p>
               </div>
             </div>

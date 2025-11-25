@@ -9,7 +9,7 @@ import type { KanbanBoard, KanbanColumn, KanbanUser } from '../types/kanban-tv.t
 export const kanbanAdminApi = {
   // Boards
   async createBoard(params: { name: string; slug: string; created_by: string | null }) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_boards')
       .insert([params])
       .select()
@@ -20,7 +20,7 @@ export const kanbanAdminApi = {
   },
 
   async updateBoard(id: string, params: { name?: string; slug?: string; is_active?: boolean }) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_boards')
       .update(params)
       .eq('id', id)
@@ -32,7 +32,7 @@ export const kanbanAdminApi = {
   },
 
   async deleteBoard(id: string) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('kanban_boards')
       .delete()
       .eq('id', id);
@@ -48,7 +48,7 @@ export const kanbanAdminApi = {
     color?: string;
     wip_limit?: number | null;
   }) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_columns')
       .insert([params])
       .select()
@@ -64,7 +64,7 @@ export const kanbanAdminApi = {
     color?: string;
     wip_limit?: number | null;
   }) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_columns')
       .update(params)
       .eq('id', id)
@@ -76,7 +76,7 @@ export const kanbanAdminApi = {
   },
 
   async deleteColumn(id: string) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('kanban_columns')
       .delete()
       .eq('id', id);
@@ -86,9 +86,9 @@ export const kanbanAdminApi = {
 
   async reorderColumns(columnUpdates: { id: string; position: number }[]) {
     const promises = columnUpdates.map(({ id, position }) =>
-      supabase
+      (supabase as any)
         .from('kanban_columns')
-        .update({ position })
+        .update({ position: String(position) })
         .eq('id', id)
     );
 
@@ -99,7 +99,7 @@ export const kanbanAdminApi = {
 
   // Users
   async getUsers() {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_users')
       .select('*')
       .order('created_at', { ascending: false });
@@ -113,7 +113,7 @@ export const kanbanAdminApi = {
     password_hash: string;
     role: 'KANBAN_ADMIN' | 'KANBAN_EDITOR' | 'KANBAN_VIEWER';
   }) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_users')
       .insert([params])
       .select()
@@ -129,7 +129,7 @@ export const kanbanAdminApi = {
     role?: 'KANBAN_ADMIN' | 'KANBAN_EDITOR' | 'KANBAN_VIEWER';
     is_active?: boolean;
   }) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('kanban_users')
       .update(params)
       .eq('id', id)
@@ -141,7 +141,7 @@ export const kanbanAdminApi = {
   },
 
   async deleteUser(id: string) {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('kanban_users')
       .delete()
       .eq('id', id);

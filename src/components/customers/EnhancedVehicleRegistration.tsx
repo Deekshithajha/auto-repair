@@ -77,100 +77,7 @@ export const EnhancedVehicleRegistration: React.FC = () => {
     vin: ''
   });
 
-  // Dummy data for demonstration
-  const dummyCustomers: Customer[] = [
-    {
-      id: '11111111-1111-1111-1111-111111111111',
-      name: 'John Smith',
-      email: 'john.smith@email.com',
-      phone: '(555) 123-4567',
-      vehicles: [
-        {
-          id: 'veh-11111111-1111-1111-1111-111111111111',
-          make: 'Toyota',
-          model: 'Camry',
-          year: 2020,
-          reg_no: 'ABC-1234',
-          license_no: 'ABC-1234',
-          vin: '1HGBH41JXMN109186',
-          repair_history: [
-            {
-              id: 'repair-1',
-              ticket_number: 'WO-001',
-              description: 'Engine diagnostic and spark plug replacement',
-              status: 'completed',
-              created_at: '2024-01-15T10:30:00Z',
-              completed_at: '2024-01-18T16:00:00Z',
-              total_cost: 285.50,
-              damage_logs: [
-                {
-                  id: 'damage-1',
-                  description: 'Engine misfire detected - spark plugs worn',
-                  logged_at: '2024-01-15T11:00:00Z',
-                  logged_by: 'Alex Rodriguez',
-                  is_new_damage: false
-                },
-                {
-                  id: 'damage-2',
-                  description: 'Minor scratch on front bumper',
-                  logged_at: '2024-01-15T11:30:00Z',
-                  logged_by: 'Alex Rodriguez',
-                  is_new_damage: true
-                }
-              ]
-            },
-            {
-              id: 'repair-2',
-              ticket_number: 'WO-002',
-              description: 'Oil change and brake inspection',
-              status: 'completed',
-              created_at: '2023-12-10T09:00:00Z',
-              completed_at: '2023-12-10T11:00:00Z',
-              total_cost: 125.00,
-              damage_logs: []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: '22222222-2222-2222-2222-222222222222',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@email.com',
-      phone: '(555) 234-5678',
-      vehicles: [
-        {
-          id: 'veh-22222222-2222-2222-2222-222222222222',
-          make: 'Honda',
-          model: 'Civic',
-          year: 2019,
-          reg_no: 'XYZ-5678',
-          license_no: 'XYZ-5678',
-          vin: '2HGBH41JXMN109187',
-          repair_history: [
-            {
-              id: 'repair-3',
-              ticket_number: 'WO-003',
-              description: 'AC system repair',
-              status: 'completed',
-              created_at: '2024-01-12T09:15:00Z',
-              completed_at: '2024-01-15T15:30:00Z',
-              total_cost: 420.75,
-              damage_logs: [
-                {
-                  id: 'damage-3',
-                  description: 'AC compressor failure - refrigerant leak',
-                  logged_at: '2024-01-12T10:00:00Z',
-                  logged_by: 'Lisa Chen',
-                  is_new_damage: false
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ];
+  // Dummy data removed - now using database queries
 
   const handleSearch = async () => {
     if (!searchValue.trim()) {
@@ -185,22 +92,112 @@ export const EnhancedVehicleRegistration: React.FC = () => {
     setSearching(true);
     
     try {
-      // Simulate API call with dummy data
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       let foundCustomerData: Customer | null = null;
       
       if (searchType === 'license') {
-        foundCustomerData = dummyCustomers.find(customer => 
-          customer.vehicles.some(vehicle => 
-            vehicle.license_no.toLowerCase() === searchValue.toLowerCase() ||
-            vehicle.reg_no.toLowerCase() === searchValue.toLowerCase()
-          )
-        ) || null;
+        // Search by license plate or registration number
+        const { data: vehicles, error: vehiclesError } = await supabase
+          .from('vehicles')
+          .select(`
+            id,
+            owner_id,
+            make,
+            model,
+            year,
+            reg_no,
+            license_no,
+            vin,
+            profiles:owner_id (
+              id,
+              name,
+              email,
+              phone
+            )
+          `)
+          .or(`license_plate.ilike.%${searchValue}%,reg_no.ilike.%${searchValue}%,license_no.ilike.%${searchValue}%`)
+          .limit(1);
+
+        if (vehiclesError) throw vehiclesError;
+
+        if (vehicles && vehicles.length > 0) {
+          const vehicle = vehicles[0];
+          const profile = Array.isArray(vehicle.profiles) ? vehicle.profiles[0] : vehicle.profiles;
+          
+          // Get all vehicles for this customer
+          const { data: allVehicles } = await supabase
+            .from('vehicles')
+            .select('*')
+            .eq('owner_id', profile.id);
+
+          // Get repair history (tickets) for this vehicle
+          const { data: tickets } = await supabase
+            .from('tickets')
+            .select('*')
+            .eq('vehicle_id', vehicle.id)
+            .order('created_at', { ascending: false });
+
+          foundCustomerData = {
+            id: profile.id,
+            name: profile.name || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            vehicles: (allVehicles || []).map((v: any) => ({
+              id: v.id,
+              make: v.make,
+              model: v.model,
+              year: v.year,
+              reg_no: v.reg_no || v.license_plate || '',
+              license_no: v.license_no || v.license_plate || '',
+              vin: v.vin || '',
+              repair_history: (tickets || []).map((t: any) => ({
+                id: t.id,
+                ticket_number: t.ticket_number || t.id.slice(-8),
+                description: t.description || '',
+                status: t.status,
+                created_at: t.created_at,
+                completed_at: t.updated_at,
+                total_cost: 0, // Would need to fetch from invoices
+                damage_logs: []
+              }))
+            }))
+          };
+        }
       } else {
-        foundCustomerData = dummyCustomers.find(customer => 
-          customer.phone === searchValue || customer.phone.replace(/\D/g, '') === searchValue.replace(/\D/g, '')
-        ) || null;
+        // Search by phone number
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, email, phone')
+          .ilike('phone', `%${searchValue}%`)
+          .limit(1);
+
+        if (profilesError) throw profilesError;
+
+        if (profiles && profiles.length > 0) {
+          const profile = profiles[0];
+          
+          // Get all vehicles for this customer
+          const { data: allVehicles } = await supabase
+            .from('vehicles')
+            .select('*')
+            .eq('owner_id', profile.id);
+
+          foundCustomerData = {
+            id: profile.id,
+            name: profile.name || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            vehicles: (allVehicles || []).map((v: any) => ({
+              id: v.id,
+              make: v.make,
+              model: v.model,
+              year: v.year,
+              reg_no: v.reg_no || v.license_plate || '',
+              license_no: v.license_no || v.license_plate || '',
+              vin: v.vin || '',
+              repair_history: []
+            }))
+          };
+        }
       }
       
       if (foundCustomerData) {
@@ -216,10 +213,10 @@ export const EnhancedVehicleRegistration: React.FC = () => {
           description: "No existing customer found. You can create a new customer."
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Search Error",
-        description: "Failed to search for customer",
+        description: error.message || "Failed to search for customer",
         variant: "destructive"
       });
     } finally {

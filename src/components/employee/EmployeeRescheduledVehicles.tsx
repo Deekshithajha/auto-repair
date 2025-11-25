@@ -85,17 +85,13 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
           reschedule_date,
           description,
           status,
+          customer_id,
           vehicles:vehicle_id (
             id,
             make,
             model,
             year,
             license_plate
-          ),
-          profiles:customer_id (
-            id,
-            name,
-            phone
           )
         `)
         .eq('status', 'pending')
@@ -104,22 +100,37 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
 
       if (error) throw error;
 
+      if (!tickets || tickets.length === 0) {
+        setRescheduledVehicles([]);
+        return;
+      }
+
+      // Get customer profiles separately
+      const customerIds = [...new Set(tickets.map((t: any) => t.customer_id).filter(Boolean))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, phone')
+        .in('id', customerIds);
+
+      const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
       // Get work sessions for these tickets
-      const ticketIds = (tickets || []).map((t: any) => t.id);
+      const ticketIds = tickets.map((t: any) => t.id);
       const { data: workSessions } = await supabase
         .from('work_sessions')
         .select('id, ticket_id, status')
         .in('ticket_id', ticketIds)
         .eq('employee_id', user.id);
 
-      const vehiclesWithSessions = (tickets || []).map((ticket: any) => {
+      const vehiclesWithSessions = tickets.map((ticket: any) => {
         const session = workSessions?.find(ws => ws.ticket_id === ticket.id);
+        const customer = profilesMap.get(ticket.customer_id) || { id: ticket.customer_id, name: 'Unknown', phone: '' };
         return {
           ticket_id: ticket.id,
           ticket_number: ticket.ticket_number || ticket.id.slice(-8),
           reschedule_date: ticket.reschedule_date,
           vehicle: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
-          customer: Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles,
+          customer: customer,
           description: ticket.description,
           status: ticket.status,
           work_session_id: session?.id

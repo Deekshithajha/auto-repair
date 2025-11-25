@@ -52,150 +52,10 @@ interface Employee {
 export const AdminTicketManagement: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  // Dummy data for demonstration
-  const dummyTickets: Ticket[] = [
-    {
-      id: 'tkt-11111111-1111-1111-1111-111111111111',
-      ticket_number: 'WO-001',
-      description: 'Engine making strange noise, needs diagnostic check. Car has been running rough for the past week.',
-      status: 'in_progress',
-      created_at: '2024-01-15T10:30:00Z',
-      preferred_pickup_time: '2024-01-18T16:00:00Z',
-      user_id: '11111111-1111-1111-1111-111111111111',
-      vehicle_id: 'veh-11111111-1111-1111-1111-111111111111',
-      primary_mechanic_id: '66666666-6666-6666-6666-666666666666',
-      secondary_mechanic_id: '77777777-7777-7777-7777-777777777777',
-      vehicles: {
-        make: 'Toyota',
-        model: 'Camry',
-        year: 2020,
-        reg_no: 'ABC-1234'
-      },
-      profiles: {
-        name: 'John Smith',
-        phone: '(555) 123-4567',
-        email: 'john.smith@example.com'
-      },
-      primary_mechanic: {
-        name: 'Alex Rodriguez'
-      },
-      secondary_mechanic: {
-        name: 'Lisa Chen'
-      }
-    },
-    {
-      id: 'tkt-22222222-2222-2222-2222-222222222222',
-      ticket_number: 'WO-002',
-      description: 'AC not blowing cold air properly. System needs inspection and repair.',
-      status: 'completed',
-      created_at: '2024-01-12T09:15:00Z',
-      preferred_pickup_time: '2024-01-15T15:30:00Z',
-      user_id: '22222222-2222-2222-2222-222222222222',
-      vehicle_id: 'veh-22222222-2222-2222-2222-222222222222',
-      primary_mechanic_id: '77777777-7777-7777-7777-777777777777',
-      secondary_mechanic_id: '88888888-8888-8888-8888-888888888888',
-      vehicles: {
-        make: 'Honda',
-        model: 'Civic',
-        year: 2019,
-        reg_no: 'XYZ-5678'
-      },
-      profiles: {
-        name: 'Sarah Johnson',
-        phone: '(555) 234-5678',
-        email: 'sarah.johnson@example.com'
-      },
-      primary_mechanic: {
-        name: 'Lisa Chen'
-      },
-      secondary_mechanic: {
-        name: 'Tom Wilson'
-      }
-    },
-    {
-      id: 'tkt-33333333-3333-3333-3333-333333333333',
-      ticket_number: 'WO-003',
-      description: 'Brake squeaking and oil change needed. Regular maintenance service.',
-      status: 'pending',
-      created_at: '2024-01-14T14:20:00Z',
-      preferred_pickup_time: '2024-01-20T12:00:00Z',
-      user_id: '33333333-3333-3333-3333-333333333333',
-      vehicle_id: 'veh-33333333-3333-3333-3333-333333333333',
-      vehicles: {
-        make: 'Ford',
-        model: 'Focus',
-        year: 2021,
-        reg_no: 'DEF-9012'
-      },
-      profiles: {
-        name: 'Mike Davis',
-        phone: '(555) 345-6789',
-        email: 'mike.davis@example.com'
-      }
-    },
-    {
-      id: 'tkt-44444444-4444-4444-4444-444444444444',
-      ticket_number: 'WO-004',
-      description: 'Transmission issues - car jerks when shifting gears. Needs diagnostic.',
-      status: 'approved',
-      created_at: '2024-01-16T11:45:00Z',
-      preferred_pickup_time: '2024-01-22T10:00:00Z',
-      user_id: '44444444-4444-4444-4444-444444444444',
-      vehicle_id: 'veh-44444444-4444-4444-4444-444444444444',
-      vehicles: {
-        make: 'BMW',
-        model: 'X5',
-        year: 2022,
-        reg_no: 'GHI-3456'
-      },
-      profiles: {
-        name: 'Emily Wilson',
-        phone: '(555) 456-7890',
-        email: 'emily.wilson@example.com'
-      }
-    },
-    {
-      id: 'tkt-55555555-5555-5555-5555-555555555555',
-      ticket_number: 'WO-005',
-      description: 'Engine oil leak detected. Need to identify source and repair.',
-      status: 'assigned',
-      created_at: '2024-01-17T08:30:00Z',
-      preferred_pickup_time: '2024-01-19T14:00:00Z',
-      user_id: '55555555-5555-5555-5555-555555555555',
-      vehicle_id: 'veh-55555555-5555-5555-5555-555555555555',
-      primary_mechanic_id: '88888888-8888-8888-8888-888888888888',
-      secondary_mechanic_id: '99999999-9999-9999-9999-999999999999',
-      vehicles: {
-        make: 'Mercedes',
-        model: 'C-Class',
-        year: 2021,
-        reg_no: 'JKL-7890'
-      },
-      profiles: {
-        name: 'David Brown',
-        phone: '(555) 567-8901',
-        email: 'david.brown@example.com'
-      },
-      primary_mechanic: {
-        name: 'Tom Wilson'
-      },
-      secondary_mechanic: {
-        name: 'Maria Garcia'
-      }
-    }
-  ];
 
-  const dummyEmployees: Employee[] = [
-    { user_id: '66666666-6666-6666-6666-666666666666', name: 'Alex Rodriguez', employee_id: 'EMP001' },
-    { user_id: '77777777-7777-7777-7777-777777777777', name: 'Lisa Chen', employee_id: 'EMP002' },
-    { user_id: '88888888-8888-8888-8888-888888888888', name: 'Tom Wilson', employee_id: 'EMP003' },
-    { user_id: '99999999-9999-9999-9999-999999999999', name: 'Maria Garcia', employee_id: 'EMP004' }
-  ];
-
-  const [tickets, setTickets] = useState<Ticket[]>(dummyTickets);
-  const [loading, setLoading] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>(dummyEmployees);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [primaryMechanic, setPrimaryMechanic] = useState<Record<string, string>>({});
   const [secondaryMechanic, setSecondaryMechanic] = useState<Record<string, string>>({});
   const [declineReason, setDeclineReason] = useState<Record<string, string>>({});
@@ -207,24 +67,146 @@ export const AdminTicketManagement: React.FC = () => {
   const [selectedTicketForInvoice, setSelectedTicketForInvoice] = useState<Ticket | null>(null);
 
   useEffect(() => {
-    // Use dummy data instead of database calls
-    setTickets(dummyTickets);
-    setEmployees(dummyEmployees);
-    setLoading(false);
+    fetchTickets();
+    fetchEmployees();
   }, []);
 
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          id,
+          ticket_number,
+          description,
+          status,
+          created_at,
+          preferred_pickup_time,
+          user_id,
+          vehicle_id,
+          primary_mechanic_id,
+          secondary_mechanic_id,
+          vehicles:vehicle_id (
+            id,
+            make,
+            model,
+            year,
+            reg_no,
+            vin
+          ),
+          profiles:user_id (
+            id,
+            name,
+            phone,
+            email
+          ),
+          primary_mechanic:primary_mechanic_id (
+            id,
+            name
+          ),
+          secondary_mechanic:secondary_mechanic_id (
+            id,
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedTickets = (data || []).map((ticket: any) => ({
+        id: ticket.id,
+        ticket_number: ticket.ticket_number || ticket.id.slice(-8),
+        description: ticket.description || '',
+        status: ticket.status,
+        created_at: ticket.created_at,
+        preferred_pickup_time: ticket.preferred_pickup_time || ticket.created_at,
+        user_id: ticket.user_id,
+        vehicle_id: ticket.vehicle_id,
+        primary_mechanic_id: ticket.primary_mechanic_id,
+        secondary_mechanic_id: ticket.secondary_mechanic_id,
+        vehicles: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
+        profiles: Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles,
+        primary_mechanic: ticket.primary_mechanic ? (Array.isArray(ticket.primary_mechanic) ? ticket.primary_mechanic[0] : ticket.primary_mechanic) : undefined,
+        secondary_mechanic: ticket.secondary_mechanic ? (Array.isArray(ticket.secondary_mechanic) ? ticket.secondary_mechanic[0] : ticket.secondary_mechanic) : undefined,
+      }));
+
+      setTickets(formattedTickets);
+    } catch (error: any) {
+      console.error('Error fetching tickets:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch tickets",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select(`
+          id,
+          user_id,
+          employee_id,
+          profiles:user_id (
+            id,
+            name
+          )
+        `)
+        .eq('is_active', true)
+        .eq('employment_status', 'active');
+
+      if (error) throw error;
+
+      const formattedEmployees = (data || []).map((emp: any) => {
+        const profile = Array.isArray(emp.profiles) ? emp.profiles[0] : emp.profiles;
+        return {
+          user_id: emp.user_id,
+          name: profile?.name || 'Unknown',
+          employee_id: emp.employee_id
+        };
+      });
+
+      setEmployees(formattedEmployees);
+    } catch (error: any) {
+      console.error('Error fetching employees:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch employees",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleApprove = async (ticketId: string) => {
-    // Update dummy data instead of database
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'approved' as any }
-        : ticket
-    ));
-    
-    toast({
-      title: "Success",
-      description: "Ticket approved successfully"
-    });
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          status: 'approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+
+      await fetchTickets();
+      
+      toast({
+        title: "Success",
+        description: "Ticket approved successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve ticket",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDecline = async (ticketId: string) => {
@@ -238,20 +220,34 @@ export const AdminTicketManagement: React.FC = () => {
       return;
     }
 
-    // Update dummy data instead of database
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'declined' as any }
-        : ticket
-    ));
-    
-    setShowDeclineDialog(prev => ({ ...prev, [ticketId]: false }));
-    setDeclineReason(prev => ({ ...prev, [ticketId]: '' }));
-    
-    toast({
-      title: "Success",
-      description: "Ticket declined successfully"
-    });
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          status: 'declined',
+          decline_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+
+      await fetchTickets();
+      
+      setShowDeclineDialog(prev => ({ ...prev, [ticketId]: false }));
+      setDeclineReason(prev => ({ ...prev, [ticketId]: '' }));
+      
+      toast({
+        title: "Success",
+        description: "Ticket declined successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to decline ticket",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAssign = async (ticketId: string) => {
@@ -265,25 +261,36 @@ export const AdminTicketManagement: React.FC = () => {
       return;
     }
 
-    // Update dummy data instead of database
-    const secondaryId = secondaryMechanic[ticketId];
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { 
-            ...ticket, 
-            status: 'assigned' as any,
-            primary_mechanic_id: primaryId,
-            secondary_mechanic_id: secondaryId,
-            primary_mechanic: { name: employees.find(e => e.user_id === primaryId)?.name || '' },
-            secondary_mechanic: secondaryId ? { name: employees.find(e => e.user_id === secondaryId)?.name || '' } : undefined
-          }
-        : ticket
-    ));
-    
-    toast({
-      title: "Success",
-      description: "Mechanics assigned successfully"
-    });
+    try {
+      const secondaryId = secondaryMechanic[ticketId] || null;
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          status: 'assigned',
+          primary_mechanic_id: primaryId,
+          secondary_mechanic_id: secondaryId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+
+      await fetchTickets();
+      
+      setPrimaryMechanic(prev => ({ ...prev, [ticketId]: '' }));
+      setSecondaryMechanic(prev => ({ ...prev, [ticketId]: '' }));
+      
+      toast({
+        title: "Success",
+        description: "Mechanics assigned successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign mechanics",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditTicket = (ticketId: string) => {
@@ -304,22 +311,32 @@ export const AdminTicketManagement: React.FC = () => {
     const form = editForm[ticketId];
     if (!form) return;
 
-    // Update dummy data
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { 
-            ...ticket, 
-            description: form.description,
-            preferred_pickup_time: form.pickup_time
-          }
-        : ticket
-    ));
-    
-    setShowEditDialog(prev => ({ ...prev, [ticketId]: false }));
-    toast({
-      title: "Success",
-      description: "Ticket updated successfully"
-    });
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          description: form.description,
+          preferred_pickup_time: form.pickup_time,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+
+      await fetchTickets();
+      
+      setShowEditDialog(prev => ({ ...prev, [ticketId]: false }));
+      toast({
+        title: "Success",
+        description: "Ticket updated successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update ticket",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleReassignMechanics = (ticketId: string) => {
@@ -337,25 +354,36 @@ export const AdminTicketManagement: React.FC = () => {
       return;
     }
 
-    // Update dummy data
-    const secondaryId = secondaryMechanic[ticketId];
-    setTickets(prev => prev.map(ticket => 
-      ticket.id === ticketId 
-        ? { 
-            ...ticket, 
-            primary_mechanic_id: primaryId,
-            secondary_mechanic_id: secondaryId,
-            primary_mechanic: { name: employees.find(e => e.user_id === primaryId)?.name || '' },
-            secondary_mechanic: secondaryId ? { name: employees.find(e => e.user_id === secondaryId)?.name || '' } : undefined
-          }
-        : ticket
-    ));
-    
-    setShowReassignDialog(prev => ({ ...prev, [ticketId]: false }));
-    toast({
-      title: "Success",
-      description: "Mechanics reassigned successfully"
-    });
+    try {
+      const secondaryId = secondaryMechanic[ticketId] || null;
+      const { error } = await supabase
+        .from('tickets')
+        .update({ 
+          primary_mechanic_id: primaryId,
+          secondary_mechanic_id: secondaryId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+
+      await fetchTickets();
+      
+      setShowReassignDialog(prev => ({ ...prev, [ticketId]: false }));
+      setPrimaryMechanic(prev => ({ ...prev, [ticketId]: '' }));
+      setSecondaryMechanic(prev => ({ ...prev, [ticketId]: '' }));
+      
+      toast({
+        title: "Success",
+        description: "Mechanics reassigned successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reassign mechanics",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleGenerateInvoice = (ticket: Ticket) => {

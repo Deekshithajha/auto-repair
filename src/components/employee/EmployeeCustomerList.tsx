@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Search, Eye, Car } from 'lucide-react';
 import { EnhancedCustomerProfile } from '@/components/customers/EnhancedCustomerProfile';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -59,6 +59,7 @@ export const EmployeeCustomerList: React.FC = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
+      // Query profiles directly - employees have permission to view all profiles via RLS
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -66,39 +67,31 @@ export const EmployeeCustomerList: React.FC = () => {
 
       if (profilesError) throw profilesError;
 
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'customer');
-
-      if (rolesError) throw rolesError;
-
-      const customerIds = new Set(rolesData.map(r => r.user_id));
-      const customersData = profilesData.filter(p => customerIds.has(p.id));
-
-      setCustomers(customersData);
-      setFilteredCustomers(customersData);
+      setCustomers(profilesData || []);
+      setFilteredCustomers(profilesData || []);
 
       // Fetch vehicles for all customers
-      const { data: vehiclesData, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('*')
-        .in('owner_id', customersData.map(c => c.id));
+      if (profilesData && profilesData.length > 0) {
+        const { data: vehiclesData, error: vehiclesError } = await supabase
+          .from('vehicles')
+          .select('*')
+          .in('owner_id', profilesData.map(c => c.id));
 
-      if (vehiclesError) throw vehiclesError;
+        if (vehiclesError) throw vehiclesError;
 
-      const vehiclesByOwner: Record<string, Vehicle[]> = {};
-      vehiclesData?.forEach(vehicle => {
-        if (!vehiclesByOwner[vehicle.owner_id]) {
-          vehiclesByOwner[vehicle.owner_id] = [];
-        }
-        vehiclesByOwner[vehicle.owner_id].push(vehicle);
-      });
+        const vehiclesByOwner: Record<string, Vehicle[]> = {};
+        vehiclesData?.forEach(vehicle => {
+          if (!vehiclesByOwner[vehicle.owner_id]) {
+            vehiclesByOwner[vehicle.owner_id] = [];
+          }
+          vehiclesByOwner[vehicle.owner_id].push(vehicle);
+        });
 
-      setVehicles(vehiclesByOwner);
+        setVehicles(vehiclesByOwner);
+      }
     } catch (error: any) {
       console.error('Error fetching customers:', error);
-      toast.error('Failed to fetch customers');
+      toast.error('Failed to fetch customers: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -181,6 +174,9 @@ export const EmployeeCustomerList: React.FC = () => {
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Customer Profile</DialogTitle>
+            <DialogDescription>
+              View detailed customer information and vehicle history
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[calc(90vh-100px)]">
             {selectedCustomer && (

@@ -33,6 +33,8 @@ interface VehicleFormData {
   model: string;
   year: string;
   license_plate: string;
+  license_no?: string;
+  reg_no?: string;
   vin: string;
   engine_size: string;
   mileage: string;

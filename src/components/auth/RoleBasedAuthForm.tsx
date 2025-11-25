@@ -243,7 +243,7 @@ export const RoleBasedAuthForm: React.FC = () => {
               </g>
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">AUTO REPAIR INC</h1>
+          <h1 className="text-4xl font-bold text-white mb-2 whitespace-nowrap">Lakewood 76 Auto Repair Inc</h1>
           <p className="text-white/90 text-lg">Auto Repair Excellence</p>
         </div>
 
@@ -381,7 +381,7 @@ export const RoleBasedAuthForm: React.FC = () => {
         )}
 
         <div className="text-center text-white/60 text-sm mt-6">
-          <p>🔧 AUTO REPAIR INC • Secure Login</p>
+          <p>🔧 Lakewood 76 Auto Repair Inc • Secure Login</p>
         </div>
         </div>
       </div>

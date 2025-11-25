@@ -958,7 +958,11 @@ export const EmployeeWorkManagement: React.FC = () => {
       const userId = workSessions.find(s => s.id === sessionId)?.ticket.user_id;
       const employeeUserId = user?.id;
       let adminId: string | null = null;
-      const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(1);
+      const { data: admins } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1) as { data: Array<{ id: string }> | null; error: any };
       if (admins && admins.length > 0) adminId = admins[0].id;
 
       const inserts: any[] = [];
