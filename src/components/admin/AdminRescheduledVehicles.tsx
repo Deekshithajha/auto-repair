@@ -218,13 +218,10 @@ export const AdminRescheduledVehicles: React.FC = () => {
         .from('notifications')
         .insert([{
           user_id: vehicle.customer.id,
-          type: 'work_started',
+          type: 'service_reminder',
           title: 'Vehicle Rescheduled',
           message: `Your vehicle ${vehicle.vehicle.make} ${vehicle.vehicle.model} has been rescheduled to ${format(nextDay, 'MMM dd, yyyy')} as you did not arrive on the scheduled date.`,
-          metadata: { 
-            ticket_id: vehicle.ticket_id, 
-            reschedule_date: nextDay.toISOString() 
-          }
+          ticket_id: vehicle.ticket_id
         }]);
 
       if (notifError) console.error('Notification error:', notifError);
