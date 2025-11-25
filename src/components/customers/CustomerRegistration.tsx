@@ -120,13 +120,12 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
           const { error: vehicleError } = await supabase
             .from('vehicles')
             .insert({
-              user_id: authData.user.id,
+              owner_id: authData.user.id,
               make: customerData.make,
               model: customerData.model,
               year: yearNumber,
-              license_no: customerData.licensePlate,
-              owner_id: authData.user.id
-            });
+              license_plate: customerData.licensePlate
+            } as any);
 
           if (vehicleError) {
             console.warn('Vehicle creation failed:', vehicleError);

@@ -34,15 +34,15 @@ export const ReportsAnalytics: React.FC = () => {
 
       if (invoicesError) throw invoicesError;
 
-      const completedTickets = tickets?.filter(t => t.status === 'completed') || [];
-      const totalRevenue = invoices?.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;
+      const completedTickets = (tickets || []).filter((t: any) => t.status === 'completed');
+      const totalRevenue = (invoices || []).reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
       
       // Calculate average completion time
       const completionTimes = completedTickets
-        .filter(t => t.created_at && t.work_completed_at)
-        .map(t => {
+        .filter((t: any) => t.created_at && t.completed_date)
+        .map((t: any) => {
           const start = new Date(t.created_at).getTime();
-          const end = new Date(t.work_completed_at!).getTime();
+          const end = new Date(t.completed_date).getTime();
           return (end - start) / (1000 * 60 * 60); // Hours
         });
 

@@ -125,7 +125,7 @@ export const RevenueTracker: React.FC = () => {
     const tomorrow = format(new Date(startOfToday().getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
     // Revenue: sum of invoices.total_amount where payment_status = 'paid' and created_at is today
-    const { data: invoices, error: invError } = await supabase
+    const { data: invoices, error: invError } = await (supabase as any)
       .from('invoices')
       .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
@@ -135,7 +135,7 @@ export const RevenueTracker: React.FC = () => {
     if (invError) throw invError;
     
     // Filter to only invoices created today
-    const todayInvoices = (invoices || []).filter(inv => {
+    const todayInvoices = ((invoices as any) || []).filter((inv: any) => {
       const createdDate = inv.created_at;
       if (!createdDate) return false;
       const createdDateStr = format(parseISO(createdDate), 'yyyy-MM-dd');
