@@ -318,11 +318,11 @@ export const CustomerList: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-semibold">{customer.name}</h3>
-                      <Badge variant={getLegacyBadgeVariant(customer.legacy_status)}>
-                        {customer.legacy_status.replace('_', ' ').toUpperCase()}
+                      <Badge variant={getLegacyBadgeVariant(customer.legacy_status || 'new')}>
+                        {(customer.legacy_status || 'new').replace('_', ' ').toUpperCase()}
                       </Badge>
                       <Badge variant="outline">
-                        {customer.invoice_count} invoice{customer.invoice_count !== 1 ? 's' : ''}
+                        {customer.invoice_count || 0} invoice{(customer.invoice_count || 0) !== 1 ? 's' : ''}
                       </Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
