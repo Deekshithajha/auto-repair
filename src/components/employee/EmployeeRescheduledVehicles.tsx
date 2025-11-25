@@ -13,14 +13,13 @@ import { CalendarIcon, Car, User, Clock, PlayCircle } from 'lucide-react';
 interface RescheduledVehicle {
   ticket_id: string;
   ticket_number: string;
-  reschedule_date: string;
-  reschedule_reason: string | null;
+  scheduled_date: string;
   vehicle: {
     id: string;
     make: string;
     model: string;
     year: number;
-    reg_no: string;
+    license_plate: string;
   };
   customer: {
     id: string;
@@ -64,7 +63,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
   useEffect(() => {
     if (selectedDate) {
       const filtered = rescheduledVehicles.filter(vehicle => 
-        isSameDay(parseISO(vehicle.reschedule_date), selectedDate)
+        isSameDay(parseISO(vehicle.scheduled_date), selectedDate)
       );
       setFilteredVehicles(filtered);
     } else {
@@ -83,28 +82,25 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         .select(`
           id,
           ticket_number,
-          reschedule_date,
-          reschedule_reason,
+          scheduled_date,
           description,
           status,
-          primary_mechanic_id,
-          secondary_mechanic_id,
           vehicles:vehicle_id (
             id,
             make,
             model,
             year,
-            reg_no
+            license_plate
           ),
-          profiles:user_id (
+          profiles:customer_id (
             id,
             name,
             phone
           )
         `)
-        .not('reschedule_date', 'is', null)
-        .or(`primary_mechanic_id.eq.${user.id},secondary_mechanic_id.eq.${user.id}`)
-        .order('reschedule_date', { ascending: true });
+        .eq('status', 'pending')
+        .not('scheduled_date', 'is', null)
+        .order('scheduled_date', { ascending: true });
 
       if (error) throw error;
 
@@ -121,8 +117,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         return {
           ticket_id: ticket.id,
           ticket_number: ticket.ticket_number || ticket.id.slice(-8),
-          reschedule_date: ticket.reschedule_date,
-          reschedule_reason: ticket.reschedule_reason,
+          scheduled_date: ticket.scheduled_date,
           vehicle: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
           customer: Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles,
           description: ticket.description,
@@ -146,7 +141,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
   const getDatesWithVehicles = () => {
     const dates = new Set<string>();
     rescheduledVehicles.forEach(vehicle => {
-      const dateStr = format(parseISO(vehicle.reschedule_date), 'yyyy-MM-dd');
+      const dateStr = format(parseISO(vehicle.scheduled_date), 'yyyy-MM-dd');
       dates.add(dateStr);
     });
     return Array.from(dates).map(d => parseISO(d));
@@ -204,7 +199,6 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         .from('tickets')
         .update({
           status: 'in_progress',
-          work_started_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedVehicle.ticket_id);
@@ -216,12 +210,10 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         .from('notifications')
         .insert([{
           user_id: selectedVehicle.customer.id,
-          type: 'work_started',
+          type: 'vehicle_ready',
           title: 'Work Resumed',
           message: `Work has resumed on your vehicle ${selectedVehicle.vehicle.make} ${selectedVehicle.vehicle.model}.`,
-          metadata: { 
-            ticket_id: selectedVehicle.ticket_id
-          }
+          ticket_id: selectedVehicle.ticket_id
         }]);
 
       if (notifError) console.error('Notification error:', notifError);
@@ -334,7 +326,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4" />
-                              <span>{format(parseISO(vehicle.reschedule_date), 'MMM dd, yyyy hh:mm a')}</span>
+                              <span>{format(parseISO(vehicle.scheduled_date), 'MMM dd, yyyy hh:mm a')}</span>
                             </div>
                           </div>
                         </div>
@@ -384,8 +376,8 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                         <p className="font-semibold">{selectedVehicle.vehicle.year}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Registration</p>
-                        <p className="font-semibold">{selectedVehicle.vehicle.reg_no}</p>
+                        <p className="text-sm text-muted-foreground">License Plate</p>
+                        <p className="font-semibold">{selectedVehicle.vehicle.license_plate}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -413,30 +405,24 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Reschedule Information */}
+                {/* Schedule Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Reschedule Details</CardTitle>
+                    <CardTitle>Service Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div>
-                      <p className="text-sm text-muted-foreground">Rescheduled Date</p>
+                      <p className="text-sm text-muted-foreground">Scheduled Date</p>
                       <p className="font-semibold">
-                        {format(parseISO(selectedVehicle.reschedule_date), 'MMMM dd, yyyy hh:mm a')}
+                        {format(parseISO(selectedVehicle.scheduled_date), 'MMMM dd, yyyy hh:mm a')}
                       </p>
                     </div>
-                    {selectedVehicle.reschedule_reason && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Reason</p>
-                        <p className="font-semibold">{selectedVehicle.reschedule_reason}</p>
-                      </div>
-                    )}
                     <div>
                       <p className="text-sm text-muted-foreground">Service Description</p>
                       <p className="font-semibold">{selectedVehicle.description}</p>
                     </div>
                   </CardContent>
-                </Card>
+</Card>
 
                 {/* Actions */}
                 <div className="flex gap-2">

@@ -274,12 +274,11 @@ export const EnhancedVehicleRegistration: React.FC = () => {
       const { data: vehicleData, error: vehicleError } = await supabase
         .from('vehicles')
         .insert({
-          user_id: profileData.id,
+          owner_id: profileData.id,
           make: newVehicleForm.make,
           model: newVehicleForm.model,
           year: newVehicleForm.year,
-          reg_no: newVehicleForm.reg_no,
-          license_no: newVehicleForm.license_no,
+          license_plate: newVehicleForm.license_no,
           vin: newVehicleForm.vin || null
         })
         .select()
