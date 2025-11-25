@@ -53,6 +53,7 @@ export function AppSidebar() {
         return [
           { title: 'My Assignments', url: '/employee/assignments', icon: ClipboardList },
           { title: 'Register Customer', url: '/employee/register', icon: UserPlus },
+          { title: 'Customers', url: '/employee/customers', icon: Users },
           { title: 'Rescheduled Vehicles', url: '/employee/rescheduled', icon: Calendar },
           { title: 'Work Log', url: '/employee/worklog', icon: FileText },
           { title: 'Attendance', url: '/employee/attendance', icon: Clock },
