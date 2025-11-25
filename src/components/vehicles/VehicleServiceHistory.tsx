@@ -22,7 +22,7 @@ interface ServiceRecord {
   };
   parts?: Array<{
     id: string;
-    name: string;
+    part_name: string;
     quantity: number;
     unit_price: number;
   }>;
@@ -51,7 +51,7 @@ export const VehicleServiceHistory: React.FC<VehicleServiceHistoryProps> = ({ ve
         .select(`
           *,
           invoices:invoices(id, invoice_number, total_amount),
-          parts:parts(id, name, quantity, unit_price)
+          parts:parts(id, part_name, quantity, unit_price)
         `)
         .eq('vehicle_id', vehicleId)
         .order('created_at', { ascending: false });
@@ -246,7 +246,7 @@ export const VehicleServiceHistory: React.FC<VehicleServiceHistoryProps> = ({ ve
                       {record.parts.map((part) => (
                         <div key={part.id} className="flex justify-between text-sm">
                           <span>
-                            {part.name} <span className="text-muted-foreground">x{part.quantity}</span>
+                            {part.part_name} <span className="text-muted-foreground">x{part.quantity}</span>
                           </span>
                           <span className="font-medium">
                             {formatCurrency(part.unit_price * part.quantity)}
