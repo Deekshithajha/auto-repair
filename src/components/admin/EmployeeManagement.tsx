@@ -156,14 +156,13 @@ export const EmployeeManagement: React.FC = () => {
     if (!selectedEmployee) return;
 
     try {
-      // Update profile
+      // Update profile (without employee_id - that's in employees table)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           name: editForm.name,
           email: editForm.email,
           phone: editForm.phone,
-          employee_id: editForm.employee_id,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedEmployee.user_id);
@@ -214,10 +213,10 @@ export const EmployeeManagement: React.FC = () => {
   };
 
   const handleCreateEmployee = async () => {
-    if (!createForm.name) {
+    if (!createForm.name || !createForm.email) {
       toast({
         title: "Error",
-        description: "Name is required",
+        description: "Name and email are required",
         variant: "destructive"
       });
       return;
@@ -227,30 +226,38 @@ export const EmployeeManagement: React.FC = () => {
     const employeeId = createForm.employee_id || generateEmployeeId();
 
     try {
-      // Get current user session to use as id
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError || !authUser) throw new Error('Not authenticated');
+      // Create a new auth user for the employee
+      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: createForm.email,
+        password: tempPassword,
+        options: {
+          data: {
+            name: createForm.name
+          }
+        }
+      });
 
-      // Create user profile first
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: authUser.id,
-          name: createForm.name,
-          email: createForm.email || null,
-          phone: createForm.phone || null,
-          employee_id: employeeId
-        }])
-        .select()
-        .single();
+      if (signUpError) throw signUpError;
+      if (!authData.user) throw new Error('Failed to create user');
 
-      if (profileError) throw profileError;
+      // Profile should be auto-created by trigger, but update it with phone if needed
+      if (createForm.phone) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            phone: createForm.phone
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) console.error('Profile update error:', profileError);
+      }
 
       // Create employee record
       const { data: employeeData, error: empError } = await supabase
         .from('employees')
         .insert({
-          user_id: profileData.id,
+          user_id: authData.user.id,
           employee_id: employeeId,
           hire_date: createForm.hire_date,
           is_active: true,
@@ -260,6 +267,16 @@ export const EmployeeManagement: React.FC = () => {
         .single();
 
       if (empError) throw empError;
+
+      // Assign employee role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role: 'employee'
+        });
+
+      if (roleError) console.error('Role assignment error:', roleError);
 
       // Create employee details
       const { error: detailsError } = await supabase
@@ -275,7 +292,7 @@ export const EmployeeManagement: React.FC = () => {
 
       toast({
         title: "Success",
-        description: "Employee created successfully"
+        description: `Employee created successfully. Temporary password: ${tempPassword} (Please share this with the employee)`
       });
 
       setCreateOpen(false);
