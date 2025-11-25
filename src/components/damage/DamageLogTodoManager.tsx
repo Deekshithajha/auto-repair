@@ -197,11 +197,11 @@ export const DamageLogTodoManager: React.FC<DamageLogTodoManagerProps> = ({
 
     const { data } = await supabase
       .from('vehicle_photos')
-      .select('storage_path')
+      .select('photo_data')
       .eq('id', photoId)
       .single();
     
-    const photoPath = data?.storage_path || '';
+    const photoPath = data?.photo_data || '';
     // Cache the result
     setPhotoDataCache(prev => ({ ...prev, [photoId]: photoPath }));
     return photoPath;

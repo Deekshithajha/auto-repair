@@ -417,7 +417,7 @@ export const RevenueTracker: React.FC = () => {
     }
 
     // Fetch COGS
-    const allTicketIds = [...new Set(filteredInvoices.map(inv => inv.ticket_id))];
+    const allTicketIds = [...new Set(filteredInvoices.map(inv => inv.ticket_id))] as string[];
     if (allTicketIds.length > 0) {
       const { data: parts, error: partsError } = await supabase
         .from('parts')

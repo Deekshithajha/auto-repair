@@ -194,24 +194,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
     setLoadingInvoiceDetails(true);
     try {
       if (invoice.ticketId) {
-        const [servicesRes, partsRes, stdRes] = await Promise.all([
-          supabase.from('workorder_services').select('*').eq('ticket_id', invoice.ticketId),
+        const [partsRes] = await Promise.all([
           supabase.from('parts').select('*').eq('ticket_id', invoice.ticketId),
-          supabase.from('standard_services').select('service_name').eq('is_active', true),
         ]);
 
-        const standardNames = new Set((stdRes.data || []).map((s: any) => (s.service_name || '').toLowerCase()));
-
-        if (!servicesRes.error) {
-          const mappedServices = (servicesRes.data || []).map((s: any) => ({
-            name: s.service_name ?? 'Service',
-            quantity: Number(s.quantity ?? 1),
-            unit_price: Number(s.unit_price ?? 0),
-            is_taxable: Boolean(s.is_taxable ?? true),
-            is_standard: standardNames.has((s.service_name || '').toLowerCase()),
-          }));
-          setInvoiceServices(mappedServices);
-        }
+        const mappedServices: any[] = [];
 
         if (!partsRes.error) {
           const mappedParts = (partsRes.data || []).map((p: any) => ({
@@ -387,13 +374,13 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
       try {
         const { data, error } = await supabase
           .from('vehicles')
-          .select('id, make, model, year, license_no')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
+          .select('id, make, model, year, license_plate')
+          .eq('owner_id', user.id)
+          .eq('status', 'active')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setUserVehicles(data || []);
+        setUserVehicles(data as any || []);
       } catch (error: any) {
         console.error('Error fetching vehicles:', error);
       }

@@ -114,7 +114,7 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
         state: '',
         zip_code: '',
         preferred_notification: 'email',
-        legacy_status: 'active',
+        legacy_status: 'new',
         campaign_notes: ''
       });
 
@@ -182,42 +182,13 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
     }
   };
 
+  // Communication logging removed - table doesn't exist
   const handleLogCommunication = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('communications_log')
-        .insert([{
-          customer_id: customerId,
-          communication_type: commFormData.type,
-          direction: commFormData.direction,
-          notes: commFormData.notes || null,
-          created_by: user.id
-        }]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Communication logged"
-      });
-
-      setShowCommDialog(false);
-      setCommFormData({
-        type: 'call',
-        direction: 'outbound',
-        notes: ''
-      });
-      fetchCustomerData();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
+    toast({
+      title: "Feature Unavailable",
+      description: "Communication logging is not available in the current database schema",
+      variant: "destructive"
+    });
   };
 
   const getLegacyStatusColor = (status: Profile['legacy_status']) => {
