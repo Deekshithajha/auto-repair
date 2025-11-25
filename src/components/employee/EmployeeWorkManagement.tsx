@@ -594,15 +594,14 @@ export const EmployeeWorkManagement: React.FC = () => {
           // Convert image to base64
           const base64Data = await convertFileToBase64(photo);
           
-          // Store photo with storage_path instead of photo_data
           const { data, error } = await supabase
             .from('vehicle_photos')
             .insert({
               vehicle_id: vehicleId,
               photo_type: 'damage',
-              storage_path: `damage/${Date.now()}_${photo.name}`,
+              photo_data: base64Data,
               uploaded_by: user?.id || null
-            })
+            } as any)
             .select()
             .single();
           
@@ -992,13 +991,13 @@ export const EmployeeWorkManagement: React.FC = () => {
   const fetchStandardServices = async () => {
     try {
       const { data, error } = await supabase
-        .from('standard_services')
+        .from('services' as any)
         .select('*')
         .eq('is_active', true)
-        .order('service_name');
+        .order('name');
 
       if (error) throw error;
-      setStandardServices(data || []);
+      setStandardServices(data as any || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
       toast({

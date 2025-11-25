@@ -53,13 +53,13 @@ export const ServiceSelector: React.FC<ServiceSelectorProps> = ({ ticketId, onSe
   const fetchStandardServices = async () => {
     try {
       const { data, error } = await supabase
-        .from('standard_services')
+        .from('services' as any)
         .select('*')
         .eq('is_active', true)
-        .order('service_name');
+        .order('name');
 
       if (error) throw error;
-      setStandardServices(data || []);
+      setStandardServices(data as any || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
     }
