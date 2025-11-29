@@ -1,0 +1,57 @@
+import { Vehicle } from '../types';
+
+export const vehicles: Vehicle[] = [
+  {
+    id: 'v1',
+    customerId: 'c1',
+    plate: 'ABC-1234',
+    make: 'Toyota',
+    model: 'Camry',
+    year: 2020,
+    color: 'Silver',
+    vin: '1HGBH41JXMN109186',
+    nickname: 'Silver Bullet',
+  },
+  {
+    id: 'v2',
+    customerId: 'c1',
+    plate: 'XYZ-5678',
+    make: 'Honda',
+    model: 'CR-V',
+    year: 2019,
+    color: 'Blue',
+    vin: '2HGFC2F59KH542391',
+  },
+  {
+    id: 'v3',
+    customerId: 'c2',
+    plate: 'DEF-9012',
+    make: 'Ford',
+    model: 'F-150',
+    year: 2021,
+    color: 'Black',
+    vin: '1FTFW1E84MKE12345',
+    nickname: 'The Beast',
+  },
+  {
+    id: 'v4',
+    customerId: 'c3',
+    plate: 'GHI-3456',
+    make: 'Tesla',
+    model: 'Model 3',
+    year: 2022,
+    color: 'White',
+    vin: '5YJ3E1EA8KF123456',
+  },
+  {
+    id: 'v5',
+    customerId: 'c1',
+    plate: 'JKL-7890',
+    make: 'Chevrolet',
+    model: 'Silverado',
+    year: 2018,
+    color: 'Red',
+    vin: '1GCVKREC8JZ123456',
+  },
+];
+

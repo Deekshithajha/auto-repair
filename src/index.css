@@ -2,185 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    /* Enhanced Red-Blue Theme for 76 Auto Repair */
-    --primary: 358 89% 52%; /* Vibrant Crimson Red */
-    --primary-foreground: 0 0% 98%;
-    --primary-light: 358 79% 62%;
-    --primary-glow: 358 69% 72%;
-
-    --secondary: 217 91% 55%; /* Electric Blue */
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: 217 81% 65%;
-    --secondary-glow: 217 71% 75%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 355 45% 95%; /* Light red accent */
-    --accent-foreground: 355 85% 25%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 355 85% 45%;
-
-    --radius: 0.5rem;
-
-    /* Status Colors */
-    --status-pending: 45 100% 51%; /* Amber */
-    --status-approved: 142 76% 36%; /* Green */
-    --status-declined: 0 84% 60%; /* Red */
-    --status-assigned: 215 85% 50%; /* Blue */
-    --status-in-progress: 262 83% 58%; /* Purple */
-    --status-ready: 173 58% 39%; /* Teal */
-    --status-completed: 142 76% 36%; /* Green */
-
-    /* Enhanced Gradients for 76 Auto Repair */
-    --gradient-primary: linear-gradient(145deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-secondary: linear-gradient(145deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
-    --gradient-accent: linear-gradient(45deg, hsl(var(--primary) / 0.1), hsl(var(--secondary) / 0.1));
-
-    /* Shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 355 85% 45%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 215 85% 50%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    /* Dark theme adjustments for red-blue palette */
-    --primary: 355 75% 55%;
-    --primary-foreground: 0 0% 10%;
-    --primary-light: 355 65% 65%;
-    --primary-glow: 355 55% 75%;
-
-    --secondary: 215 75% 60%;
-    --secondary-foreground: 0 0% 10%;
-    --secondary-light: 215 65% 70%;
-    --secondary-glow: 215 55% 80%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 355 25% 15%;
-    --accent-foreground: 355 75% 75%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 355 75% 55%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
-
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.4);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.5);
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 355 75% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 215 75% 60%;
-  }
-}
-
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border-soft;
   }
-
+  
   body {
-    @apply bg-background text-foreground;
-  }
-
-  /* Ensure dropdowns and popovers have proper backgrounds and z-index */
-  [role="dialog"],
-  [data-radix-popper-content-wrapper] {
-    @apply z-50;
+    @apply bg-bg-soft text-text-main antialiased;
   }
 }
 
-/* Mobile-First Responsive Utilities */
 @layer utilities {
-  /* Touch-friendly spacing */
-  .touch-spacing {
-    @apply p-4 sm:p-6;
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  /* Mobile-optimized text */
-  .text-mobile-sm {
-    @apply text-xs sm:text-sm;
+  /* Scrolling animation for landing page background */
+  @keyframes scroll-up-slow {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
   }
 
-  .text-mobile-base {
-    @apply text-sm sm:text-base;
+  @keyframes scroll-up-medium {
+    0% {
+      transform: translateY(-25%);
+    }
+    100% {
+      transform: translateY(-75%);
+    }
   }
 
-  .text-mobile-lg {
-    @apply text-base sm:text-lg;
+  @keyframes scroll-up-fast {
+    0% {
+      transform: translateY(-50%);
+    }
+    100% {
+      transform: translateY(-100%);
+    }
   }
 
-  /* Mobile grid layouts */
-  .grid-mobile-1 {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  .animate-scroll-up-slow {
+    animation: scroll-up-slow 30s linear infinite;
   }
 
-  /* Responsive flex utilities */
-  .flex-mobile-col {
-    @apply flex flex-col sm:flex-row;
+  .animate-scroll-up-medium {
+    animation: scroll-up-medium 25s linear infinite;
   }
 
-  /* Image optimization for mobile */
-  .img-mobile-contain {
-    @apply w-full h-auto object-contain;
-  }
-
-  /* Safe area padding for mobile notches */
-  .safe-top {
-    padding-top: max(env(safe-area-inset-top), 0.5rem);
-  }
-
-  .safe-bottom {
-    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  .animate-scroll-up-fast {
+    animation: scroll-up-fast 20s linear infinite;
   }
 }
+
