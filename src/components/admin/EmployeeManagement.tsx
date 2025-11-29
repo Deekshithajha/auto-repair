@@ -84,54 +84,42 @@ export const EmployeeManagement: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch employees with joined profile and detail data
+      // Fetch employees with joined profile data manually
       const { data: employeeData, error: empError } = await supabase
         .from('employees')
-        .select(`
-          id,
-          user_id,
-          employee_id,
-          hire_date,
-          is_active,
-          employment_status,
-          termination_date,
-          termination_reason,
-          created_at,
-          updated_at,
-          profiles (
-            name,
-            email,
-            phone
-          ),
-          employee_details (
-            employment_type,
-            hourly_rate,
-            overtime_rate,
-            position
-          )
-        `)
+        .select('*')
         .order('hire_date', { ascending: false });
 
       if (empError) throw empError;
 
-      // Transform the data to match our interface
-      const transformedEmployees = (employeeData || []).map((emp: any) => ({
-        ...emp,
-        profiles: emp.profiles || { name: 'Unknown', email: 'N/A', phone: null },
-        employee_details: emp.employee_details || []
-      }));
+      // Fetch profile data for each employee
+      const employeesWithProfiles = await Promise.all(
+        (employeeData || []).map(async (emp) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name, email, phone')
+            .eq('id', emp.user_id)
+            .single();
 
-      setEmployees(transformedEmployees as Employee[]);
-      
-      toast({
-        title: "Success",
-        description: `Loaded ${transformedEmployees.length} employee(s) from database`
-      });
+          const { data: details } = await supabase
+            .from('employee_details')
+            .select('employment_type, hourly_rate, overtime_rate')
+            .eq('employee_id', emp.id);
+
+          return {
+            ...emp,
+            profiles: profile || { name: 'Unknown', email: 'N/A', phone: null },
+            employee_details: details || []
+          };
+        })
+      );
+
+      setEmployees(employeesWithProfiles as any);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to load employees",
+        description: "Failed to load employees",
         variant: "destructive"
       });
     } finally {
@@ -168,13 +156,14 @@ export const EmployeeManagement: React.FC = () => {
     if (!selectedEmployee) return;
 
     try {
-      // Update profile (without employee_id - that's in employees table)
+      // Update profile
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           name: editForm.name,
           email: editForm.email,
           phone: editForm.phone,
+          employee_id: editForm.employee_id,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedEmployee.user_id);
@@ -225,10 +214,10 @@ export const EmployeeManagement: React.FC = () => {
   };
 
   const handleCreateEmployee = async () => {
-    if (!createForm.name || !createForm.email) {
+    if (!createForm.name) {
       toast({
         title: "Error",
-        description: "Name and email are required",
+        description: "Name is required",
         variant: "destructive"
       });
       return;
@@ -238,38 +227,30 @@ export const EmployeeManagement: React.FC = () => {
     const employeeId = createForm.employee_id || generateEmployeeId();
 
     try {
-      // Create a new auth user for the employee
-      const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: createForm.email,
-        password: tempPassword,
-        options: {
-          data: {
-            name: createForm.name
-          }
-        }
-      });
+      // Get current user session to use as id
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser) throw new Error('Not authenticated');
 
-      if (signUpError) throw signUpError;
-      if (!authData.user) throw new Error('Failed to create user');
+      // Create user profile first
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: authUser.id,
+          name: createForm.name,
+          email: createForm.email || null,
+          phone: createForm.phone || null,
+          employee_id: employeeId
+        }])
+        .select()
+        .single();
 
-      // Profile should be auto-created by trigger, but update it with phone if needed
-      if (createForm.phone) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            phone: createForm.phone
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) console.error('Profile update error:', profileError);
-      }
+      if (profileError) throw profileError;
 
       // Create employee record
       const { data: employeeData, error: empError } = await supabase
         .from('employees')
         .insert({
-          user_id: authData.user.id,
+          user_id: profileData.id,
           employee_id: employeeId,
           hire_date: createForm.hire_date,
           is_active: true,
@@ -279,16 +260,6 @@ export const EmployeeManagement: React.FC = () => {
         .single();
 
       if (empError) throw empError;
-
-      // Assign employee role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: 'employee'
-        });
-
-      if (roleError) console.error('Role assignment error:', roleError);
 
       // Create employee details
       const { error: detailsError } = await supabase
@@ -304,7 +275,7 @@ export const EmployeeManagement: React.FC = () => {
 
       toast({
         title: "Success",
-        description: `Employee created successfully. Temporary password: ${tempPassword} (Please share this with the employee)`
+        description: "Employee created successfully"
       });
 
       setCreateOpen(false);

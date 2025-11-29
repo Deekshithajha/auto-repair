@@ -121,28 +121,27 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
 
       if (vehicleError) throw vehicleError;
       
-      const vehicle = vehicleData as any;
-      setVehicle(vehicle as Vehicle);
+      setVehicle(vehicleData as Vehicle);
       setCustomerFormData({
-        make: vehicle.make,
-        model: vehicle.model,
-        year: vehicle.year,
-        reg_no: vehicle.reg_no || vehicle.license_plate || '',
-        license_no: vehicle.license_no || vehicle.license_plate || ''
+        make: vehicleData.make,
+        model: vehicleData.model,
+        year: vehicleData.year,
+        reg_no: vehicleData.reg_no || '',
+        license_no: vehicleData.license_no || ''
       });
       
       setMechanicFormData({
-        vin: vehicle.vin || '',
-        engine_size: vehicle.engine_size || '',
-        mileage: vehicle.mileage || 0,
-        trim_code: vehicle.trim_code || '',
-        drive_train: vehicle.drive_train || '',
-        location_status: (vehicle.location_status as 'in_shop' | 'not_in_shop') || 'not_in_shop',
-        is_active: vehicle.is_active
+        vin: vehicleData.vin || '',
+        engine_size: vehicleData.engine_size || '',
+        mileage: vehicleData.mileage || 0,
+        trim_code: vehicleData.trim_code || '',
+        drive_train: vehicleData.drive_train || '',
+        location_status: (vehicleData.location_status as 'in_shop' | 'not_in_shop') || 'not_in_shop',
+        is_active: vehicleData.is_active
       });
 
-      if (vehicle.expected_return_date) {
-        setExpectedReturnDate(new Date(vehicle.expected_return_date));
+      if (vehicleData.expected_return_date) {
+        setExpectedReturnDate(new Date(vehicleData.expected_return_date));
       }
 
       // Fetch photos
@@ -150,16 +149,11 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
         .from('vehicle_photos')
         .select('*')
         .eq('vehicle_id', vehicleId)
-        .order('created_at', { ascending: false });
+        .order('uploaded_at', { ascending: false });
 
-      setPhotos((photosData || []).map((p: any) => ({
-        id: p.id,
-        vehicle_id: p.vehicle_id,
-        photo_type: p.photo_type as 'exterior' | 'interior' | 'vin_sticker' | 'damage',
-        storage_path: p.storage_path,
-        uploaded_at: p.uploaded_at || p.created_at,
-        uploaded_by: p.uploaded_by,
-        created_at: p.created_at
+      setPhotos((photosData || []).map(p => ({
+        ...p,
+        photo_type: p.photo_type as 'exterior' | 'interior' | 'vin_sticker' | 'damage'
       })));
 
       // Fetch damage log
@@ -199,7 +193,7 @@ export const EnhancedVehicleProfile: React.FC<EnhancedVehicleProfileProps> = ({ 
         // Create new vehicle
         const { data, error } = await supabase
           .from('vehicles')
-          .insert([{ ...customerFormData, owner_id: user.id }])
+          .insert([{ ...customerFormData, user_id: user.id }])
           .select()
           .single();
         

@@ -16,7 +16,8 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
-  license_plate?: string;
+  license_no?: string;
+  reg_no?: string;
   vin?: string;
   engine_size?: string;
   mileage?: number;
@@ -32,9 +33,8 @@ interface VehicleFormData {
   make: string;
   model: string;
   year: string;
-  license_plate: string;
-  license_no?: string;
-  reg_no?: string;
+  license_no: string;
+  reg_no: string;
   vin: string;
   engine_size: string;
   mileage: string;
@@ -57,7 +57,8 @@ export const CustomerVehicleManagement: React.FC = () => {
     make: '',
     model: '',
     year: new Date().getFullYear().toString(),
-    license_plate: '',
+    license_no: '',
+    reg_no: '',
     vin: '',
     engine_size: '',
     mileage: '',
@@ -81,7 +82,7 @@ export const CustomerVehicleManagement: React.FC = () => {
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
         .select('*')
-        .eq('owner_id', user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (vehiclesError) throw vehiclesError;
@@ -91,7 +92,7 @@ export const CustomerVehicleManagement: React.FC = () => {
         (vehiclesData || []).map(async (vehicle) => {
           const { data: photosData, error: photosError } = await supabase
             .from('vehicle_photos')
-            .select('id, photo_data')
+            .select('id, storage_path')
             .eq('vehicle_id', vehicle.id);
           
           if (photosError) {
@@ -105,18 +106,18 @@ export const CustomerVehicleManagement: React.FC = () => {
         })
       );
       
-      setVehicles(vehiclesWithPhotos as any);
+      setVehicles(vehiclesWithPhotos);
       
-      // Store photo data for editing
+      // Store photo storage paths for editing
       const photosMap: Record<string, Array<{id: string, data: string}>> = {};
       for (const vehicle of vehiclesData || []) {
         const { data: photosData } = await supabase
           .from('vehicle_photos')
-          .select('id, photo_data')
+          .select('id, storage_path')
           .eq('vehicle_id', vehicle.id);
         
         if (photosData) {
-          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.photo_data || '' }));
+          photosMap[vehicle.id] = photosData.map(p => ({ id: p.id, data: p.storage_path || '' }));
         }
       }
       setExistingPhotos(photosMap);
@@ -226,13 +227,14 @@ export const CustomerVehicleManagement: React.FC = () => {
         make: formData.make,
         model: formData.model,
         year: parseInt(formData.year),
-        license_plate: formData.license_plate || null,
+        license_no: formData.license_no || null,
+        reg_no: formData.reg_no || null,
         vin: normalizedVin || null,
         engine_size: formData.engine_size || null,
         mileage: formData.mileage ? parseInt(formData.mileage) : null,
         trim_code: formData.trim_code || null,
         drive_train: formData.drive_train || null,
-        owner_id: user.id,
+        user_id: user.id,
         is_active: true
       };
 
@@ -254,18 +256,18 @@ export const CustomerVehicleManagement: React.FC = () => {
         if (normalizedVin) {
           const { data: existingByVin, error: existingVinErr } = await supabase
             .from('vehicles')
-            .select('id, owner_id')
+            .select('id, user_id')
             .eq('vin', normalizedVin)
             .maybeSingle();
 
           if (existingVinErr) throw existingVinErr;
 
           if (existingByVin) {
-            if (existingByVin.owner_id === user.id) {
+            if (existingByVin.user_id === user.id) {
               // Vehicle already exists for this user. Update it instead of inserting a duplicate
               const { error: updErr } = await supabase
                 .from('vehicles')
-                .update(vehicleData as any)
+                .update(vehicleData)
                 .eq('id', existingByVin.id);
               if (updErr) throw updErr;
               vehicleId = existingByVin.id;
@@ -277,7 +279,7 @@ export const CustomerVehicleManagement: React.FC = () => {
             // Safe to insert a fresh record
             const { data, error } = await supabase
               .from('vehicles')
-              .insert([vehicleData] as any)
+              .insert([vehicleData])
               .select()
               .single();
             if (error) throw error;
@@ -287,7 +289,7 @@ export const CustomerVehicleManagement: React.FC = () => {
           // No VIN provided, just insert
           const { data, error } = await supabase
             .from('vehicles')
-            .insert([vehicleData] as any)
+            .insert([vehicleData])
             .select()
             .single();
           if (error) throw error;
@@ -345,7 +347,8 @@ export const CustomerVehicleManagement: React.FC = () => {
         make: '',
         model: '',
         year: new Date().getFullYear().toString(),
-        license_plate: '',
+        license_no: '',
+        reg_no: '',
         vin: '',
         engine_size: '',
         mileage: '',
@@ -379,7 +382,8 @@ export const CustomerVehicleManagement: React.FC = () => {
       make: vehicle.make,
       model: vehicle.model,
       year: vehicle.year.toString(),
-      license_plate: vehicle.license_plate || '',
+      license_no: vehicle.license_no || '',
+      reg_no: vehicle.reg_no || '',
       vin: vehicle.vin || '',
       engine_size: vehicle.engine_size || '',
       mileage: vehicle.mileage?.toString() || '',
@@ -390,12 +394,12 @@ export const CustomerVehicleManagement: React.FC = () => {
     // Fetch existing photos from database
     const { data: photosData } = await supabase
       .from('vehicle_photos')
-      .select('id, photo_data')
+      .select('id, storage_path')
       .eq('vehicle_id', vehicle.id);
     
     setExistingPhotos(prev => ({
       ...prev,
-      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.photo_data || '' }))
+      [vehicle.id]: (photosData || []).map(p => ({ id: p.id, data: p.storage_path || '' }))
     }));
     setPhotosToRemove(prev => ({
       ...prev,
@@ -410,7 +414,7 @@ export const CustomerVehicleManagement: React.FC = () => {
     try {
       const { error } = await supabase
         .from('vehicles')
-        .update({ status: 'archived' })
+        .update({ is_active: false })
         .eq('id', vehicleId);
 
       if (error) throw error;
@@ -436,7 +440,8 @@ export const CustomerVehicleManagement: React.FC = () => {
       make: '',
       model: '',
       year: new Date().getFullYear().toString(),
-      license_plate: '',
+      license_no: '',
+      reg_no: '',
       vin: '',
       engine_size: '',
       mileage: '',
@@ -715,7 +720,7 @@ export const CustomerVehicleManagement: React.FC = () => {
                     {vehicle.year} {vehicle.make} {vehicle.model}
                   </CardTitle>
                   <CardDescription>
-                    {vehicle.license_plate && `License: ${vehicle.license_plate}`}
+                    {vehicle.license_no && `License: ${vehicle.license_no}`}
                   </CardDescription>
                 </div>
                 <Badge variant="outline" className="text-xs">
@@ -730,9 +735,9 @@ export const CustomerVehicleManagement: React.FC = () => {
                     <strong>VIN:</strong> {vehicle.vin}
                   </div>
                 )}
-                {vehicle.license_plate && (
+                {vehicle.reg_no && (
                   <div className="text-muted-foreground">
-                    <strong>License Plate:</strong> {vehicle.license_plate}
+                    <strong>Reg:</strong> {vehicle.reg_no}
                   </div>
                 )}
                 {vehicle.engine_size && (
@@ -840,8 +845,8 @@ export const CustomerVehicleManagement: React.FC = () => {
                   Complete service history for {vehicles.find(v => v.id === selectedVehicleForHistory)?.year}{' '}
                   {vehicles.find(v => v.id === selectedVehicleForHistory)?.make}{' '}
                   {vehicles.find(v => v.id === selectedVehicleForHistory)?.model}
-                  {vehicles.find(v => v.id === selectedVehicleForHistory)?.license_plate && 
-                    ` (${vehicles.find(v => v.id === selectedVehicleForHistory)?.license_plate})`}
+                  {vehicles.find(v => v.id === selectedVehicleForHistory)?.license_no && 
+                    ` (${vehicles.find(v => v.id === selectedVehicleForHistory)?.license_no})`}
                 </>
               )}
             </DialogDescription>

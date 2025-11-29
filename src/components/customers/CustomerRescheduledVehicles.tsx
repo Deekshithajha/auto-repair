@@ -17,7 +17,7 @@ interface RescheduledVehicle {
     make: string;
     model: string;
     year: number;
-    license_plate: string;
+    reg_no: string;
   };
   description: string;
   status: string;
@@ -42,7 +42,7 @@ export const CustomerRescheduledVehicles: React.FC = () => {
       const subscription = supabase
         .channel('rescheduled_vehicles_changes')
         .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'tickets', filter: `customer_id=eq.${user.id}` },
+          { event: '*', schema: 'public', table: 'tickets', filter: `user_id=eq.${user.id}` },
           () => {
             fetchRescheduledVehicles();
           }
@@ -67,7 +67,6 @@ export const CustomerRescheduledVehicles: React.FC = () => {
           ticket_number,
           reschedule_date,
           reschedule_reason,
-          notes,
           description,
           status,
           vehicles:vehicle_id (
@@ -75,10 +74,10 @@ export const CustomerRescheduledVehicles: React.FC = () => {
             make,
             model,
             year,
-            license_plate
+            reg_no
           )
         `)
-        .eq('customer_id', user.id)
+        .eq('user_id', user.id)
         .not('reschedule_date', 'is', null)
         .order('reschedule_date', { ascending: true });
 
@@ -172,7 +171,7 @@ export const CustomerRescheduledVehicles: React.FC = () => {
                         {vehicle.vehicle.make} {vehicle.vehicle.model} ({vehicle.vehicle.year})
                       </CardTitle>
                       <CardDescription className="mt-1">
-                        License Plate: {vehicle.vehicle.license_plate} | Ticket: {vehicle.ticket_number}
+                        Registration: {vehicle.vehicle.reg_no} | Ticket: {vehicle.ticket_number}
                       </CardDescription>
                     </div>
                   </div>

@@ -39,51 +39,60 @@ export const InvoiceList: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          id,
-          invoice_number,
-          ticket_id,
-          total_amount,
-          payment_status,
-          created_at,
-          tickets:ticket_id (
-            ticket_number,
-            profiles:user_id (
-              name
-            ),
-            vehicles:vehicle_id (
-              make,
-              model,
-              year
-            )
-          )
-        `)
-        .order('created_at', { ascending: false });
+      // For now, using dummy data since we need to create the invoices table
+      // In a real implementation, this would fetch from an invoices table
+      const dummyInvoices: Invoice[] = [
+        {
+          id: 'INV-001',
+          ticket_id: 'TICKET-001',
+          ticket_number: 'TICKET-001',
+          customer_name: 'John Smith',
+          vehicle_info: '2020 Toyota Camry',
+          total_amount: 1250.75,
+          created_at: '2024-01-16T10:30:00Z',
+          status: 'paid',
+          services_count: 3,
+          parts_count: 2
+        },
+        {
+          id: 'INV-002',
+          ticket_id: 'TICKET-002',
+          ticket_number: 'TICKET-002',
+          customer_name: 'Sarah Johnson',
+          vehicle_info: '2019 Honda Civic',
+          total_amount: 850.50,
+          created_at: '2024-01-15T14:20:00Z',
+          status: 'sent',
+          services_count: 2,
+          parts_count: 1
+        },
+        {
+          id: 'INV-003',
+          ticket_id: 'TICKET-003',
+          ticket_number: 'TICKET-003',
+          customer_name: 'Mike Davis',
+          vehicle_info: '2021 Ford Focus',
+          total_amount: 2100.00,
+          created_at: '2024-01-14T09:15:00Z',
+          status: 'overdue',
+          services_count: 4,
+          parts_count: 3
+        },
+        {
+          id: 'INV-004',
+          ticket_id: 'TICKET-004',
+          ticket_number: 'TICKET-004',
+          customer_name: 'Emily Brown',
+          vehicle_info: '2018 BMW X3',
+          total_amount: 3200.25,
+          created_at: '2024-01-13T16:45:00Z',
+          status: 'draft',
+          services_count: 5,
+          parts_count: 4
+        }
+      ];
 
-      if (error) throw error;
-
-      const formattedInvoices = (data || []).map((inv: any) => {
-        const ticket = Array.isArray(inv.tickets) ? inv.tickets[0] : inv.tickets;
-        const profile = ticket?.profiles ? (Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles) : null;
-        const vehicle = ticket?.vehicles ? (Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles) : null;
-
-        return {
-          id: inv.invoice_number || inv.id,
-          ticket_id: inv.ticket_id,
-          ticket_number: ticket?.ticket_number || 'N/A',
-          customer_name: profile?.name || 'Unknown',
-          vehicle_info: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A',
-          total_amount: Number(inv.total_amount || 0),
-          created_at: inv.created_at,
-          status: (inv.payment_status || 'draft') as 'draft' | 'sent' | 'paid' | 'overdue',
-          services_count: 0, // Would need to count from invoice_services
-          parts_count: 0 // Would need to count from parts table
-        };
-      });
-
-      setInvoices(formattedInvoices);
+      setInvoices(dummyInvoices);
     } catch (error: any) {
       console.error('Error fetching invoices:', error);
       toast({

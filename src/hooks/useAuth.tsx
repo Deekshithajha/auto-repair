@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       toast({
         title: "Account Created",
-        description: "Welcome to Lakewood 76 Auto Repair Inc! You can now access your dashboard.",
+        description: "Welcome to AUTO REPAIR INC! You can now access your dashboard.",
       });
       
       // Auto-confirm user by signing them in immediately

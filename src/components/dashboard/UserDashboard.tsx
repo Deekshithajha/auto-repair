@@ -94,6 +94,42 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
   const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState<string | null>(null);
   const [userVehicles, setUserVehicles] = useState<Array<{ id: string; make: string; model: string; year: number; license_no?: string }>>([]);
 
+  // Dummy data for demonstration
+  const dummyTickets: Ticket[] = [
+    {
+      id: '1',
+      status: 'in_progress',
+      description: 'Engine making strange noise, needs diagnostic check. Car has been running rough for the past week.',
+      created_at: '2024-01-15T10:30:00Z',
+      vehicles: {
+        make: 'Toyota',
+        model: 'Camry',
+        year: 2020
+      }
+    },
+    {
+      id: '2',
+      status: 'completed',
+      description: 'Oil change and brake pad replacement. Regular maintenance service.',
+      created_at: '2024-01-10T14:20:00Z',
+      vehicles: {
+        make: 'Honda',
+        model: 'Civic',
+        year: 2019
+      }
+    },
+    {
+      id: '3',
+      status: 'pending',
+      description: 'Air conditioning not working properly. Blowing warm air instead of cold.',
+      created_at: '2024-01-12T09:15:00Z',
+      vehicles: {
+        make: 'Ford',
+        model: 'Focus',
+        year: 2021
+      }
+    }
+  ];
 
   const dummyInvoices = [
     {
@@ -158,11 +194,24 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
     setLoadingInvoiceDetails(true);
     try {
       if (invoice.ticketId) {
-        const [partsRes] = await Promise.all([
+        const [servicesRes, partsRes, stdRes] = await Promise.all([
+          supabase.from('workorder_services').select('*').eq('ticket_id', invoice.ticketId),
           supabase.from('parts').select('*').eq('ticket_id', invoice.ticketId),
+          supabase.from('standard_services').select('service_name').eq('is_active', true),
         ]);
 
-        const mappedServices: any[] = [];
+        const standardNames = new Set((stdRes.data || []).map((s: any) => (s.service_name || '').toLowerCase()));
+
+        if (!servicesRes.error) {
+          const mappedServices = (servicesRes.data || []).map((s: any) => ({
+            name: s.service_name ?? 'Service',
+            quantity: Number(s.quantity ?? 1),
+            unit_price: Number(s.unit_price ?? 0),
+            is_taxable: Boolean(s.is_taxable ?? true),
+            is_standard: standardNames.has((s.service_name || '').toLowerCase()),
+          }));
+          setInvoiceServices(mappedServices);
+        }
 
         if (!partsRes.error) {
           const mappedParts = (partsRes.data || []).map((p: any) => ({
@@ -204,211 +253,133 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
     }
   };
 
-  const [notifications, setNotifications] = useState<Array<{
-    id: string;
-    title: string;
-    message: string;
-    date: string;
-    type: string;
-  }>>([]);
+  const dummyNotifications = [
+    {
+      id: '1',
+      title: 'Repair Update',
+      message: 'Your Toyota Camry diagnostic is complete. Engine issue identified - needs spark plug replacement.',
+      date: '2024-01-16T08:30:00Z',
+      type: 'info'
+    },
+    {
+      id: '2',
+      title: 'Service Reminder',
+      message: 'Your Honda Civic is due for its next oil change in 500 miles.',
+      date: '2024-01-14T10:00:00Z',
+      type: 'reminder'
+    },
+    {
+      id: '3',
+      title: 'Payment Confirmation',
+      message: 'Payment of $245.50 for invoice INV-001 has been processed successfully.',
+      date: '2024-01-10T15:45:00Z',
+      type: 'success'
+    }
+  ];
+
+  const dummyVehicleStatus: VehicleStatus[] = [
+    {
+      id: 'vs-1',
+      vehicle: {
+        make: 'Toyota',
+        model: 'Camry',
+        year: 2020,
+        reg_no: 'ABC-1234',
+        color: 'Silver',
+        mileage: 45000
+      },
+      current_ticket: {
+        id: 'TICKET-001',
+        description: 'Engine making strange noise, needs diagnostic check',
+        status: 'in_progress',
+        progress_percentage: 75,
+        estimated_completion: '2024-01-18T16:00:00Z',
+        assigned_mechanic: 'Mike Johnson',
+        work_stages: [
+          { stage: 'Initial Inspection', status: 'completed', completed_at: '2024-01-16T09:00:00Z' },
+          { stage: 'Engine Diagnostic', status: 'completed', completed_at: '2024-01-16T11:30:00Z' },
+          { stage: 'Parts Ordering', status: 'completed', completed_at: '2024-01-16T14:00:00Z' },
+          { stage: 'Spark Plug Replacement', status: 'in_progress' },
+          { stage: 'Final Testing', status: 'pending' },
+          { stage: 'Quality Check', status: 'pending' }
+        ]
+      },
+      service_history: [
+        { date: '2024-01-10', service: 'Oil Change & Filter', cost: 45.00, status: 'completed' },
+        { date: '2023-12-15', service: 'Brake Pad Replacement', cost: 120.00, status: 'completed' },
+        { date: '2023-11-20', service: 'Tire Rotation', cost: 25.00, status: 'completed' }
+      ]
+    },
+    {
+      id: 'vs-2',
+      vehicle: {
+        make: 'Honda',
+        model: 'Civic',
+        year: 2019,
+        reg_no: 'XYZ-5678',
+        color: 'Blue',
+        mileage: 52000
+      },
+      current_ticket: {
+        id: 'TICKET-002',
+        description: 'AC not blowing cold air properly',
+        status: 'completed',
+        progress_percentage: 100,
+        estimated_completion: '2024-01-15T15:30:00Z',
+        assigned_mechanic: 'Sarah Wilson',
+        work_stages: [
+          { stage: 'AC System Inspection', status: 'completed', completed_at: '2024-01-15T09:00:00Z' },
+          { stage: 'Refrigerant Leak Test', status: 'completed', completed_at: '2024-01-15T10:30:00Z' },
+          { stage: 'Compressor Replacement', status: 'completed', completed_at: '2024-01-15T13:00:00Z' },
+          { stage: 'System Recharge', status: 'completed', completed_at: '2024-01-15T14:30:00Z' },
+          { stage: 'Final Testing', status: 'completed', completed_at: '2024-01-15T15:00:00Z' },
+          { stage: 'Quality Check', status: 'completed', completed_at: '2024-01-15T15:30:00Z' }
+        ]
+      },
+      service_history: [
+        { date: '2024-01-15', service: 'AC System Repair', cost: 285.50, status: 'completed' },
+        { date: '2023-12-10', service: 'Transmission Service', cost: 180.00, status: 'completed' },
+        { date: '2023-10-25', service: 'Battery Replacement', cost: 95.00, status: 'completed' }
+      ]
+    },
+    {
+      id: 'vs-3',
+      vehicle: {
+        make: 'Ford',
+        model: 'Focus',
+        year: 2021,
+        reg_no: 'DEF-9012',
+        color: 'White',
+        mileage: 32000
+      },
+      current_ticket: {
+        id: 'TICKET-003',
+        description: 'Brake squeaking and oil change needed',
+        status: 'pending',
+        progress_percentage: 0,
+        estimated_completion: '2024-01-20T12:00:00Z',
+        assigned_mechanic: 'Pending Assignment',
+        work_stages: [
+          { stage: 'Initial Inspection', status: 'pending' },
+          { stage: 'Brake System Check', status: 'pending' },
+          { stage: 'Oil Change Service', status: 'pending' },
+          { stage: 'Brake Pad Replacement', status: 'pending' },
+          { stage: 'Final Testing', status: 'pending' },
+          { stage: 'Quality Check', status: 'pending' }
+        ]
+      },
+      service_history: [
+        { date: '2023-11-15', service: 'Regular Maintenance', cost: 85.00, status: 'completed' },
+        { date: '2023-08-20', service: 'Wheel Alignment', cost: 75.00, status: 'completed' }
+      ]
+    }
+  ];
 
   useEffect(() => {
-    if (user?.id) {
-      fetchNotifications();
-    }
-  }, [user?.id]);
-
-  const fetchNotifications = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      const formattedNotifications = (data || []).map((notif: any) => ({
-        id: notif.id,
-        title: notif.title || 'Notification',
-        message: notif.message || '',
-        date: notif.created_at,
-        type: notif.type || 'info'
-      }));
-
-      setNotifications(formattedNotifications);
-    } catch (error: any) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
-
-  // Fetch tickets on mount
-  useEffect(() => {
-    if (user?.id) {
-      console.log('🎯 UserDashboard: Triggering fetchTickets for user:', user.id);
-      fetchTickets();
-    }
-  }, [user?.id]);
-
-  // Fetch vehicles on mount
-  useEffect(() => {
-    if (user?.id) {
-      console.log('🚗 UserDashboard: Triggering fetchUserVehicles for user:', user.id);
-      fetchUserVehicles();
-    }
-  }, [user?.id]);
-
-  const fetchUserVehicles = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data: vehicles, error } = await supabase
-        .from('vehicles')
-        .select('id, make, model, year, license_plate')
-        .eq('owner_id', user.id)
-        .eq('is_active', true);
-
-      if (error) throw error;
-      
-      const formatted = (vehicles || []).map(v => ({
-        id: v.id,
-        make: v.make,
-        model: v.model,
-        year: v.year,
-        license_no: v.license_plate
-      }));
-      
-      console.log('✅ fetchUserVehicles: Got vehicles', formatted);
-      setUserVehicles(formatted);
-    } catch (error: any) {
-      console.error('❌ Error fetching user vehicles:', error);
-    }
-  };
-
-  const [vehicleStatuses, setVehicleStatuses] = useState<VehicleStatus[]>([]);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchVehicleStatuses();
-    }
-  }, [user?.id]);
-
-  const fetchVehicleStatuses = async () => {
-    if (!user?.id) {
-      console.log('❌ fetchVehicleStatuses: No user ID found');
-      return;
-    }
-    
-    console.log('🚗 fetchVehicleStatuses: Starting fetch for user:', user.id);
-    
-    try {
-      // Fetch user's vehicles with their current tickets
-      const { data: vehicles, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select(`
-          id,
-          make,
-          model,
-          year,
-          reg_no,
-          license_plate,
-          color,
-          mileage
-        `)
-        .eq('owner_id', user.id)
-        .eq('status', 'active');
-
-      console.log('🚗 fetchVehicleStatuses: Vehicles result', { vehicles, vehiclesError, count: vehicles?.length });
-
-      if (vehiclesError) throw vehiclesError;
-
-      // For each vehicle, get the current active ticket
-      const statuses = await Promise.all((vehicles || []).map(async (vehicle: any) => {
-        const { data: tickets } = await supabase
-          .from('tickets')
-          .select(`
-            id,
-            ticket_number,
-            description,
-            status,
-            preferred_pickup_time,
-            primary_mechanic_id,
-            profiles:primary_mechanic_id (name)
-          `)
-          .eq('vehicle_id', vehicle.id)
-          .in('status', ['pending', 'in_progress', 'awaiting_parts', 'completed'])
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        const currentTicket = tickets && tickets.length > 0 ? tickets[0] : null;
-        const mechanic = currentTicket?.profiles ? (Array.isArray(currentTicket.profiles) ? currentTicket.profiles[0] : currentTicket.profiles) : null;
-
-        // Get service history (completed tickets)
-        const { data: completedTickets } = await supabase
-          .from('tickets')
-          .select(`
-            id,
-            created_at,
-            description,
-            status
-          `)
-          .eq('vehicle_id', vehicle.id)
-          .eq('status', 'completed')
-          .order('created_at', { ascending: false })
-          .limit(3);
-
-        const serviceHistory = (completedTickets || []).map((ticket: any) => ({
-          date: ticket.created_at,
-          service: ticket.description || 'Service',
-          cost: 0, // Would need to fetch from invoices
-          status: 'completed'
-        }));
-
-        return {
-          id: vehicle.id,
-          vehicle: {
-            make: vehicle.make,
-            model: vehicle.model,
-            year: vehicle.year,
-            reg_no: vehicle.reg_no || vehicle.license_plate || '',
-            color: vehicle.color || 'N/A',
-            mileage: vehicle.mileage || 0
-          },
-          current_ticket: currentTicket ? {
-            id: currentTicket.ticket_number || currentTicket.id,
-            description: currentTicket.description || '',
-            status: currentTicket.status,
-            progress_percentage: currentTicket.status === 'completed' ? 100 : currentTicket.status === 'in_progress' ? 50 : currentTicket.status === 'awaiting_parts' ? 25 : 0,
-            estimated_completion: currentTicket.preferred_pickup_time || '',
-            assigned_mechanic: mechanic?.name || 'Pending Assignment',
-            work_stages: [] // Would need to fetch from work_sessions or damage_log
-          } : {
-            id: 'N/A',
-            description: 'No active ticket',
-            status: 'none',
-            progress_percentage: 0,
-            estimated_completion: '',
-            assigned_mechanic: 'N/A',
-            work_stages: []
-          },
-          service_history: serviceHistory
-        };
-      }));
-
-      setVehicleStatuses(statuses);
-    } catch (error: any) {
-      console.error('Error fetching vehicle statuses:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchTickets();
-    }
-  }, [user?.id]);
+    // Use dummy data instead of fetching from database
+    setTickets(dummyTickets);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     const fetchUserVehicles = async () => {
@@ -416,13 +387,13 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
       try {
         const { data, error } = await supabase
           .from('vehicles')
-          .select('id, make, model, year, license_plate')
-          .eq('owner_id', user.id)
-          .eq('status', 'active')
+          .select('id, make, model, year, license_no')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setUserVehicles(data as any || []);
+        setUserVehicles(data || []);
       } catch (error: any) {
         console.error('Error fetching vehicles:', error);
       }
@@ -508,55 +479,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
   }, [user?.id]);
 
   const fetchTickets = async () => {
-    if (!user?.id) {
-      console.log('❌ fetchTickets: No user ID found', user);
-      return;
-    }
-    
-    console.log('🔍 fetchTickets: Starting fetch for user:', user.id);
-    
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('tickets')
-        .select(`
-          id,
-          status,
-          description,
-          created_at,
-          vehicles:vehicle_id (
-            make,
-            model,
-            year
-          )
-        `)
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false });
-
-      console.log('📊 fetchTickets: Query result', { data, error, count: data?.length });
-
-      if (error) throw error;
-
-      const formattedTickets = (data || []).map((ticket: any) => ({
-        id: ticket.id,
-        status: ticket.status,
-        description: ticket.description || '',
-        created_at: ticket.created_at,
-        vehicles: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
-      }));
-
-      console.log('✅ fetchTickets: Formatted tickets', formattedTickets);
-      setTickets(formattedTickets);
-    } catch (error: any) {
-      console.error('❌ Error fetching tickets:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load tickets",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Keep the function for future use but use dummy data for now
+    setTickets(dummyTickets);
+    setLoading(false);
   };
 
   const handleTicketCreated = () => {
@@ -674,16 +599,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
       </div>
 
       <div className="grid gap-6">
-        {vehicleStatuses.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="text-4xl mb-4">🚗</div>
-              <h3 className="text-lg font-semibold mb-2">No vehicles</h3>
-              <p className="text-muted-foreground">Add a vehicle to get started</p>
-            </CardContent>
-          </Card>
-        ) : (
-          vehicleStatuses.map((vehicleStatus) => (
+        {dummyVehicleStatus.map((vehicleStatus) => (
           <Card key={vehicleStatus.id} className="hover:shadow-elegant transition-shadow">
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -821,8 +737,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
               </div>
             </CardContent>
           </Card>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );
@@ -833,59 +748,40 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         <h2 className="text-xl sm:text-2xl font-bold">Invoices</h2>
         <p className="text-muted-foreground text-sm sm:text-base">View your repair invoices</p>
       </div>
-      {loadingInvoices ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="h-3 bg-muted rounded"></div>
-                  <div className="h-3 bg-muted rounded w-2/3"></div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {(loadingInvoices ? [] : userInvoices).map((invoice) => (
+          <Card key={invoice.id} className="hover:shadow-elegant transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg">{invoice.id}</CardTitle>
+                <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
+                  {invoice.status}
+                </Badge>
+              </div>
+              <CardDescription className="flex items-center text-xs">
+                <span className="mr-1">📅</span>
+                {new Date(invoice.date).toLocaleDateString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{invoice.vehicle}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {invoice.description}
+                </p>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-lg font-bold text-green-600">
+                    ${invoice.amount.toFixed(2)}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => handleOpenInvoice(invoice.id)}>
+                    View Details
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {userInvoices.map((invoice) => (
-            <Card key={invoice.id} className="hover:shadow-elegant transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{invoice.id}</CardTitle>
-                  <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'}>
-                    {invoice.status}
-                  </Badge>
-                </div>
-                <CardDescription className="flex items-center text-xs">
-                  <span className="mr-1">📅</span>
-                  {new Date(invoice.date).toLocaleDateString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">{invoice.vehicle}</p>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {invoice.description}
-                  </p>
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-lg font-bold text-green-600">
-                      ${invoice.amount.toFixed(2)}
-                    </span>
-                    <Button variant="outline" size="sm" onClick={() => handleOpenInvoice(invoice.id)}>
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
       {(!loadingInvoices && userInvoices.length === 0) && (
         <Card className="text-center py-10">
           <CardContent>
@@ -904,16 +800,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         <p className="text-muted-foreground text-sm sm:text-base">Stay updated on your repairs</p>
       </div>
       <div className="space-y-4">
-        {notifications.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="text-4xl mb-4">🔔</div>
-              <h3 className="text-lg font-semibold mb-2">No notifications</h3>
-              <p className="text-muted-foreground">You're all caught up!</p>
-            </CardContent>
-          </Card>
-        ) : (
-          notifications.map((notification) => (
+        {dummyNotifications.map((notification) => (
           <Card key={notification.id} className="hover:shadow-elegant transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-start space-x-4">
@@ -938,8 +825,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
               </div>
             </CardContent>
           </Card>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );
@@ -963,10 +849,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ activeTab = 'ticke
         />
 
         {/* Invoice Details Dialog */}
-        <Dialog open={invoiceDialogOpen} onOpenChange={(open) => { 
-          setInvoiceDialogOpen(open); 
-          if (!open) setSelectedInvoice(null); 
-        }}>
+        <Dialog open={invoiceDialogOpen} onOpenChange={(open) => { setInvoiceDialogOpen(open); if (!open) setSelectedInvoice(null); }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Invoice Details</DialogTitle>

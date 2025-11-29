@@ -14,12 +14,13 @@ interface RescheduledVehicle {
   ticket_id: string;
   ticket_number: string;
   reschedule_date: string;
+  reschedule_reason: string | null;
   vehicle: {
     id: string;
     make: string;
     model: string;
     year: number;
-    license_plate: string;
+    reg_no: string;
   };
   customer: {
     id: string;
@@ -83,54 +84,47 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
           id,
           ticket_number,
           reschedule_date,
+          reschedule_reason,
           description,
           status,
-          customer_id,
+          primary_mechanic_id,
+          secondary_mechanic_id,
           vehicles:vehicle_id (
             id,
             make,
             model,
             year,
-            license_plate
+            reg_no
+          ),
+          profiles:user_id (
+            id,
+            name,
+            phone
           )
         `)
-        .eq('status', 'pending')
         .not('reschedule_date', 'is', null)
+        .or(`primary_mechanic_id.eq.${user.id},secondary_mechanic_id.eq.${user.id}`)
         .order('reschedule_date', { ascending: true });
 
       if (error) throw error;
 
-      if (!tickets || tickets.length === 0) {
-        setRescheduledVehicles([]);
-        return;
-      }
-
-      // Get customer profiles separately
-      const customerIds = [...new Set(tickets.map((t: any) => t.customer_id).filter(Boolean))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, name, phone')
-        .in('id', customerIds);
-
-      const profilesMap = new Map((profiles || []).map((p: any) => [p.id, p]));
-
       // Get work sessions for these tickets
-      const ticketIds = tickets.map((t: any) => t.id);
+      const ticketIds = (tickets || []).map((t: any) => t.id);
       const { data: workSessions } = await supabase
         .from('work_sessions')
         .select('id, ticket_id, status')
         .in('ticket_id', ticketIds)
         .eq('employee_id', user.id);
 
-      const vehiclesWithSessions = tickets.map((ticket: any) => {
+      const vehiclesWithSessions = (tickets || []).map((ticket: any) => {
         const session = workSessions?.find(ws => ws.ticket_id === ticket.id);
-        const customer = profilesMap.get(ticket.customer_id) || { id: ticket.customer_id, name: 'Unknown', phone: '' };
         return {
           ticket_id: ticket.id,
           ticket_number: ticket.ticket_number || ticket.id.slice(-8),
           reschedule_date: ticket.reschedule_date,
+          reschedule_reason: ticket.reschedule_reason,
           vehicle: Array.isArray(ticket.vehicles) ? ticket.vehicles[0] : ticket.vehicles,
-          customer: customer,
+          customer: Array.isArray(ticket.profiles) ? ticket.profiles[0] : ticket.profiles,
           description: ticket.description,
           status: ticket.status,
           work_session_id: session?.id
@@ -210,6 +204,7 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         .from('tickets')
         .update({
           status: 'in_progress',
+          work_started_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedVehicle.ticket_id);
@@ -221,10 +216,12 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
         .from('notifications')
         .insert([{
           user_id: selectedVehicle.customer.id,
-          type: 'vehicle_ready',
+          type: 'work_started',
           title: 'Work Resumed',
           message: `Work has resumed on your vehicle ${selectedVehicle.vehicle.make} ${selectedVehicle.vehicle.model}.`,
-          ticket_id: selectedVehicle.ticket_id
+          metadata: { 
+            ticket_id: selectedVehicle.ticket_id
+          }
         }]);
 
       if (notifError) console.error('Notification error:', notifError);
@@ -387,8 +384,8 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                         <p className="font-semibold">{selectedVehicle.vehicle.year}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">License Plate</p>
-                        <p className="font-semibold">{selectedVehicle.vehicle.license_plate}</p>
+                        <p className="text-sm text-muted-foreground">Registration</p>
+                        <p className="font-semibold">{selectedVehicle.vehicle.reg_no}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -416,10 +413,10 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Schedule Information */}
+                {/* Reschedule Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Service Details</CardTitle>
+                    <CardTitle>Reschedule Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div>
@@ -428,12 +425,18 @@ export const EmployeeRescheduledVehicles: React.FC = () => {
                         {format(parseISO(selectedVehicle.reschedule_date), 'MMMM dd, yyyy hh:mm a')}
                       </p>
                     </div>
+                    {selectedVehicle.reschedule_reason && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Reason</p>
+                        <p className="font-semibold">{selectedVehicle.reschedule_reason}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm text-muted-foreground">Service Description</p>
                       <p className="font-semibold">{selectedVehicle.description}</p>
                     </div>
                   </CardContent>
-</Card>
+                </Card>
 
                 {/* Actions */}
                 <div className="flex gap-2">

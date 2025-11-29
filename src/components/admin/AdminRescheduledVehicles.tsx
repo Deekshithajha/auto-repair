@@ -19,7 +19,8 @@ interface RescheduledVehicle {
     make: string;
     model: string;
     year: number;
-    license_plate: string;
+    reg_no: string;
+    license_no?: string;
   };
   customer: {
     id: string;
@@ -102,9 +103,10 @@ export const AdminRescheduledVehicles: React.FC = () => {
             make,
             model,
             year,
-            license_plate
+            reg_no,
+            license_no
           ),
-          profiles:customer_id (
+          profiles:user_id (
             id,
             name,
             phone,
@@ -216,10 +218,13 @@ export const AdminRescheduledVehicles: React.FC = () => {
         .from('notifications')
         .insert([{
           user_id: vehicle.customer.id,
-          type: 'service_reminder',
+          type: 'work_started',
           title: 'Vehicle Rescheduled',
           message: `Your vehicle ${vehicle.vehicle.make} ${vehicle.vehicle.model} has been rescheduled to ${format(nextDay, 'MMM dd, yyyy')} as you did not arrive on the scheduled date.`,
-          ticket_id: vehicle.ticket_id
+          metadata: { 
+            ticket_id: vehicle.ticket_id, 
+            reschedule_date: nextDay.toISOString() 
+          }
         }]);
 
       if (notifError) console.error('Notification error:', notifError);
@@ -394,9 +399,15 @@ export const AdminRescheduledVehicles: React.FC = () => {
                         <p className="font-semibold">{selectedVehicle.vehicle.year}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">License Plate</p>
-                        <p className="font-semibold">{selectedVehicle.vehicle.license_plate}</p>
+                        <p className="text-sm text-muted-foreground">Registration</p>
+                        <p className="font-semibold">{selectedVehicle.vehicle.reg_no}</p>
                       </div>
+                      {selectedVehicle.vehicle.license_no && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">License</p>
+                          <p className="font-semibold">{selectedVehicle.vehicle.license_no}</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

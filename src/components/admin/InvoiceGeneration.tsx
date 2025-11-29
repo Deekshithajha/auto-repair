@@ -140,13 +140,13 @@ export const InvoiceGeneration: React.FC = () => {
   const fetchStandardServices = async () => {
     try {
       const { data, error } = await supabase
-        .from('services' as any)
+        .from('standard_services')
         .select('*')
         .eq('is_active', true)
-        .order('name');
+        .order('service_name');
 
       if (error) throw error;
-      setStandardServices((data || []) as any);
+      setStandardServices(data || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
     }
@@ -166,13 +166,13 @@ export const InvoiceGeneration: React.FC = () => {
     // Fetch existing services for this ticket
     try {
       const { data: services, error: servicesError } = await supabase
-        .from('services' as any)
+        .from('workorder_services')
         .select('*')
         .eq('ticket_id', ticketId);
 
       if (servicesError) throw servicesError;
 
-      setInvoiceData(prev => ({ ...prev, services: (services || []) as any }));
+      setInvoiceData(prev => ({ ...prev, services: services || [] }));
     } catch (error: any) {
       console.error('Error fetching services:', error);
     }
@@ -382,7 +382,7 @@ export const InvoiceGeneration: React.FC = () => {
       for (const service of invoiceData.services) {
         if (service.id.startsWith('temp-')) {
           // New service - insert
-          const { error } = await (supabase as any)
+          const { error } = await supabase
             .from('workorder_services')
             .insert({
               ticket_id: invoiceData.ticket!.id,

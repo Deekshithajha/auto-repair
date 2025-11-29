@@ -107,12 +107,14 @@ export const CustomerList: React.FC = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .eq('role', 'user')
+        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setCustomers((data || []) as any);
-      setFilteredCustomers((data || []) as any);
+      setCustomers((data || []) as Customer[]);
+      setFilteredCustomers((data || []) as Customer[]);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -217,7 +219,11 @@ export const CustomerList: React.FC = () => {
 
       const { error } = await supabase
         .from('profiles')
-        .delete()
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_by: user?.id || null
+        })
         .eq('id', customerToDelete.id);
 
       if (error) throw error;
@@ -318,11 +324,11 @@ export const CustomerList: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-semibold">{customer.name}</h3>
-                      <Badge variant={getLegacyBadgeVariant(customer.legacy_status || 'new')}>
-                        {(customer.legacy_status || 'new').replace('_', ' ').toUpperCase()}
+                      <Badge variant={getLegacyBadgeVariant(customer.legacy_status)}>
+                        {customer.legacy_status.replace('_', ' ').toUpperCase()}
                       </Badge>
                       <Badge variant="outline">
-                        {customer.invoice_count || 0} invoice{(customer.invoice_count || 0) !== 1 ? 's' : ''}
+                        {customer.invoice_count} invoice{customer.invoice_count !== 1 ? 's' : ''}
                       </Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">

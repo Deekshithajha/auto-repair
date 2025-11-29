@@ -125,7 +125,7 @@ export const RevenueTracker: React.FC = () => {
     const tomorrow = format(new Date(startOfToday().getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
     // Revenue: sum of invoices.total_amount where payment_status = 'paid' and created_at is today
-    const { data: invoices, error: invError } = await (supabase as any)
+    const { data: invoices, error: invError } = await supabase
       .from('invoices')
       .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
@@ -135,7 +135,7 @@ export const RevenueTracker: React.FC = () => {
     if (invError) throw invError;
     
     // Filter to only invoices created today
-    const todayInvoices = ((invoices as any) || []).filter((inv: any) => {
+    const todayInvoices = (invoices || []).filter(inv => {
       const createdDate = inv.created_at;
       if (!createdDate) return false;
       const createdDateStr = format(parseISO(createdDate), 'yyyy-MM-dd');
@@ -184,7 +184,7 @@ export const RevenueTracker: React.FC = () => {
     const { data: invoices, error: invError } = await supabase
       .from('invoices')
       .select('id, total_amount, ticket_id, payment_status, created_at')
-      .eq('payment_status', 'paid') as any;
+      .eq('payment_status', 'paid');
 
     if (invError) throw invError;
 
@@ -226,7 +226,7 @@ export const RevenueTracker: React.FC = () => {
       .from('invoices')
       .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
-      .order('created_at', { ascending: true }) as any;
+      .order('created_at', { ascending: true });
 
     if (invError) throw invError;
 
@@ -308,7 +308,7 @@ export const RevenueTracker: React.FC = () => {
       .from('invoices')
       .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
-      .order('created_at', { ascending: true }) as any;
+      .order('created_at', { ascending: true });
 
     if (invError) throw invError;
 
@@ -379,7 +379,7 @@ export const RevenueTracker: React.FC = () => {
       .from('invoices')
       .select('id, total_amount, ticket_id, payment_status, created_at')
       .eq('payment_status', 'paid')
-      .order('created_at', { ascending: false }) as any;
+      .order('created_at', { ascending: false });
 
     if (invError) throw invError;
 
@@ -417,7 +417,7 @@ export const RevenueTracker: React.FC = () => {
     }
 
     // Fetch COGS
-    const allTicketIds = [...new Set(filteredInvoices.map(inv => inv.ticket_id))] as string[];
+    const allTicketIds = [...new Set(filteredInvoices.map(inv => inv.ticket_id))];
     if (allTicketIds.length > 0) {
       const { data: parts, error: partsError } = await supabase
         .from('parts')

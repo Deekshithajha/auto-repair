@@ -90,7 +90,7 @@ export const EmployeeAttendance: React.FC = () => {
         .limit(30); // Last 30 days
 
       if (error) throw error;
-      setAttendanceRecords(data as any || []);
+      setAttendanceRecords(data || []);
 
     } catch (error: any) {
       console.error('Error fetching attendance:', error);

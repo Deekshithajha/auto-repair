@@ -44,7 +44,6 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
-  license_plate?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -101,37 +100,38 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
 
       if (profileError) throw profileError;
 
-      const typedProfile = profileData as any;
-      setProfile({
-        ...typedProfile,
-        legacy_status: typedProfile.legacy_status || 'new',
-        invoice_count: typedProfile.invoice_count || 0,
-        preferred_notification: typedProfile.preferred_notification || 'email'
-      });
+      const typedProfile = profileData as Profile;
+      setProfile(typedProfile);
       setFormData({
-        name: typedProfile.name || typedProfile.full_name || '',
+        name: typedProfile.name,
         phone: typedProfile.phone || '',
         email: typedProfile.email || '',
-        customer_id: typedProfile.system_id || '',
-        dob_month: '',
-        address_line1: '',
-        address_line2: '',
-        city: '',
-        state: '',
-        zip_code: '',
-        preferred_notification: 'email',
-        legacy_status: 'new',
-        campaign_notes: ''
+        customer_id: typedProfile.customer_id || '',
+        dob_month: typedProfile.dob_month?.toString() || '',
+        address_line1: typedProfile.address_line1 || '',
+        address_line2: typedProfile.address_line2 || '',
+        city: typedProfile.city || '',
+        state: typedProfile.state || '',
+        zip_code: typedProfile.zip_code || '',
+        preferred_notification: typedProfile.preferred_notification,
+        legacy_status: typedProfile.legacy_status,
+        campaign_notes: typedProfile.campaign_notes || ''
       });
 
-      // Communications log table doesn't exist - skip for now
-      setCommunications([]);
+      // Fetch communications
+      const { data: commData } = await supabase
+        .from('communications_log')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('timestamp', { ascending: false });
+
+      setCommunications((commData || []) as CommunicationLog[]);
 
       // Fetch vehicles
       const { data: vehicleData } = await supabase
         .from('vehicles')
         .select('*')
-        .eq('owner_id', customerId)
+        .eq('user_id', customerId)
         .order('created_at', { ascending: false });
 
       setVehicles((vehicleData || []) as Vehicle[]);
@@ -188,13 +188,42 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
     }
   };
 
-  // Communication logging removed - table doesn't exist
   const handleLogCommunication = async () => {
-    toast({
-      title: "Feature Unavailable",
-      description: "Communication logging is not available in the current database schema",
-      variant: "destructive"
-    });
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('communications_log')
+        .insert([{
+          customer_id: customerId,
+          communication_type: commFormData.type,
+          direction: commFormData.direction,
+          notes: commFormData.notes || null,
+          created_by: user.id
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Communication logged"
+      });
+
+      setShowCommDialog(false);
+      setCommFormData({
+        type: 'call',
+        direction: 'outbound',
+        notes: ''
+      });
+      fetchCustomerData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const getLegacyStatusColor = (status: Profile['legacy_status']) => {
@@ -220,11 +249,11 @@ export const EnhancedCustomerProfile: React.FC<EnhancedCustomerProfileProps> = (
         <div>
           <h2 className="text-2xl font-bold">{profile.name}</h2>
           <div className="flex gap-2 mt-2">
-            <Badge variant={getLegacyStatusColor(profile.legacy_status || 'new')}>
-              {(profile.legacy_status || 'new').replace('_', ' ').toUpperCase()}
+            <Badge variant={getLegacyStatusColor(profile.legacy_status)}>
+              {profile.legacy_status.replace('_', ' ').toUpperCase()}
             </Badge>
             <Badge variant="outline">
-              {profile.invoice_count || 0} Invoice{profile.invoice_count !== 1 ? 's' : ''}
+              {profile.invoice_count} Invoice{profile.invoice_count !== 1 ? 's' : ''}
             </Badge>
           </div>
         </div>

@@ -594,14 +594,15 @@ export const EmployeeWorkManagement: React.FC = () => {
           // Convert image to base64
           const base64Data = await convertFileToBase64(photo);
           
+          // Store photo with storage_path instead of photo_data
           const { data, error } = await supabase
             .from('vehicle_photos')
             .insert({
               vehicle_id: vehicleId,
               photo_type: 'damage',
-              photo_data: base64Data,
+              storage_path: `damage/${Date.now()}_${photo.name}`,
               uploaded_by: user?.id || null
-            } as any)
+            })
             .select()
             .single();
           
@@ -958,11 +959,7 @@ export const EmployeeWorkManagement: React.FC = () => {
       const userId = workSessions.find(s => s.id === sessionId)?.ticket.user_id;
       const employeeUserId = user?.id;
       let adminId: string | null = null;
-      const { data: admins } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', 'admin')
-        .limit(1) as { data: Array<{ id: string }> | null; error: any };
+      const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(1);
       if (admins && admins.length > 0) adminId = admins[0].id;
 
       const inserts: any[] = [];
@@ -995,13 +992,13 @@ export const EmployeeWorkManagement: React.FC = () => {
   const fetchStandardServices = async () => {
     try {
       const { data, error } = await supabase
-        .from('services' as any)
+        .from('standard_services')
         .select('*')
         .eq('is_active', true)
-        .order('name');
+        .order('service_name');
 
       if (error) throw error;
-      setStandardServices(data as any || []);
+      setStandardServices(data || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
       toast({

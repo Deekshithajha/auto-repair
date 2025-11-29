@@ -7,13 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus } from 'lucide-react';
 
 interface CustomerData {
   name: string;
   email: string;
   phone: string;
-  password: string;
   licensePlate: string;
   make: string;
   model: string;
@@ -32,7 +30,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
     name: '',
     email: '',
     phone: '',
-    password: '',
     licensePlate: '',
     make: '',
     model: '',
@@ -64,22 +61,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       });
       return false;
     }
-    if (!customerData.password.trim()) {
-      toast({
-        title: "Error",
-        description: "Password is required",
-        variant: "destructive",
-      });
-      return false;
-    }
-    if (customerData.password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
-      return false;
-    }
     if (!customerData.licensePlate.trim()) {
       toast({
         title: "Error",
@@ -106,12 +87,11 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
 
     setIsLoading(true);
     try {
-      // Create the user account
+      // Create the user account, using license plate as password
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: customerData.email,
-        password: customerData.password,
+        password: customerData.licensePlate,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name: customerData.name,
             phone: customerData.phone
@@ -127,20 +107,11 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ phone: customerData.phone })
+          .update({ phone: customerData.phone, license_plate: customerData.licensePlate })
           .eq('id', authData.user.id);
 
         if (profileError) {
           console.warn('Profile update failed:', profileError);
-        }
-        
-        // Assign customer role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: authData.user.id, role: 'customer' });
-        
-        if (roleError) {
-          console.warn('Role assignment failed:', roleError);
         }
 
         // Create initial vehicle only if make and model are provided
@@ -149,12 +120,13 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
           const { error: vehicleError } = await supabase
             .from('vehicles')
             .insert({
-              owner_id: authData.user.id,
+              user_id: authData.user.id,
               make: customerData.make,
               model: customerData.model,
               year: yearNumber,
-              license_plate: customerData.licensePlate
-            } as any);
+              license_no: customerData.licensePlate,
+              owner_id: authData.user.id
+            });
 
           if (vehicleError) {
             console.warn('Vehicle creation failed:', vehicleError);
@@ -177,7 +149,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
         name: '',
         email: '',
         phone: '',
-        password: '',
         licensePlate: '',
         make: '',
         model: '',
@@ -205,7 +176,7 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
           <span onClick={() => setOpen(true)}>{trigger}</span>
         ) : (
           <Button variant="outline" className="w-full sm:w-auto">
-            <UserPlus className="mr-2 h-4 w-4" />
+            <span className="mr-2">👤</span>
             Register New Customer
           </Button>
         )}
@@ -252,22 +223,6 @@ export const CustomerRegistration: React.FC<CustomerRegistrationProps> = ({ onSu
               value={customerData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="customer-password">Password *</Label>
-            <Input
-              id="customer-password"
-              type="password"
-              placeholder="Minimum 6 characters"
-              value={customerData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              required
-              minLength={6}
-            />
-            <p className="text-xs text-muted-foreground">
-              Customer will use this to login to their account
-            </p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

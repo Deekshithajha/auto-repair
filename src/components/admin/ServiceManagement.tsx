@@ -47,13 +47,13 @@ export const ServiceManagement: React.FC = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('standard_services')
         .select('*')
         .order('service_name');
 
       if (error) throw error;
-      setServices((data || []) as any);
+      setServices(data || []);
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
@@ -78,7 +78,7 @@ export const ServiceManagement: React.FC = () => {
 
       if (editingService) {
         const { error } = await supabase
-          .from('services' as any)
+          .from('standard_services')
           .update(serviceData)
           .eq('id', editingService.id);
 
@@ -86,7 +86,7 @@ export const ServiceManagement: React.FC = () => {
         toast({ title: 'Success', description: 'Service updated successfully' });
       } else {
         const { error } = await supabase
-          .from('services' as any)
+          .from('standard_services')
           .insert([serviceData]);
 
         if (error) throw error;
@@ -123,7 +123,7 @@ export const ServiceManagement: React.FC = () => {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('services' as any)
+        .from('standard_services')
         .delete()
         .eq('id', id);
 

@@ -124,7 +124,7 @@ export const AuthForm: React.FC = () => {
               <span className="text-xl sm:text-2xl">🚗</span>
             </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 whitespace-nowrap">Lakewood 76 Auto Repair Inc</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">AUTO REPAIR INC</h1>
           <p className="text-white/90 text-base sm:text-lg">Auto Repair Excellence</p>
           
           {/* Mode Indicator */}
@@ -262,7 +262,7 @@ export const AuthForm: React.FC = () => {
         )}
 
         <div className="text-center text-white/60 text-sm mt-6">
-          <p>🔧 Lakewood 76 Auto Repair Inc • No email confirmation required</p>
+          <p>🔧 AUTO REPAIR INC • No email confirmation required</p>
         </div>
       </div>
     </div>

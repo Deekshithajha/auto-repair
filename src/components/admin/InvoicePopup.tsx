@@ -105,14 +105,14 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
 
   const fetchStandardServices = async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('standard_services')
         .select('*')
         .eq('is_active', true)
         .order('service_name');
 
       if (error) throw error;
-      setStandardServices((data || []) as any);
+      setStandardServices(data || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
     }
@@ -122,13 +122,13 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
     if (!ticket) return;
 
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('workorder_services')
         .select('*')
         .eq('ticket_id', ticket.id);
 
       if (error) throw error;
-      setServices((data || []) as any);
+      setServices(data || []);
     } catch (error: any) {
       console.error('Error fetching services:', error);
     }
@@ -258,7 +258,7 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
       // Save services to workorder_services table
       for (const service of services) {
         if (service.id.startsWith('temp-')) {
-          const { error } = await (supabase as any)
+          const { error } = await supabase
             .from('workorder_services')
             .insert({
               ticket_id: ticket.id,
@@ -281,10 +281,13 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
             .from('parts')
             .insert({
               ticket_id: ticket.id,
-              part_name: part.name,
+              name: part.name,
               quantity: part.quantity,
-              unit_price: part.unit_price
-            } as any);
+              unit_price: part.unit_price,
+              tax_percentage: part.is_taxable ? taxRate : 0,
+              status: 'used',
+              uploaded_by: user?.id
+            });
           if (error) throw error;
         }
       }
@@ -297,7 +300,7 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
       // Generate invoice number via RPC if available
       let invoiceNumber: string | null = null;
       try {
-        const { data: genData } = await (supabase.rpc as any)('generate_invoice_number');
+        const { data: genData } = await supabase.rpc('generate_invoice_number');
         if (genData) invoiceNumber = genData as string;
       } catch (_) {
         invoiceNumber = null;
@@ -309,10 +312,11 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
         invoice_number: invoiceNumber ?? `INV-${Date.now()}`,
         subtotal,
         tax_amount: taxAmount,
+        discount_amount: 0,
         total_amount: totalAmount,
-        customer_id: (ticket as any).customer_id,
-        status: 'pending'
-      } as any);
+        created_by: user?.id,
+        payment_status: 'pending'
+      });
       if (invErr) throw invErr;
 
       toast({
@@ -351,7 +355,7 @@ export const InvoicePopup: React.FC<InvoicePopupProps> = ({ ticket, isOpen, onCl
                 <span className="text-2xl">🔧</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold whitespace-nowrap">Lakewood 76 Auto Repair Inc</h1>
+                <h1 className="text-2xl font-bold">AUTO REPAIR INC</h1>
                 <p className="text-blue-100">Professional Automotive Services</p>
               </div>
             </div>

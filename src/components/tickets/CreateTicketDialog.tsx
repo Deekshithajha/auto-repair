@@ -14,7 +14,7 @@ interface Vehicle {
   make: string;
   model: string;
   year: number;
-  license_plate?: string;
+  license_no?: string;
   is_active: boolean;
 }
 
@@ -37,7 +37,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
     make: '',
     model: '',
     year: new Date().getFullYear(),
-    license_plate: '',
+    license_no: '',
     description: '',
     preferred_pickup_time: ''
   });
@@ -52,7 +52,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
       const { data, error } = await supabase
         .from('vehicles')
         .select('*')
-        .eq('owner_id', user.id)
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -106,14 +106,16 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         });
         return;
       }
-        } else if (!formData.make || !formData.model || !formData.description || !formData.license_plate) {
-          toast({
-            title: "Error",
-            description: "Please fill in all required fields (make, model, year, license plate, description)",
-            variant: "destructive"
-          });
-          return;
-        }
+    } else {
+      if (!formData.make || !formData.model || !formData.description || !formData.license_no) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields (make, model, year, license plate, description)",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
 
     setLoading(true);
 
@@ -135,8 +137,8 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
             make: formData.make,
             model: formData.model,
             year: formData.year,
-            license_plate: formData.license_plate,
-            owner_id: user.id,
+            license_no: formData.license_no,
+            user_id: user.id,
             is_active: true
           }])
           .select()
@@ -151,10 +153,9 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         .from('tickets')
         .insert([{
           vehicle_id: vehicleId,
-          title: 'Repair Request',
           description: formData.description,
           preferred_pickup_time: formData.preferred_pickup_time || null,
-          customer_id: user.id
+          user_id: user.id
         }])
         .select()
         .single();
@@ -176,7 +177,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
         make: '',
         model: '',
         year: new Date().getFullYear(),
-        license_plate: '',
+        license_no: '',
         description: '',
         preferred_pickup_time: ''
       });
@@ -202,7 +203,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
       make: '',
       model: '',
       year: new Date().getFullYear(),
-      license_plate: '',
+      license_no: '',
       description: '',
       preferred_pickup_time: ''
     });
@@ -258,7 +259,7 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                   <SelectContent>
                     {vehicles.map((vehicle) => (
                       <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.license_plate && `(${vehicle.license_plate})`}
+                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.license_no && `(${vehicle.license_no})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -316,8 +317,8 @@ export const CreateTicketDialog: React.FC<CreateTicketDialogProps> = ({
                   <Label htmlFor="license" className="text-sm">License Plate</Label>
                   <Input
                     id="license"
-                    value={formData.license_plate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, license_plate: e.target.value.toUpperCase() }))}
+                    value={formData.license_no}
+                    onChange={(e) => setFormData(prev => ({ ...prev, license_no: e.target.value.toUpperCase() }))}
                     placeholder="ABC-1234"
                     required
                     className="h-10 sm:h-11 text-sm sm:text-base"

@@ -17,7 +17,6 @@ import { RevenueTracker } from '@/components/admin/RevenueTracker';
 import { NotificationManagement } from '@/components/admin/NotificationManagement';
 import { ServiceManagement } from '@/components/admin/ServiceManagement';
 import { AdminAttendanceManagement } from '@/components/admin/AdminAttendanceManagement';
-import { QuoteList } from '@/components/admin/QuoteList';
 import RaiseTicketWizard from '@/components/tickets/RaiseTicketWizard';
 
 interface AdminDashboardProps {
@@ -127,7 +126,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
 
   const dummySystemSettings = {
     business: {
-      name: 'Lakewood 76 Auto Repair Inc',
+      name: 'AUTO REPAIR INC',
       address: '123 Main Street, City, State 12345',
       phone: '(555) 123-4567',
       email: 'info@76autorepair.com',
@@ -227,11 +226,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeTab = 'tic
           {/* Invoice Tab */}
           <TabsContent value="invoice" className="space-y-4 sm:space-y-6">
             <InvoiceList />
-          </TabsContent>
-
-          {/* Quotes Tab */}
-          <TabsContent value="quotes" className="space-y-4 sm:space-y-6">
-            <QuoteList />
           </TabsContent>
 
           {/* Live Monitor Tab */}

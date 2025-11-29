@@ -69,7 +69,7 @@ export const NotificationManagement: React.FC = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      setNotifications((data || []) as any);
+      setNotifications(data || []);
     } catch (error: any) {
       console.error('Error fetching notifications:', error);
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

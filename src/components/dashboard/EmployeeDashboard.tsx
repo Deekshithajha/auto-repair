@@ -14,7 +14,6 @@ import { EmployeeWorkLog } from '@/components/employee/EmployeeWorkLog';
 import { EmployeeAttendance } from '@/components/employee/EmployeeAttendance';
 import { EmployeeSettings } from '@/components/employee/EmployeeSettings';
 import { CreateTicketDialog } from '@/components/tickets/CreateTicketDialog';
-import { EmployeeCustomerList } from '@/components/employee/EmployeeCustomerList';
 import DashboardBackground from '@/components/layout/DashboardBackground';
 
 interface EmployeeDashboardProps {
@@ -40,8 +39,6 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
         return renderProfilePage();
       case 'register':
         return renderRegisterCustomerPage();
-      case 'customers':
-        return renderCustomersPage();
       case 'settings':
         return renderSettingsPage();
       default:
@@ -79,20 +76,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ activeTab 
 
   const renderRegisterCustomerPage = () => (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold">Customer Management</h2>
-          <p className="text-muted-foreground text-sm sm:text-base">View and register customers</p>
-        </div>
-        <CustomerRegistration />
-      </div>
-      <EmployeeCustomerList />
-    </div>
-  );
-
-  const renderCustomersPage = () => (
-    <div className="space-y-4 sm:space-y-6">
-      <EmployeeCustomerList />
+      <EnhancedVehicleRegistration />
     </div>
   );
 
